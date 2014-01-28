@@ -1,0 +1,41 @@
+{
+    "name": "DM.js",
+    "version": "0.1.0",
+    "description": "Dependency Injection Manager",
+    "main": "index.js",
+    "directories": {
+        "test": "test"
+    },
+    "scripts": {
+        "test": "grunt test"
+    },
+    "repository": "",
+    "keywords": [
+        "Dependency",
+        "Injection",
+        "Javascript",
+        "Requirejs"
+    ],
+    "author": "Sergey Kamardin",
+    "license": "MIT",
+    "devDependencies": {
+        "lodash":                "*",
+        "jquery":                "*",
+        "grunt":                 "*",
+        "karma":                 "*",
+        "karma-mocha":           "*",
+
+        "mocha":                 "*",
+        "chai":                  "*",
+        "chance":                "*",
+        "sinon":                 "*",
+        "grunt-cafe-mocha":      "*",
+        "grunt-karma":           "*",
+        "grunt-contrib-coffee":  "*",
+        "grunt-contrib-jshint":  "*",
+        "grunt-contrib-uglify":  "*",
+        "grunt-contrib-clean":   "*",
+        "grunt-contrib-copy" :   "*",
+        "grunt-contrib-concat" : "*"
+    }
+}
