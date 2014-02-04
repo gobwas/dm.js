@@ -267,10 +267,9 @@
 
             setAsync: function(adapter) {
                 this.async = {
-                    all: adapter.all,
+                    all:     adapter.all,
                     promise: adapter.promise
                 };
-
 
                 return this.promise(function(reject, resolve) {
                     resolve();
@@ -286,26 +285,40 @@
                 var self = this,
                     args, handler, path;
 
-                if (isString(string)) {
-                    if (string.match(PROPERTY_REGEX)) {
-                        return this.getParameter(string.replace(PROPERTY_REGEX, '$1'));
+                return new Promise(function(resolve, reject) {
+
+                    if (isString(string)) {
+                        if (string.match(PROPERTY_REGEX)) {
+                            resolve(self.getParameter(string.replace(PROPERTY_REGEX, '$1')));
+
+                            return;
+                        }
+
+                        if (string.match(SERVICE_REGEX)) {
+                            self.get(string.replace(SERVICE_REGEX, '$1'))
+                                .then(resolve, reject);
+
+                            return;
+                        }
+
+                        if (string.match(RESOURCE_REGEX)) {
+                            args = string.match(RESOURCE_REGEX);
+                            handler = args[1];
+                            path    = args[2];
+
+                            self.getResource(path, handler)
+                                .then(resolve, reject);
+
+                            return;
+                        }
+
+                        resolve(string);
+
+                        return;
                     }
 
-                    if (string.match(SERVICE_REGEX)) {
-                        return this.get(string.replace(SERVICE_REGEX, '$1'));
-                    }
-
-                    if (string.match(RESOURCE_REGEX)) {
-                        args = string.match(RESOURCE_REGEX);
-                        handler = args[1];
-                        path    = args[2];
-                        return this.getResource.call(self, path, handler);
-                    }
-
-                    return new Promise(function(resolve){resolve(string)});
-                }
-
-                throw new Error("String is expected");
+                    reject(new Error("String is expected"));
+                });
             },
 
             /**
@@ -318,61 +331,65 @@
             parse: (function() {
 
                 var escaper = function(obj) {
-                    if (obj[DependencyManager.ESCAPE_FLAG] === true) {
-                        return obj[DependencyManager.ESCAPE_VALUE];
-                    }
-
-                    return null;
+                    return new Promise(function(resolve) {
+                        if (obj[DependencyManager.ESCAPE_FLAG] === true) {
+                            resolve(obj[DependencyManager.ESCAPE_VALUE]);
+                        } else {
+                            resolve(null);
+                        }
+                    });
                 };
 
                 return function(config) {
                     var self = this,
-                        promises = [],
                         parsed, iterator;
 
+                    if (isArray(config)) {
+                        parsed = [];
+                        iterator = forEachSimple;
+                    } else if (isObject(config)) {
+                        parsed = {};
+                        iterator = forEachOwn;
+                    } else {
+                        return config;
+                    }
+
                     return new Promise(function(resolve, reject) {
-                        if (isArray(config)) {
-                            parsed = [];
-                            iterator = forEachSimple;
-                        } else if (isObject(config)) {
-                            parsed = {};
-                            iterator = forEachOwn;
-                        } else {
-                            return config;
-                        }
+                        var promises = [];
 
                         iterator(config, function(value, key) {
-                            var parsedValue;
+                            var promise;
 
                             switch (objectType(value)) {
                                 case 'String':
-                                    parsedValue = self.parseString(value);
+                                    promise = self.parseString(value);
                                     break;
                                 case 'Object':
+                                    promise = escaper(value)
+                                        .then(function(escaped) {
+                                            return escaped ? escaped : self.parse(value);
+                                        });
+                                    break;
                                 case 'Array':
-                                    parsedValue = escaper(value) || self.parse(value);
+                                    promise = self.parse(value);
                                     break;
                                 default:
-                                    parsedValue = value;
+                                    promise = value;
                                     break;
                             }
 
-                            promises.push(parsedValue);
+                            promises.push(promise);
 
-                            parsedValue
-                                .then(function(value) {
-                                    parsed[key] = value;
-                                });
+                            promise.then(function(value) {
+                                parsed[key] = value;
+                            });
                         });
 
                         Promise.all(promises)
                             .then(function() {
-                                deferred.resolve(parsed);
+                                resolve(parsed);
                             })
                             .catch(reject);
-
-
-                        return deferred.promise();
                     });
                 }
             })(),
@@ -418,7 +435,7 @@
                 };
 
                 return function(key) {
-                    var self     =  this,
+                    var self = this,
                         config, path, args, calls, properties;
 
                     if (!(config = this.getConfig(key))) {
@@ -430,64 +447,65 @@
                     calls      = config.calls      || [];
                     properties = config.properties || {};
 
-                    require([path], function(constructor) {
-                        // Need parse things here to prevent premature load of service dependencies
-                        // They could be included via r.js in upper module level
-                        var args       = self.parse(args),
-                            calls      = self.parse(calls),
-                            properties = self.parse(properties);
+                    return new Promise(function(resolve, reject) {
 
-                        $.when(args, calls, properties)
-                            .done(function(args, calls, properties) {
-                                // Arguments
-                                var service = newInstanceArgs(constructor, args);
+                        require([path], function(constructor) {
+                            // Need parse things here to prevent premature load of service dependencies
+                            // They could be included via r.js in upper module level
+                            var args       = self.parse(args),
+                                calls      = self.parse(calls),
+                                properties = self.parse(properties);
 
-                                // Calls
-                                forEachSimple(calls, function(call) {
-                                    makeCall(service, call[0], call[1]);
+                            Promise.all([args, calls, properties])
+                                .then(function(inputs) {
+                                    var args       = inputs[0],
+                                        calls      = inputs[1],
+                                        properties = inputs[2],
+                                        service;
+
+                                    // Arguments
+                                    service = newInstanceArgs(constructor, args);
+
+                                    // Calls
+                                    forEachSimple(calls, function(call) {
+                                        makeCall(service, call[0], call[1]);
+                                    });
+
+                                    // Properties
+                                    forEachOwn(properties, function(value, key) {
+                                        service[key] = value;
+                                    });
+
+                                    resolve(service);
                                 });
 
-                                // Properties
-                                forEachOwn(properties, function(value, key) {
-                                    service[key] = value;
-                                });
+                        }, reject);
 
-                                deferred.resolve(service);
-                            });
-
-                    }, function(err) {
-                        console.error("Could not load path for service: %s", path, err);
-                        deferred.reject(err);
                     });
-
-                    return deferred.promise();
                 }
             })(),
 
             getResource: function(path, handler) {
-                var deferred = $.Deferred();
+                return new Promise(function(resolve, reject) {
 
-                if (handler) {
-                    this.parseString(handler).done(function(handler) {
-                        if (isString(handler)) {
-                            require([sprintf('%s!%s', handler, path)], function(resource) {
-                                deferred.resolve(resource);
+                    if (handler) {
+                        this.parseString(handler)
+                            .then(function(handler) {
+                                if (isString(handler)) {
+                                    require([sprintf('%s!%s', handler, path)], resolve, reject);
+                                } else if (isFunction(handler)) {
+                                    require([path], function(resource) {
+                                        resolve(handler.call(null, resource));
+                                    }, reject);
+                                } else {
+                                    reject(new Error("Can not parse handler"));
+                                }
                             });
-                        } else if (isFunction(handler)) {
-                            require([path], function(resource) {
-                                deferred.resolve(handler.call(null, resource));
-                            });
-                        } else {
-                            deferred.reject(new Error("Can not parse handler"));
-                        }
-                    });
-                } else {
-                    require([path], function(resource) {
-                        deferred.resolve(resource);
-                    });
-                }
+                    } else {
+                        require([path], resolve, reject);
+                    }
 
-                return deferred.promise();
+                });
             },
 
             /**
@@ -508,7 +526,7 @@
                     return this.services[key];
                 }
 
-                return this.services[key] = this.build(key).done(function(service) {
+                return this.services[key] = this.build(key).then(function(service) {
                     self.servicesInstances[key] = service;
                 });
             }

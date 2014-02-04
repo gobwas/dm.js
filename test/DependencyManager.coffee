@@ -214,7 +214,7 @@ suite "DependencyManager.js", ->
       result = DM.parseString(string);
 
       mock.verify();
-      assert.strictEqual result, value;
+      assert.strictEqual result + 1, value;
 
     # ================
 
