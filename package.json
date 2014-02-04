@@ -29,13 +29,17 @@
         "chai":                  "*",
         "chance":                "*",
         "sinon":                 "*",
-        "grunt-cafe-mocha":      "*",
-        "grunt-karma":           "*",
-        "grunt-contrib-coffee":  "*",
-        "grunt-contrib-jshint":  "*",
-        "grunt-contrib-uglify":  "*",
-        "grunt-contrib-clean":   "*",
-        "grunt-contrib-copy" :   "*",
-        "grunt-contrib-concat" : "*"
+
+        "grunt-es6-module-transpiler": "*",
+        "grunt-browserify": "*",
+
+        "grunt-cafe-mocha":            "*",
+        "grunt-karma":                 "*",
+        "grunt-contrib-coffee":        "*",
+        "grunt-contrib-jshint":        "*",
+        "grunt-contrib-uglify":        "*",
+        "grunt-contrib-clean":         "*",
+        "grunt-contrib-copy" :         "*",
+        "grunt-contrib-concat" :       "*"
     }
 }
