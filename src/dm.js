@@ -1,7 +1,7 @@
-import {objectType, isString, isNumber, isFunction, isBoolean, isDate, isObject, isRegExp, isArray, isUndefined} from "./type";
-import {forEachOwn, forEachSimple} from "./each";
-import sprintf from "./sprintf";
-import clone from "./clone";
+import {objectType, isString, isNumber, isFunction, isBoolean, isDate, isObject, isRegExp, isArray, isUndefined} from "./dm/util/type";
+import {forEachOwn, forEachSimple} from "./dm/util/each";
+import sprintf from "./dm/util/sprintf";
+import clone from "./dm/util/clone";
 
 /**
  * DM Constructor.
