@@ -244,11 +244,8 @@ suite "dm.js", ->
 
     setup ->
       dm = new DM;
-      async  = sinon.stub(new Async);
-      loader = sinon.stub(new Loader);
-
-      console.log('lll', Async.prototype, Loader.prototype);
-
+      async  = new Async;
+      loader = new Loader;
 
       dm.setAsync(async);
       dm.setLoader(loader.setAsync(async));
@@ -256,11 +253,14 @@ suite "dm.js", ->
     # ================
 
     test "Should throw an error when nothing is given", ->
-      try
-        dm.parseString();
-      catch err
-        error = err;
 
+      sinon.stub(async, "reject", (err) ->
+        return err;
+      );
+
+      error = dm.parseString();
+
+      sinon.assert.calledOnce(async.reject);
       assert.instanceOf error, Error;
 
     # ================
@@ -269,6 +269,10 @@ suite "dm.js", ->
       key    = chance.word();
       string = "%" + key + "%";
       value  = chance.word();
+
+      sinon.stub(async, "resolve", (value) ->
+        return value;
+      );
 
       mock = sinon.mock(dm)
         .expects("getParameter")
@@ -279,7 +283,9 @@ suite "dm.js", ->
 
       result = dm.parseString(string);
 
+      sinon.assert.calledOnce(async.resolve);
       mock.verify();
+
       assert.strictEqual result, value;
 
     # ================
@@ -313,7 +319,7 @@ suite "dm.js", ->
         .expects("getResource")
         .on(dm)
         .once()
-        .withExactArgs(resource, handler)
+        .withExactArgs(resource, handler, string)
         .returns(value);
 
       result = dm.parseString(string);
