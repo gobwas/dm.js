@@ -1,17 +1,21 @@
-_                 = require('lodash');
-chance            = require('chance');
-sinon             = require('sinon');
-chai              = require('chai');
-DependencyManager = require('../src/DependencyManager.js');
+_      = require('lodash');
+chance = require('chance');
+sinon  = require('sinon');
+chai   = require('chai');
+# TODO check this out https://github.com/square/es6-module-transpiler/issues/85
+DM     = require('./dist/dm.js').default;
+Loader = require('./dist/dm/adapter/loader').default;
+Async  = require('./dist/dm/adapter/async').default;
 
 chance = new chance;
 assert = chai.assert;
 
-# ---------------------------------
-# Tests suite for DependencyManager
-# ---------------------------------
 
-suite "DependencyManager.js", ->
+# ------------------
+# Tests suite for dm
+# ------------------
+
+suite "dm.js", ->
 
   # Setup
   # -----
@@ -32,12 +36,12 @@ suite "DependencyManager.js", ->
 
   suite "#setConfig", ->
 
-    DM         = null;
+    dm         = null;
     config     = null;
     parameters = null;
 
     setup ->
-      DM         = new DependencyManager;
+      dm         = new DM;
       config     = randomPrimitivesHash();
       parameters = randomPrimitivesHash();
 
@@ -45,7 +49,7 @@ suite "DependencyManager.js", ->
 
     test "Should set config without errors", ->
       try
-        DM.setConfig(config, parameters);
+        dm.setConfig(config, parameters);
       catch err
         error = err
 
@@ -55,7 +59,7 @@ suite "DependencyManager.js", ->
 
     test "Should throw Error if nothing given", ->
       try
-        DM.setConfig();
+        dm.setConfig();
       catch err
         error = err
 
@@ -64,10 +68,10 @@ suite "DependencyManager.js", ->
     # ================
 
     test "Should throw Error when configuring twice", ->
-      DM.setConfig(config);
+      dm.setConfig(config);
 
       try
-        DM.setConfig(randomPrimitivesHash());
+        dm.setConfig(randomPrimitivesHash());
       catch err
         error = err
 
@@ -78,43 +82,43 @@ suite "DependencyManager.js", ->
 
   suite "#getConfig", ->
 
-    DM         = null;
+    dm         = null;
     config     = null;
     parameters = null;
 
     setup ->
-      DM         = new DependencyManager;
+      dm         = new DM;
       config     = randomPrimitivesHash();
       parameters = randomPrimitivesHash();
 
     # ================
 
     test "Should return not exact copy of config", ->
-      DM.setConfig(config, parameters);
-      copy = DM.getConfig();
+      dm.setConfig(config, parameters);
+      copy = dm.getConfig();
 
       assert.notEqual(config, copy, "Must not be equal objects");
 
       _.each copy,       (value, key) -> assert.strictEqual config[key], value,          "Config values must be strict equal";
-      _.each parameters, (value, key) -> assert.strictEqual value, DM.getParameter(key), "Parameters values must be strict equal";
+      _.each parameters, (value, key) -> assert.strictEqual value, dm.getParameter(key), "Parameters values must be strict equal";
 
   # setParameter
   # -----------
 
   suite "#setParameter", ->
 
-    DM         = null;
+    dm         = null;
     parameters = null;
 
     setup ->
-      DM = new DependencyManager;
+      dm = new DM;
       parameters = randomPrimitivesHash();
 
     # ================
 
     test "Should set parameter", ->
-      _.each parameters, (value, key) -> DM.setParameter(key, value);
-      _.each parameters, (value, key) -> assert.strictEqual value, DM.getParameter(key), "Parameters values must be strict equal";
+      _.each parameters, (value, key) -> dm.setParameter(key, value);
+      _.each parameters, (value, key) -> assert.strictEqual value, dm.getParameter(key), "Parameters values must be strict equal";
 
     # ================
 
@@ -122,10 +126,10 @@ suite "DependencyManager.js", ->
       key   = chance.word();
       value = chance.word();
 
-      DM.setParameter(key, value);
+      dm.setParameter(key, value);
 
       try
-        DM.setParameter(key, chance.word())
+        dm.setParameter(key, chance.word())
       catch err
         error = err;
 
@@ -137,42 +141,123 @@ suite "DependencyManager.js", ->
 
   suite "#getParameter", ->
 
-    DM         = null;
+    dm         = null;
     parameters = null;
 
     setup ->
-      DM = new DependencyManager;
+      dm = new DM;
       parameters = randomPrimitivesHash();
 
     # ================
 
     test "Should get parameter", ->
-      _.each parameters, (value, key) -> DM.setParameter(key, value);
-      _.each parameters, (value, key) -> assert.strictEqual value, DM.getParameter(key), "Parameters values must be strict equal";
+      _.each parameters, (value, key) -> dm.setParameter(key, value);
+      _.each parameters, (value, key) -> assert.strictEqual value, dm.getParameter(key), "Parameters values must be strict equal";
 
     # ================
 
-    test "Shoul return null, when parameter is not set", ->
-      value = DM.getParameter(chance.word());
+    test "Should return null, when parameter is not set", ->
+      value = dm.getParameter(chance.word());
 
       assert.isNull value;
 
+  # setAsync
+  # --------
+
+  suite "#setAsync", ->
+
+    dm    = null;
+    async = null;
+
+    setup ->
+      dm    = new DM;
+      async = new Async;
+
+    test "Should accept adapter of expected interface", ->
+      try
+        dm.setAsync(async);
+      catch err
+        error = err;
+
+      assert.isUndefined error;
+
+    test "Should throw an error when given adapter is not of expected interface", ->
+      try
+        dm.setAsync(new Object);
+      catch err
+        error = err;
+
+      assert.instanceOf error, Error;
+
+    test "Should throw an error when nothing is given", ->
+      try
+        dm.setAsync();
+      catch err
+        error = err;
+
+      assert.instanceOf error, Error;
+
+  # setLoader
+  # ---------
+
+  suite "#setLoader", ->
+
+    dm     = null;
+    loader = null;
+
+    setup ->
+      dm     = new DM;
+      loader = new Loader;
+
+    test "Should accept adapter of expected interface", ->
+      try
+        dm.setLoader(loader);
+      catch err
+        error = err;
+
+      assert.isUndefined error;
+
+    test "Should throw an error when given adapter is not of expected interface", ->
+      try
+        dm.setLoader(new Object);
+      catch err
+        error = err;
+
+      assert.instanceOf error, Error;
+
+    test "Should throw an error when nothing is given", ->
+      try
+        dm.setLoader();
+      catch err
+        error = err;
+
+      assert.instanceOf error, Error;
 
   # parseString
   # ------------
 
   suite "#parseString", ->
 
-    DM = null;
+    dm     = null;
+    async  = null;
+    loader = null;
 
     setup ->
-      DM = new DependencyManager;
+      dm = new DM;
+      async  = sinon.stub(new Async);
+      loader = sinon.stub(new Loader);
+
+      console.log('lll', Async.prototype, Loader.prototype);
+
+
+      dm.setAsync(async);
+      dm.setLoader(loader.setAsync(async));
 
     # ================
 
-    test "Should throw Error when nothing is given", ->
+    test "Should throw an error when nothing is given", ->
       try
-        DM.parseString();
+        dm.parseString();
       catch err
         error = err;
 
@@ -181,18 +266,18 @@ suite "DependencyManager.js", ->
     # ================
 
     test "Should parse as parameter", ->
-      key = chance.word();
+      key    = chance.word();
       string = "%" + key + "%";
-      value = chance.word();
+      value  = chance.word();
 
-      mock = sinon.mock(DM)
+      mock = sinon.mock(dm)
         .expects("getParameter")
-        .on(DM)
+        .on(dm)
         .once()
         .withExactArgs(key)
         .returns(value);
 
-      result = DM.parseString(string);
+      result = dm.parseString(string);
 
       mock.verify();
       assert.strictEqual result, value;
@@ -204,14 +289,14 @@ suite "DependencyManager.js", ->
       string = "@" + key;
       value = chance.word();
 
-      mock = sinon.mock(DM)
+      mock = sinon.mock(dm)
         .expects("get")
-        .on(DM)
+        .on(dm)
         .once()
         .withExactArgs(key)
         .returns(value);
 
-      result = DM.parseString(string);
+      result = dm.parseString(string);
 
       mock.verify();
       assert.strictEqual result + 1, value;
@@ -224,14 +309,14 @@ suite "DependencyManager.js", ->
       string = "#" + handler + "!" + resource + "#";
       value = chance.word();
 
-      mock = sinon.mock(DM)
+      mock = sinon.mock(dm)
         .expects("getResource")
-        .on(DM)
+        .on(dm)
         .once()
         .withExactArgs(resource, handler)
         .returns(value);
 
-      result = DM.parseString(string);
+      result = dm.parseString(string);
 
       mock.verify();
       assert.strictEqual result, value;
@@ -243,14 +328,14 @@ suite "DependencyManager.js", ->
       string = "#" + resource + "#";
       value = chance.word();
 
-      mock = sinon.mock(DM)
+      mock = sinon.mock(dm)
         .expects("getResource")
-        .on(DM)
+        .on(dm)
         .once()
         .withArgs(resource)
         .returns(value);
 
-      result = DM.parseString(string);
+      result = dm.parseString(string);
 
       mock.verify();
       assert.strictEqual result, value;
@@ -261,10 +346,10 @@ suite "DependencyManager.js", ->
 
   suite "#parse", ->
 
-    DM = null;
+    dm = null;
 
     setup ->
-      DM = new DependencyManager;
+      dm = new DM;
 
 
 
@@ -277,10 +362,10 @@ suite "DependencyManager.js", ->
 
   suite "#getResource", ->
 
-    DM = null;
+    dm = null;
 
     setup ->
-      DM = new DependencyManager;
+      dm = new DM;
 
 
   # initialize
@@ -288,10 +373,10 @@ suite "DependencyManager.js", ->
 
   suite "#initialize", ->
 
-    DM = null;
+    dm = null;
 
     setup ->
-      DM = new DependencyManager;
+      dm = new DM;
 
 
   # build
@@ -299,10 +384,10 @@ suite "DependencyManager.js", ->
 
   suite "#build", ->
 
-    DM = null;
+    dm = null;
 
     setup ->
-      DM = new DependencyManager;
+      dm = new DM;
 
 
   # get
@@ -310,8 +395,11 @@ suite "DependencyManager.js", ->
 
   suite "#get", ->
 
-    DM = null;
+    dm = null;
 
     setup ->
-      DM = new DependencyManager;
+      dm = new DM;
 
+
+
+# escaping with array, object, function

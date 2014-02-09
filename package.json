@@ -30,10 +30,12 @@
         "chance":                "*",
         "sinon":                 "*",
 
-        "grunt-es6-module-transpiler": "*",
-        "grunt-browserify": "*",
+        "coffee-script":         "*",
 
-        "grunt-cafe-mocha":            "*",
+        "grunt-es6-module-transpiler": "*",
+        "grunt-browserify":            "*",
+        "grunt-mocha-test":            "*",
+
         "grunt-karma":                 "*",
         "grunt-contrib-coffee":        "*",
         "grunt-contrib-jshint":        "*",

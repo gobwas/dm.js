@@ -1,7 +1,21 @@
-import {objectType, isString, isNumber, isFunction, isBoolean, isDate, isObject, isRegExp, isArray, isUndefined} from "./dm/util/type";
-import {forEachOwn, forEachSimple} from "./dm/util/each";
-import sprintf from "./dm/util/sprintf";
-import clone from "./dm/util/clone";
+import {
+    objectType,
+        isString,
+        isNumber,
+        isFunction,
+        isBoolean,
+        isDate,
+        isObject,
+        isRegExp,
+        isArray,
+        isUndefined,
+        forEachOwn,
+        forEachSimple,
+        clone,
+        sprintf
+} from "./dm/utils";
+import Async from "./dm/adapter/async";
+import Loader from "./dm/adapter/loader";
 
 /**
  * DM Constructor.
@@ -129,62 +143,42 @@ DependencyManager.prototype = (function() {
             this.servicesInstances = {};
         },
 
-
-
         setAsync: function(adapter) {
-            this.async = {
-                all:     adapter.all,
-                promise: adapter.promise
-            };
-
-            return this.promise(function(reject, resolve) {
-                resolve();
-            });
+            if (!(adapter instanceof Async)) throw new Error("Async is expected");
+            this.async = adapter;
         },
 
-
-        promise: function(resolver) {
-            return new this.async.promise(resolver);
+        setLoader: function(adapter) {
+            if (!(adapter instanceof Loader)) throw new Error("Loader is expected");
+            this.loader = adapter;
         },
 
         parseString: function(string) {
             var self = this,
                 args, handler, path;
 
-            return new Promise(function(resolve, reject) {
 
-                if (isString(string)) {
-                    if (string.match(PROPERTY_REGEX)) {
-                        resolve(self.getParameter(string.replace(PROPERTY_REGEX, '$1')));
-
-                        return;
-                    }
-
-                    if (string.match(SERVICE_REGEX)) {
-                        self.get(string.replace(SERVICE_REGEX, '$1'))
-                            .then(resolve, reject);
-
-                        return;
-                    }
-
-                    if (string.match(RESOURCE_REGEX)) {
-                        args = string.match(RESOURCE_REGEX);
-                        handler = args[1];
-                        path    = args[2];
-
-                        self.getResource(path, handler)
-                            .then(resolve, reject);
-
-                        return;
-                    }
-
-                    resolve(string);
-
-                    return;
+            if (isString(string)) {
+                if (string.match(PROPERTY_REGEX)) {
+                    return self.async.resolve(self.getParameter(string.replace(PROPERTY_REGEX, '$1')));
                 }
 
-                reject(new Error("String is expected"));
-            });
+                if (string.match(SERVICE_REGEX)) {
+                    return self.get(string.replace(SERVICE_REGEX, '$1'));
+                }
+
+                if (string.match(RESOURCE_REGEX)) {
+                    args = string.match(RESOURCE_REGEX);
+                    handler = args[1];
+                    path    = args[2];
+
+                    return self.getResource(path, handler, string);
+                }
+
+                return self.async.resolve(string);
+            }
+
+            return self.async.reject(new Error("String is expected"));
         },
 
         /**
@@ -197,13 +191,11 @@ DependencyManager.prototype = (function() {
         parse: (function() {
 
             var escaper = function(obj) {
-                return new Promise(function(resolve) {
-                    if (obj[DependencyManager.ESCAPE_FLAG] === true) {
-                        resolve(obj[DependencyManager.ESCAPE_VALUE]);
-                    } else {
-                        resolve(null);
-                    }
-                });
+                if (obj[DependencyManager.ESCAPE_FLAG] === true) {
+                    return obj[DependencyManager.ESCAPE_VALUE];
+                }
+
+                return null;
             };
 
             return function(config) {
@@ -220,42 +212,33 @@ DependencyManager.prototype = (function() {
                     return config;
                 }
 
-                return new Promise(function(resolve, reject) {
-                    var promises = [];
+                var promises = [];
 
-                    iterator(config, function(value, key) {
-                        var promise;
+                iterator(config, function(value, key) {
+                    var promise, escaped;
 
-                        switch (objectType(value)) {
-                            case 'String':
-                                promise = self.parseString(value);
-                                break;
-                            case 'Object':
-                                promise = escaper(value)
-                                    .then(function(escaped) {
-                                        return escaped ? escaped : self.parse(value);
-                                    });
-                                break;
-                            case 'Array':
-                                promise = self.parse(value);
-                                break;
-                            default:
-                                promise = value;
-                                break;
-                        }
+                    switch (objectType(value)) {
+                        case 'String':
+                            promise = self.parseString(value);
+                            break;
+                        case 'Object':
+                        case 'Array':
+                            promise = (escaped = escaper(value)) ? self.async.resolve(escaped) : self.parse(value);
+                            break;
+                        default:
+                            promise = value;
+                            break;
+                    }
 
-                        promises.push(promise);
+                    promises.push(promise);
 
-                        promise.then(function(value) {
-                            parsed[key] = value;
-                        });
+                    promise.then(function(value) {
+                        parsed[key] = value;
                     });
+                });
 
-                    Promise.all(promises)
-                        .then(function() {
-                            resolve(parsed);
-                        })
-                        .catch(reject);
+                return self.async.all(promises).then(function() {
+                    resolve(parsed);
                 });
             }
         })(),
@@ -313,16 +296,16 @@ DependencyManager.prototype = (function() {
                 calls      = config.calls      || [];
                 properties = config.properties || {};
 
-                return new Promise(function(resolve, reject) {
 
-                    require([path], function(constructor) {
+                return self.loader.require(path)
+                    .then(function(constructor) {
                         // Need parse things here to prevent premature load of service dependencies
                         // They could be included via r.js in upper module level
                         var args       = self.parse(args),
                             calls      = self.parse(calls),
                             properties = self.parse(properties);
 
-                        Promise.all([args, calls, properties])
+                        self.async.all([args, calls, properties])
                             .then(function(inputs) {
                                 var args       = inputs[0],
                                     calls      = inputs[1],
@@ -342,44 +325,34 @@ DependencyManager.prototype = (function() {
                                     service[key] = value;
                                 });
 
-                                resolve(service);
+                                return service;
                             });
-
-                    }, reject);
-
-                });
+                    });
             }
         })(),
 
-        getResource: function(path, handler) {
-            return new Promise(function(resolve, reject) {
+        getResource: function(path, handler, string) {
+            var self = this;
 
-                if (handler) {
-                    this.parseString(handler)
-                        .then(function(handler) {
-                            if (isString(handler)) {
-                                require([sprintf('%s!%s', handler, path)], resolve, reject);
-                            } else if (isFunction(handler)) {
-                                require([path], function(resource) {
-                                    resolve(handler.call(null, resource));
-                                }, reject);
-                            } else {
-                                reject(new Error("Can not parse handler"));
-                            }
-                        });
-                } else {
-                    require([path], resolve, reject);
-                }
+            if (handler) {
+                this.parseString(handler).then(function(handler) {
 
-            });
+                    if (isString(handler)) {
+                        return self.loader.require(string);
+                    } else if (isFunction(handler)) {
+                        return self.loader.require(path).then(handler); // todo make available syntax like @service:getHandler
+                    } else {
+                        return self.async.reject(new Error("Can not parse handler"));
+                    }
+
+                });
+            }
+
+            return this.loader.require(path);
         },
 
         /**
-         * Возвращает сервис.
          *
-         * @param key {String}
-         *
-         * @returns {$.Deferred.promise}
          */
         get: function(key) {
             var self = this;
@@ -416,13 +389,13 @@ export default DependencyManager;
 // Module registration
 // -------------------
 /*
-var isNode = typeof module !== "undefined" && module.exports,
-    isAMD = typeof define === 'function' && typeof define.amd === 'object' && define.amd;
+ var isNode = typeof module !== "undefined" && module.exports,
+ isAMD = typeof define === 'function' && typeof define.amd === 'object' && define.amd;
 
-if (isNode) {
-    module.exports = DependencyManager;
-} else if (isAMD) {
-    define([], function() {return DependencyManager;});
-} else if ( typeof window === "object" && typeof window.document === "object" ) {
-    window.DependencyManager = DependencyManager;
-}*/
+ if (isNode) {
+ module.exports = DependencyManager;
+ } else if (isAMD) {
+ define([], function() {return DependencyManager;});
+ } else if ( typeof window === "object" && typeof window.document === "object" ) {
+ window.DependencyManager = DependencyManager;
+ }*/
