@@ -5,7 +5,7 @@ var Async = Adapter.extend({
      *
      * @param {Function} actor
      */
-    promise: function(actor) {
+    promise: function(resolver) {
         throw new Error("Method must be implemented");
     },
 

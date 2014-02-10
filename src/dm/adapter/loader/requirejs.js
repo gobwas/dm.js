@@ -1,4 +1,4 @@
-import Loader from "./loader";
+import Loader from "../loader";
 
 var Requirejs = Loader.extend({
     constructor: function() {

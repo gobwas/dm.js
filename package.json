@@ -32,6 +32,8 @@
 
         "coffee-script":         "*",
 
+        "rsvp":                  "*",
+
         "grunt-es6-module-transpiler": "*",
         "grunt-browserify":            "*",
         "grunt-mocha-test":            "*",

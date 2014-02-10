@@ -283,39 +283,59 @@ suite "dm.js", ->
 
       result = dm.parseString(string);
 
-      sinon.assert.calledOnce(async.resolve);
       mock.verify();
-
       assert.strictEqual result, value;
 
     # ================
 
-    test "Should parse as service", ->
-      key = chance.word();
-      string = "@" + key;
+    test "Should parse as service without", ->
+      name = chance.word();
+      string = "@" + name;
       value = chance.word();
 
       mock = sinon.mock(dm)
         .expects("get")
         .on(dm)
         .once()
-        .withExactArgs(key)
+        .withExactArgs(name, undefined)
         .returns(value);
 
       result = dm.parseString(string);
 
       mock.verify();
-      assert.strictEqual result + 1, value;
+      assert.strictEqual result, value;
+
+    test "Should parse as service with handler", ->
+      name    = chance.word();
+      handler = chance.word();
+      string = "@" + name + ":" + handler;
+      value = chance.word();
+
+      mock = sinon.mock(dm)
+        .expects("get")
+        .on(dm)
+        .once()
+        .withExactArgs(name, handler)
+        .returns(value);
+
+      result = dm.parseString(string);
+
+      mock.verify();
+      assert.strictEqual result, value;
 
     # ================
 
     test "Should parse as resource with handler", ->
-      handler  = chance.word();
+      name     = chance.word();
+      func     = chance.word();
+      handler  = "@" + name + ":" + func;
       resource = chance.word();
       string = "#" + handler + "!" + resource + "#";
       value = chance.word();
 
-      mock = sinon.mock(dm)
+      mock = sinon.mock(dm);
+
+      mock
         .expects("getResource")
         .on(dm)
         .once()

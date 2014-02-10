@@ -1,18 +1,18 @@
 import {
     objectType,
-        isString,
-        isNumber,
-        isFunction,
-        isBoolean,
-        isDate,
-        isObject,
-        isRegExp,
-        isArray,
-        isUndefined,
-        forEachOwn,
-        forEachSimple,
-        clone,
-        sprintf
+    isString,
+    isNumber,
+    isFunction,
+    isBoolean,
+    isDate,
+    isObject,
+    isRegExp,
+    isArray,
+    isUndefined,
+    forEachOwn,
+    forEachSimple,
+    clone,
+    sprintf
 } from "./dm/utils";
 import Async from "./dm/adapter/async";
 import Loader from "./dm/adapter/loader";
@@ -110,7 +110,7 @@ DependencyManager.prototype = (function() {
      * @private
      * @static
      */
-    var	SERVICE_REGEX = /^@(.*)$/i;
+    var	SERVICE_REGEX = /^@([^:]*)(?::([^:()]*))?$/i;
 
     /**
      * Template for checking reference to property.
@@ -129,6 +129,7 @@ DependencyManager.prototype = (function() {
      * @static
      */
     var RESOURCE_REGEX = /^#(?:([^!]+)!)?(.*)#$/i;
+
 
     return {
         constructor: DependencyManager,
@@ -155,20 +156,22 @@ DependencyManager.prototype = (function() {
 
         parseString: function(string) {
             var self = this,
-                args, handler, path;
+                args, name, handler, path;
 
 
             if (isString(string)) {
-                if (string.match(PROPERTY_REGEX)) {
-                    return self.async.resolve(self.getParameter(string.replace(PROPERTY_REGEX, '$1')));
+                if (args = string.match(PROPERTY_REGEX)) {
+                    name = args[1];
+                    return self.async.resolve(self.getParameter(name));
                 }
 
-                if (string.match(SERVICE_REGEX)) {
-                    return self.get(string.replace(SERVICE_REGEX, '$1'));
+                if (args = string.match(SERVICE_REGEX)) {
+                    name    = args[1];
+                    handler = args[2];
+                    return self.get(name, handler);
                 }
 
-                if (string.match(RESOURCE_REGEX)) {
-                    args = string.match(RESOURCE_REGEX);
+                if (args = string.match(RESOURCE_REGEX)) {
                     handler = args[1];
                     path    = args[2];
 
@@ -183,7 +186,7 @@ DependencyManager.prototype = (function() {
 
         /**
          * Finds out references to services, parameters and resources in given object.
-         * Returns promise of getting them, which is resolved then with object
+         * Returns promise of getting them, which is resolved then with object having
          * parsed values.
          *
          * @param config {Object|Array}
@@ -226,7 +229,7 @@ DependencyManager.prototype = (function() {
                             promise = (escaped = escaper(value)) ? self.async.resolve(escaped) : self.parse(value);
                             break;
                         default:
-                            promise = value;
+                            promise = self.async.resolve(value);
                             break;
                     }
 
@@ -238,7 +241,7 @@ DependencyManager.prototype = (function() {
                 });
 
                 return self.async.all(promises).then(function() {
-                    resolve(parsed);
+                    return parsed;
                 });
             }
         })(),
@@ -331,6 +334,8 @@ DependencyManager.prototype = (function() {
             }
         })(),
 
+
+        // @handler:handle!/var/resource
         getResource: function(path, handler, string) {
             var self = this;
 
@@ -340,7 +345,7 @@ DependencyManager.prototype = (function() {
                     if (isString(handler)) {
                         return self.loader.require(string);
                     } else if (isFunction(handler)) {
-                        return self.loader.require(path).then(handler); // todo make available syntax like @service:getHandler
+                        return self.loader.require(path).then(handler);
                     } else {
                         return self.async.reject(new Error("Can not parse handler"));
                     }
@@ -354,19 +359,34 @@ DependencyManager.prototype = (function() {
         /**
          *
          */
-        get: function(key) {
-            var self = this;
+        get: function(name, method) {
+            var self = this,
+                promise;
 
-            if (!isString(key)) {
-                throw new Error(sprintf("Necessary string parameter expected, '%s' given", typeof key));
+            if (!isString(name)) {
+                throw new Error(sprintf("Necessary string parameter expected, '%s' given", typeof name));
             }
 
-            if (this.services[key]) {
-                return this.services[key];
+            if (!(promise = this.services[name])) {
+                promise = this.services[name] = this.build(name)
+                    .then(function(service) {
+                        self.servicesInstances[name] = service;
+                        return service;
+                    });
             }
 
-            return this.services[key] = this.build(key).then(function(service) {
-                self.servicesInstances[key] = service;
+            return promise.then(function(service) {
+                var func;
+
+                if (!isUndefined(method)) {
+                    if (!isFunction(func = service[method])) {
+                        throw new TypeError(sprintf("Service %s does not have method %s", name, method));
+                    }
+
+                    return func;
+                }
+
+                return service;
             });
         }
     };

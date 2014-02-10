@@ -1,4 +1,4 @@
-import Async from "./async";
+import Async from "../async";
 
 var RSVP = Async.extend({
     constructor: function() {
@@ -6,23 +6,26 @@ var RSVP = Async.extend({
         this.RSVP = this.adaptee;
     },
 
-    promise: function(actor) {
-        return new this.RSVP.Promise(actor);
+    promise: function(resolver) {
+        if (!resolver) throw new Error("Resolver function is expected");
+        return new this.RSVP.Promise(resolver);
     },
 
     all: function(promises) {
+        if (!promises) throw new TypeError("Array of promises is expected")
         return this.RSVP.all(promises)
     },
 
-    resolve: function(obj) {
+    resolve: function(value) {
         var deferred = this.RSVP.defer();
-
-        return deferred.resolve(obj).promise;
+        deferred.resolve(value);
+        return deferred.promise;
     },
 
-    reject: function(obj) {
+    reject: function(value) {
         var deferred = this.RSVP.defer();
-        return deferred.reject(obj).promise;
+        deferred.reject(value);
+        return deferred.promise;
     }
 });
 
