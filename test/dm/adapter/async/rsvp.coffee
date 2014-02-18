@@ -138,8 +138,8 @@ suite "rsvp.js", ->
 
       assert.instanceOf(promise, rsvp.Promise);
 
-      errorSpy   = sinon.spy(->console.log('error!'));
-      successSpy = sinon.spy(->console.log('succ'));
+      errorSpy   = sinon.spy();
+      successSpy = sinon.spy();
 
       final = promise
         .then(successSpy)

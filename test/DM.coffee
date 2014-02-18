@@ -6,6 +6,7 @@ chai   = require('chai');
 DM     = require('./dist/dm.js').default;
 Loader = require('./dist/dm/adapter/loader').default;
 Async  = require('./dist/dm/adapter/async').default;
+RSVP   = require('rsvp');
 
 chance = new chance;
 assert = chai.assert;
@@ -372,10 +373,165 @@ suite "dm.js", ->
 
   suite "#parse", ->
 
-    dm = null;
+    dm     = null;
+    async  = null;
+    loader = null;
 
     setup ->
       dm = new DM;
+      async  = new Async;
+      loader = new Loader;
+
+      dm.setAsync(async);
+      dm.setLoader(loader.setAsync(async));
+
+    test "Should parse object properties", (done) ->
+      key    = chance.word();
+      string = chance.word();
+
+      config = {};
+      config[key] = string;
+
+      sinon.stub(async, "all", (promises) -> RSVP.all(promises));
+      parseStringStub = sinon.stub(dm, "parseString", (string) -> RSVP.resolve(string));
+
+      result = dm.parse(config);
+
+      result.then((result) ->
+        try
+          assert.isTrue parseStringStub.called,             "#parseString is never called"
+          assert.isTrue parseStringStub.calledWith(string), "#parseString is never called with string"
+          assert.isTrue parseStringStub.alwaysCalledOn(dm), "#parseString is not called always on DM"
+
+          assert.isObject result;
+          assert.property result, key
+        catch err
+          error = err
+
+        done(error);
+      );
+
+    test "Should parse array values", (done) ->
+      string = chance.word();
+
+      config = [];
+      config.push(string);
+
+      sinon.stub(async, "all", (promises) -> RSVP.all(promises));
+      parseStringStub = sinon.stub(dm, "parseString", (string) -> RSVP.resolve(string));
+
+      result = dm.parse(config);
+
+      result.then((result) ->
+        try
+          assert.isTrue parseStringStub.called,             "#parseString is never called"
+          assert.isTrue parseStringStub.calledWith(string), "#parseString is never called with string"
+          assert.isTrue parseStringStub.alwaysCalledOn(dm), "#parseString is not called always on DM"
+
+          assert.isArray result;
+          assert.strictEqual result.length, config.length
+        catch err
+          error = err
+
+        done(error);
+      );
+
+    test "Should fall in recursion with objects", (done) ->
+      key    = chance.word();
+      nested = chance.word();
+      string = chance.word();
+
+      object = {};
+      object[key] = string;
+      config = {};
+      config[nested] = object;
+
+      parseSpy = sinon.spy(dm, "parse");
+
+      sinon.stub(dm, "parseString", (string) -> RSVP.resolve(string));
+      sinon.stub(async, "all", (promises) -> RSVP.all(promises));
+
+      result = dm.parse(config);
+
+      result.then((result) ->
+        try
+          assert.isTrue parseSpy.calledTwice,                   "#parse is not called twice";
+          assert.isTrue parseSpy.secondCall.calledWith(object), "#parse is not called with nested object";
+          assert.isTrue parseSpy.alwaysCalledOn(dm),            "#parse is not called always on DM";
+
+          assert.property result, nested;
+          assert.isObject result[nested];
+          assert.property result[nested], key;
+        catch err
+          error = err
+
+        done(error);
+      );
+
+
+    test "Should fall in recursion with arrays", (done) ->
+      nested = chance.word();
+      string = chance.word();
+
+      array = [];
+      array.push(string);
+      config = {};
+      config[nested] = array;
+
+      parseSpy = sinon.spy(dm, "parse");
+
+      sinon.stub(dm, "parseString", (string) -> RSVP.resolve(string));
+      sinon.stub(async, "all", (promises) -> RSVP.all(promises));
+
+      result = dm.parse(config);
+
+      result.then((result) ->
+        try
+          assert.isTrue parseSpy.calledTwice,                   "#parse is not called twice";
+          assert.isTrue parseSpy.secondCall.calledWith(array),  "#parse is not called with nested array";
+          assert.isTrue parseSpy.alwaysCalledOn(dm),            "#parse is not called always on DM";
+
+          assert.property result, nested;
+          assert.isArray result[nested];
+          assert.strictEqual result[nested].length, array.length;
+        catch err
+          error = err
+
+        done(error);
+      );
+
+    test "Should return escaped value", (done) ->
+      key    = chance.word();
+      nested = chance.word();
+      string = chance.word();
+
+      object = {};
+      object[key] = string;
+      config = {};
+      config[nested] = DM.escape(object);
+
+      parseSpy        = sinon.spy(dm, "parse");
+      parseStringSpy  = sinon.spy(dm, "parseString");
+
+      sinon.stub(async, "all", (promises) -> RSVP.all(promises));
+      sinon.stub(async, "resolve", (value) -> RSVP.resolve(value));
+
+      result = dm.parse(config);
+
+      result.then((result) ->
+        try
+          assert.isTrue parseSpy.calledOnce, "#parse is not called once";
+
+          assert.isTrue parseStringSpy.callCount == 0, "#parseString was called";
+
+          assert.property result, nested;
+          assert.isObject result[nested];
+          assert.strictEqual result[nested], object;
+        catch err
+          error = err
+
+        done(error);
+      );
 
 
 
