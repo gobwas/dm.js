@@ -583,5 +583,16 @@ suite "dm.js", ->
       dm = new DM;
 
 
+  # escape
+  # ------------
+
+  suite "#get", ->
+
+    dm = null;
+
+    setup ->
+      dm = new DM;
+
+
 
 # escaping with array, object, function
