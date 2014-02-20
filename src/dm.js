@@ -154,9 +154,11 @@ DependencyManager.prototype = (function() {
             this.loader = adapter;
         },
 
+        // @service:getSome!@service:getVar(text, hello, @someService, %property%)
         parseString: function(string) {
             var self = this,
-                args, name, handler, path;
+                args, name, handler, path,
+                promises;
 
 
             if (isString(string)) {
@@ -172,10 +174,15 @@ DependencyManager.prototype = (function() {
                 }
 
                 if (args = string.match(RESOURCE_REGEX)) {
-                    handler = args[1];
                     path    = args[2];
+                    handler = args[1];
 
-                    return self.getResource(path, handler, string);
+                    promises = [this.parseString(path)];
+                    isString(handler) && promises.push(this.parseString(handler));
+
+                    return this.async.all(promises).then(function(path, handler) {
+                        return self.getResource(path, handler, string);
+                    });
                 }
 
                 return self.async.resolve(string);
@@ -336,22 +343,25 @@ DependencyManager.prototype = (function() {
 
 
         // @handler:handle!/var/resource
-        getResource: function(path, handler, string) {
+        // %tpl%!/var/template.html
+        // %tpl%!%path%
+        getResource: function(path, handler) {
             var self = this;
 
-            if (handler) {
-                this.parseString(handler).then(function(handler) {
-
-                    if (isString(handler)) {
-                        return self.loader.require(string);
-                    } else if (isFunction(handler)) {
-                        return self.loader.require(path).then(handler);
-                    } else {
-                        return self.async.reject(new Error("Can not parse handler"));
-                    }
-
-                });
+            if (!isString(path)) {
+                return this.async.reject(new Error("Path must be a string"));
             }
+
+            if (!isUndefined(handler)) {
+                if (isFunction(handler)) {
+                    return self.loader.require(path).then(handler);
+                } else if (isString(handler)) {
+                    return self.loader.require(handler + "!" + path);
+                } else {
+                    return self.async.reject(new Error("Handler must be a string or function"));
+                }
+            }
+
 
             return this.loader.require(path);
         },
@@ -383,7 +393,7 @@ DependencyManager.prototype = (function() {
                         throw new TypeError(sprintf("Service %s does not have method %s", name, method));
                     }
 
-                    return func;
+                    return func.bind(service); // todo use universal bind
                 }
 
                 return service;

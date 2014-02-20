@@ -12,11 +12,14 @@ chance = new chance;
 assert = chai.assert;
 
 
+
 # ------------------
 # Tests suite for dm
 # ------------------
 
 suite "dm.js", ->
+
+
 
   # Setup
   # -----
@@ -31,6 +34,8 @@ suite "dm.js", ->
 
   setup ->
     # ...
+
+
 
   # setConfig
   # ---------
@@ -78,6 +83,8 @@ suite "dm.js", ->
 
       assert.instanceOf error, Error;
 
+
+
   # getConfig
   # ---------
 
@@ -102,6 +109,8 @@ suite "dm.js", ->
 
       _.each copy,       (value, key) -> assert.strictEqual config[key], value,          "Config values must be strict equal";
       _.each parameters, (value, key) -> assert.strictEqual value, dm.getParameter(key), "Parameters values must be strict equal";
+
+
 
   # setParameter
   # -----------
@@ -137,6 +146,7 @@ suite "dm.js", ->
       assert.instanceOf error, Error;
 
 
+
   # getParameter
   # ------------
 
@@ -161,6 +171,8 @@ suite "dm.js", ->
       value = dm.getParameter(chance.word());
 
       assert.isNull value;
+
+
 
   # setAsync
   # --------
@@ -198,6 +210,8 @@ suite "dm.js", ->
 
       assert.instanceOf error, Error;
 
+
+
   # setLoader
   # ---------
 
@@ -234,12 +248,14 @@ suite "dm.js", ->
 
       assert.instanceOf error, Error;
 
+
+
   # parseString
-  # ------------
+  # -----------
 
   suite "#parseString", ->
 
-    dm     = null;
+    dm = null;
     async  = null;
     loader = null;
 
@@ -276,11 +292,11 @@ suite "dm.js", ->
       );
 
       mock = sinon.mock(dm)
-        .expects("getParameter")
-        .on(dm)
-        .once()
-        .withExactArgs(key)
-        .returns(value);
+      .expects("getParameter")
+      .on(dm)
+      .once()
+      .withExactArgs(key)
+      .returns(value);
 
       result = dm.parseString(string);
 
@@ -295,16 +311,18 @@ suite "dm.js", ->
       value = chance.word();
 
       mock = sinon.mock(dm)
-        .expects("get")
-        .on(dm)
-        .once()
-        .withExactArgs(name, undefined)
-        .returns(value);
+      .expects("get")
+      .on(dm)
+      .once()
+      .withExactArgs(name, undefined)
+      .returns(value);
 
       result = dm.parseString(string);
 
       mock.verify();
       assert.strictEqual result, value;
+
+    # ================
 
     test "Should parse as service with handler", ->
       name    = chance.word();
@@ -313,11 +331,11 @@ suite "dm.js", ->
       value = chance.word();
 
       mock = sinon.mock(dm)
-        .expects("get")
-        .on(dm)
-        .once()
-        .withExactArgs(name, handler)
-        .returns(value);
+      .expects("get")
+      .on(dm)
+      .once()
+      .withExactArgs(name, handler)
+      .returns(value);
 
       result = dm.parseString(string);
 
@@ -326,46 +344,75 @@ suite "dm.js", ->
 
     # ================
 
-    test "Should parse as resource with handler", ->
-      name     = chance.word();
-      func     = chance.word();
-      handler  = "@" + name + ":" + func;
-      resource = chance.word();
-      string = "#" + handler + "!" + resource + "#";
-      value = chance.word();
+    test "Should parse as resource with handler", (done)->
+      path    = chance.word();
+      handler = chance.word();
+      string = "#" + handler + "!" + path + "#";
 
-      mock = sinon.mock(dm);
+      handled = chance.word();
 
-      mock
-        .expects("getResource")
-        .on(dm)
-        .once()
-        .withExactArgs(resource, handler, string)
-        .returns(value);
-
-      result = dm.parseString(string);
-
-      mock.verify();
-      assert.strictEqual result, value;
-
-    # ================
-
-    test "Should parse as resource without handler", ->
-      resource = chance.word();
-      string = "#" + resource + "#";
-      value = chance.word();
+      sinon.stub(async, "resolve", RSVP.resolve);
+      sinon.stub(async, "all",     RSVP.all);
 
       mock = sinon.mock(dm)
         .expects("getResource")
         .on(dm)
         .once()
-        .withArgs(resource)
-        .returns(value);
+        .withExactArgs(path, handler, string)
+        .returns(RSVP.resolve(handled));
 
-      result = dm.parseString(string);
+      parseStringSpy = sinon.spy(dm, "parseString");
 
-      mock.verify();
-      assert.strictEqual result, value;
+      dm.parseString(string).then((result)->
+        try
+          mock.verify();
+
+          assert.isTrue parseStringSpy.calledThrice,                          "#parseString is not called thrice"
+          assert.isTrue parseStringSpy.alwaysCalledOn(dm),                    "#parseString is not always called on DM"
+          assert.isTrue parseStringSpy.firstCall.calledWithExactly(path),     "#parseString first call is not called on path"
+          assert.isTrue parseStringSpy.secondCall.calledWithExactly(handler), "#parseString second call is not called on handler"
+
+          assert.strictEqual result, handled;
+        catch err
+          error = err;
+
+        done(error);
+      );
+
+
+    # ================
+
+    test "Should parse as resource without handler", (done)->
+      path = chance.word();
+      string = "#" + path + "#";
+      value = chance.word();
+
+      mock = sinon.mock(dm);
+
+      mock
+      .expects("getResource")
+      .on(dm)
+      .once()
+      .withArgs(path)
+      .returns(value);
+
+      mock
+      .expects("parseString")
+      .on(dm)
+      .once()
+      .withExactArgs(path)
+      .returns(RSVP.all([RSVP.resolve(path)]));
+
+      dm.parseString(string).then((result)->
+        try
+          mock.verify();
+          assert.strictEqual result, value;
+        catch err
+          error = err;
+
+        done(error);
+      );
+
 
 
   # parse
@@ -382,8 +429,13 @@ suite "dm.js", ->
       async  = new Async;
       loader = new Loader;
 
+      sinon.stub(async, "all",     RSVP.all);
+      sinon.stub(async, "resolve", RSVP.resolve);
+
       dm.setAsync(async);
       dm.setLoader(loader.setAsync(async));
+
+    # ================
 
     test "Should parse object properties", (done) ->
       key    = chance.word();
@@ -392,7 +444,6 @@ suite "dm.js", ->
       config = {};
       config[key] = string;
 
-      sinon.stub(async, "all", (promises) -> RSVP.all(promises));
       parseStringStub = sinon.stub(dm, "parseString", (string) -> RSVP.resolve(string));
 
       result = dm.parse(config);
@@ -411,13 +462,14 @@ suite "dm.js", ->
         done(error);
       );
 
+    # ================
+
     test "Should parse array values", (done) ->
       string = chance.word();
 
       config = [];
       config.push(string);
 
-      sinon.stub(async, "all", (promises) -> RSVP.all(promises));
       parseStringStub = sinon.stub(dm, "parseString", (string) -> RSVP.resolve(string));
 
       result = dm.parse(config);
@@ -436,6 +488,8 @@ suite "dm.js", ->
         done(error);
       );
 
+    # ================
+
     test "Should fall in recursion with objects", (done) ->
       key    = chance.word();
       nested = chance.word();
@@ -449,7 +503,6 @@ suite "dm.js", ->
       parseSpy = sinon.spy(dm, "parse");
 
       sinon.stub(dm, "parseString", (string) -> RSVP.resolve(string));
-      sinon.stub(async, "all", (promises) -> RSVP.all(promises));
 
       result = dm.parse(config);
 
@@ -468,6 +521,7 @@ suite "dm.js", ->
         done(error);
       );
 
+    # ================
 
     test "Should fall in recursion with arrays", (done) ->
       nested = chance.word();
@@ -481,7 +535,6 @@ suite "dm.js", ->
       parseSpy = sinon.spy(dm, "parse");
 
       sinon.stub(dm, "parseString", (string) -> RSVP.resolve(string));
-      sinon.stub(async, "all", (promises) -> RSVP.all(promises));
 
       result = dm.parse(config);
 
@@ -500,6 +553,8 @@ suite "dm.js", ->
         done(error);
       );
 
+    # ================
+
     test "Should return escaped value", (done) ->
       key    = chance.word();
       nested = chance.word();
@@ -512,9 +567,6 @@ suite "dm.js", ->
 
       parseSpy        = sinon.spy(dm, "parse");
       parseStringSpy  = sinon.spy(dm, "parseString");
-
-      sinon.stub(async, "all", (promises) -> RSVP.all(promises));
-      sinon.stub(async, "resolve", (value) -> RSVP.resolve(value));
 
       result = dm.parse(config);
 
@@ -535,19 +587,183 @@ suite "dm.js", ->
 
 
 
-
-
-
-
   # getResource
   # ------------
 
   suite "#getResource", ->
 
     dm = null;
+    async  = null;
+    loader = null;
 
     setup ->
       dm = new DM;
+      async  = new Async;
+      loader = new Loader;
+
+      sinon.stub(async, "all",     (promises) -> RSVP.all(promises));
+      sinon.stub(async, "resolve", (value)    -> RSVP.resolve(value));
+
+      dm.setAsync(async);
+      dm.setLoader(loader.setAsync(async));
+
+    # ================
+
+    test "Should pass require's result direct in handler function", (done) ->
+      path     = chance.word();
+      resource = chance.word();
+      handlerLink = chance.word();
+
+      handler = sinon.spy();
+
+      sinon.stub(loader, "require", -> RSVP.resolve(resource));
+
+      dm.getResource(path, handlerLink)
+      .then(->
+          try
+            assert.isTrue handler.calledOnce, "handler function is not called once";
+            assert.isTrue handler.calledWith(resource), "handler function is not called with result of require";
+          catch err
+            error = err;
+
+          done(error);
+
+        )
+      .catch(done);
+
+    # ================
+
+    test "Should return handler function result", (done) ->
+      path   = chance.word();
+      handled = chance.word();
+      handlerLink = chance.word();
+
+      handler = sinon.spy(->handled);
+
+      sinon.stub(loader, "require", (path) -> RSVP.resolve());
+
+      dm.getResource(path, handlerLink)
+      .then((result)->
+          try
+            assert.strictEqual result, handled, "#getResource result is not strict equal to expected";
+          catch err
+            error = err;
+
+          done(error);
+
+        )
+      .catch(done);
+
+      # ================
+
+    test "Should call require for path if parsed handler is function", (done) ->
+      path = chance.word();
+      hanlderLink = chance.word();
+
+      handler = ->
+
+      mock = sinon.mock(loader)
+      .expects("require")
+      .once()
+      .on(loader)
+      .withExactArgs(path);
+
+      dm.getResource(path, hanlderLink).then(->
+        try
+          mock.verify();
+        catch err
+          error = err;
+
+        done(error);
+      )
+
+    # ================
+
+    test "Should call require for handler!path, if parsed handler is string", (done) ->
+      path = chance.word();
+      hanlderLink = chance.word();
+
+      handler = chance.word();
+
+      mock = sinon.mock(loader)
+      .expects("require")
+      .once()
+      .on(loader)
+      .withExactArgs(handler + "!" + path);
+
+      dm.getResource(path, hanlderLink).then(->
+        try
+          mock.verify();
+        catch err
+          error = err;
+
+        done(error);
+      )
+
+    # ================
+
+    test "Should not call require and throw error if parsed handler neither function or string", (done) ->
+      path = chance.word();
+      hanlderLink = chance.word();
+
+      handler = {};
+
+      mock = sinon.mock(loader)
+      .expects("require")
+      .never();
+
+      tester = (result) ->
+        try
+          mock.verify();
+          assert.instanceOf Error, result;
+        catch err
+          error = err;
+
+        done(error);
+
+      dm.getResource(path, hanlderLink)
+      .then(tester, tester);
+
+    # ================
+
+    test "Should call require for path if handler is not given", (done) ->
+      path = chance.word();
+
+      mock = sinon.mock(loader)
+      .expects("require")
+      .once()
+      .on(loader)
+      .withExactArgs(path);
+
+      dm.getResource(path).then(->
+        try
+          mock.verify();
+        catch err
+          error = err;
+
+        done(error);
+      )
+
+    # ================
+
+    test "Should throw an error if path is not string", (done) ->
+      path = null;
+
+      mock = sinon.mock(loader)
+      .expects("require")
+      .never();
+
+      tester = (result) ->
+        try
+          mock.verify();
+          assert.instanceOf Error, result;
+        catch err
+          error = err;
+
+        done(error);
+
+      dm.getResource(path).then(tester,tester);
+
 
 
   # initialize
@@ -586,7 +802,7 @@ suite "dm.js", ->
   # escape
   # ------------
 
-  suite "#get", ->
+  suite "#escape", ->
 
     dm = null;
 
