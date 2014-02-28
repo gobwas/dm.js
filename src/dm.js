@@ -11,6 +11,7 @@ import {
     isUndefined,
     forEachOwn,
     forEachSimple,
+    map,
     clone,
     sprintf
 } from "./dm/utils";
@@ -106,11 +107,14 @@ DependencyManager.prototype = (function() {
     /**
      * Template for checking reference to service.
      *
+     * Could be applied to string in format:
+     * @<service>[:<method>[(<argument-1>,[<argument-n>])]]
+     *
      * @type {RegExp}
      * @private
      * @static
      */
-    var	SERVICE_REGEX = /^@([^:]*)(?::([^:()]*))?$/i;
+    var	SERVICE_REGEX = /^@([^:]*)(?::([^()]+)(\((.+)?\))?)?$/i;
 
     /**
      * Template for checking reference to property.
@@ -157,8 +161,10 @@ DependencyManager.prototype = (function() {
         // @service:getSome!@service:getVar(text, hello, @someService, %property%)
         parseString: function(string) {
             var self = this,
-                args, name, handler, path,
-                promises;
+                args, name,
+                handler, isCall, callArgs,
+                path,
+                promise, promises;
 
 
             if (isString(string)) {
@@ -170,7 +176,38 @@ DependencyManager.prototype = (function() {
                 if (args = string.match(SERVICE_REGEX)) {
                     name    = args[1];
                     handler = args[2];
-                    return self.get(name, handler);
+                    isCall  = args[3];
+
+                    promises = [this.parseString(name)];
+
+                    if (isString(handler)) {
+                        promises.push(this.parseString(handler));
+
+                        if (isCall) {
+                            callArgs = (callArgs = args[4]) ? callArgs.split(',') : [];
+
+                            promise = this.async.all(callArgs.map(this.parseString, this))
+                                .then(function(callArgs) {
+                                    return callArgs.map(function(argument) {
+                                        if (isString(argument)) {
+                                            try {
+                                                // trying to cast values to primitive js types
+                                                return JSON.parse(argument);
+                                            } catch (err){}
+                                        }
+
+                                        return argument;
+                                    })
+                                });
+
+
+                            promises.push(promise);
+                        }
+                    }
+
+                    return this.async.all(promises).then(function(args) {
+                        return self.get.apply(self, args);
+                    });
                 }
 
                 if (args = string.match(RESOURCE_REGEX)) {
@@ -180,12 +217,12 @@ DependencyManager.prototype = (function() {
                     promises = [this.parseString(path)];
                     isString(handler) && promises.push(this.parseString(handler));
 
-                    return this.async.all(promises).then(function(path, handler) {
-                        return self.getResource(path, handler, string);
+                    return this.async.all(promises).then(function(args) {
+                        return self.getResource.apply(self, args);
                     });
                 }
 
-                return self.async.resolve(string);
+                return this.async.resolve(string);
             }
 
             return self.async.reject(new Error("String is expected"));
@@ -369,7 +406,7 @@ DependencyManager.prototype = (function() {
         /**
          *
          */
-        get: function(name, method) {
+        get: function(name, method, args) {
             var self = this,
                 promise;
 
@@ -388,9 +425,13 @@ DependencyManager.prototype = (function() {
             return promise.then(function(service) {
                 var func;
 
-                if (!isUndefined(method)) {
+                if (isString(method)) {
                     if (!isFunction(func = service[method])) {
                         throw new TypeError(sprintf("Service %s does not have method %s", name, method));
+                    }
+
+                    if (isArray(args)) {
+                        return func.apply(service, args);
                     }
 
                     return func.bind(service); // todo use universal bind

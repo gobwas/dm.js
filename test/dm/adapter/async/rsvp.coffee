@@ -64,6 +64,22 @@ suite "rsvp.js", ->
 
     # ================
 
+    test "Should return call nice callback", (done) ->
+      value = chance.word();
+      promise = adapter.all([rsvp.resolve(value)]);
+
+      promise.then((values) ->
+        try
+          assert.strictEqual(values[0], value);
+        catch err
+          error = err;
+
+        done(error);
+      )
+
+
+    # ================
+
     test "Should throw an error when promises are not passed", ->
       try
         promise = adapter.all();

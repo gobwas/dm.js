@@ -6,7 +6,7 @@ var Async = Adapter.extend({
      * @param {Function} actor
      */
     promise: function(resolver) {
-        throw new Error("Method must be implemented");
+        throw new Error("Method 'promise' must be implemented");
     },
 
     /**
@@ -14,7 +14,7 @@ var Async = Adapter.extend({
      * @param {Array} list
      */
     all: function(list) {
-        throw new Error("Method must be implemented");
+        throw new Error("Method 'all' must be implemented");
     },
 
     /**
@@ -22,7 +22,7 @@ var Async = Adapter.extend({
      * @param {*} value
      */
     resolve: function(value) {
-        throw new Error("Method must be implemented");
+        throw new Error("Method 'resolve' must be implemented");
     },
 
     /**
@@ -30,7 +30,7 @@ var Async = Adapter.extend({
      * @param {*} value
      */
     reject: function(value) {
-        throw new Error("Method must be implemented");
+        throw new Error("Method 'reject' must be implemented");
     }
 });
 

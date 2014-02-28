@@ -305,30 +305,43 @@ suite "dm.js", ->
 
     # ================
 
-    test "Should parse as service without", ->
+    test "Should parse as service without anything", (done) ->
       name = chance.word();
       string = "@" + name;
       value = chance.word();
+
+      sinon.stub(async, "resolve", RSVP.resolve);
+      sinon.stub(async, "all",     RSVP.all);
 
       mock = sinon.mock(dm)
       .expects("get")
       .on(dm)
       .once()
-      .withExactArgs(name, undefined)
+      .withArgs(name)
       .returns(value);
 
-      result = dm.parseString(string);
+      dm.parseString(string)
+      .then((result)->
+        try
+          mock.verify();
+          assert.strictEqual result, value;
+        catch err
+          error = err
 
-      mock.verify();
-      assert.strictEqual result, value;
+        done(error);
+      )
+      .catch(done);
 
     # ================
 
-    test "Should parse as service with handler", ->
+    test "Should parse as service with handler", (done) ->
       name    = chance.word();
       handler = chance.word();
       string = "@" + name + ":" + handler;
       value = chance.word();
+
+      sinon.stub(async, "resolve", RSVP.resolve);
+      sinon.stub(async, "all", RSVP.all);
 
       mock = sinon.mock(dm)
       .expects("get")
@@ -337,10 +350,96 @@ suite "dm.js", ->
       .withExactArgs(name, handler)
       .returns(value);
 
-      result = dm.parseString(string);
+      dm.parseString(string)
+      .then((result)->
+        try
+          mock.verify();
+          assert.strictEqual result, value;
+        catch err
+          error = err
 
-      mock.verify();
-      assert.strictEqual result, value;
+        done(error);
+      )
+      .catch(done)
+
+    # ================
+
+    test "Should parse as service with calling handler", (done) ->
+      name    = chance.word();
+      handler = chance.word();
+      string = "@" + name + ":" + handler + "()";
+      value = chance.word();
+
+      sinon.stub(async, "resolve", RSVP.resolve);
+      sinon.stub(async, "all", RSVP.all);
+
+      mock = sinon.mock(dm)
+      .expects("get")
+      .on(dm)
+      .once()
+      .withExactArgs(name, handler, [])
+      .returns(value);
+
+      dm.parseString(string)
+      .then((result)->
+        try
+          mock.verify();
+          assert.strictEqual result, value;
+        catch err
+          error = err
+
+        done(error);
+      )
+      .catch(done);
+
+    # ================
+
+    test "Should parse as service with calling handler and arguments", (done) ->
+      name    = chance.word();
+      handler = chance.word();
+
+      word      = chance.word();
+      int       = chance.integer();
+      parameter = chance.word();
+      parameterValue = chance.integer();
+      service   = chance.word();
+      serviceValue = chance.word();
+      args = [word, int, "%" + parameter + "%", "@" + service];
+
+      string = "@" + name + ":" + handler + "(" + args.join(",") + ")";
+
+      value = chance.word();
+
+      sinon.stub(async, "resolve", RSVP.resolve);
+      sinon.stub(async, "all", RSVP.all);
+
+      parseStringSpy = sinon.spy(dm, "parseString");
+
+      getStub = sinon.stub(dm, "get", (key, handler, args) ->
+        if (key == name) then return value;
+        if (key == service) then return serviceValue;
+      );
+
+      getParameterStub = sinon.stub(dm, "getParameter", (key) ->
+        if (key == parameter) then return parameterValue;
+      )
+
+      dm.parseString(string)
+      .then((result)->
+        try
+          assert.isTrue getStub.calledTwice, "#get called twice";
+          assert.isTrue getStub.firstCall.calledWithExactly(service), "#get first called with service"
+          assert.isTrue getStub.secondCall.calledWithExactly(name, handler, [word, int, parameterValue, serviceValue]), "#get second called with name";
+
+          assert.equal parseStringSpy.callCount, 8, "#parseString called 8 times"
+
+          assert.strictEqual result, value;
+        catch err
+          error = err
+
+        done(error);
+      )
+      .catch(done);
 
     # ================
 

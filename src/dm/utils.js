@@ -80,6 +80,11 @@ export function forEachSimple(arr, iterator, context) {
     return result;
 }
 
+export function map(array, iterator, context) {
+    // todo make real map if native isnt exists
+    return array.map(iterator.bind(context));
+}
+
 // Shallow copy of sprintf
 // Only uses '%s' placeholder
 export function sprintf(pattern) {
