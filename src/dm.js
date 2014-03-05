@@ -406,7 +406,7 @@ DependencyManager.prototype = (function() {
         /**
          *
          */
-        get: function(name, method, args) {
+        get: function(name, prop, args) {
             var self = this,
                 promise;
 
@@ -423,18 +423,22 @@ DependencyManager.prototype = (function() {
             }
 
             return promise.then(function(service) {
-                var func;
+                var property, isFunc;
 
-                if (isString(method)) {
-                    if (!isFunction(func = service[method])) {
-                        throw new TypeError(sprintf("Service %s does not have method %s", name, method));
-                    }
+                if (isString(prop)) {
+
+                    property = service[prop];
+                    isFunc = isFunction(property);
 
                     if (isArray(args)) {
-                        return func.apply(service, args);
+                        if (!isFunc) {
+                            throw new TypeError(sprintf("Service '%s' does not have the method '%s'", name, prop));
+                        }
+
+                        return property.apply(service, args);
                     }
 
-                    return func.bind(service); // todo use universal bind
+                    return isFunc ? property.bind(service) : property; // todo use universal bind
                 }
 
                 return service;
