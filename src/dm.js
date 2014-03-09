@@ -394,9 +394,9 @@ DependencyManager.prototype = (function() {
                     return self.loader.require(path).then(handler);
                 } else if (isString(handler)) {
                     return self.loader.require(handler + "!" + path);
-                } else {
-                    return self.async.reject(new Error("Handler must be a string or function"));
                 }
+
+                return self.async.reject(new Error("Handler must be a string or function"));
             }
 
 
