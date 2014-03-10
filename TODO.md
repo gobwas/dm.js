@@ -1,9 +1,9 @@
 + Finalize tests
 + Requirejs plugin
-+ DOM notation plugin
++ DOM notation plugin (think it for ModuleManager, based on DM)
 + Factory for services
 + Default factory (new instance -> default-factory)
-+ Service method calling (someProp: "@service:method(1,2,3, %my.prop%, @another)");
++ Service method calling (someProp: "@service:method(1,2,3, %my.prop%, @another)")
 
 Some example config
 ___________________

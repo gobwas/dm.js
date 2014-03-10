@@ -37,8 +37,8 @@ suite "dm.js", ->
 
 
 
-  # setConfig
-  # ---------
+    # setConfig
+    # ---------
 
   suite "#setConfig", ->
 
@@ -322,14 +322,14 @@ suite "dm.js", ->
 
       dm.parseString(string)
       .then((result)->
-        try
-          mock.verify();
-          assert.strictEqual result, value;
-        catch err
-          error = err
+          try
+            mock.verify();
+            assert.strictEqual result, value;
+          catch err
+            error = err
 
-        done(error);
-      )
+          done(error);
+        )
       .catch(done);
 
     # ================
@@ -352,14 +352,14 @@ suite "dm.js", ->
 
       dm.parseString(string)
       .then((result)->
-        try
-          mock.verify();
-          assert.strictEqual result, value;
-        catch err
-          error = err
+          try
+            mock.verify();
+            assert.strictEqual result, value;
+          catch err
+            error = err
 
-        done(error);
-      )
+          done(error);
+        )
       .catch(done)
 
     # ================
@@ -382,14 +382,14 @@ suite "dm.js", ->
 
       dm.parseString(string)
       .then((result)->
-        try
-          mock.verify();
-          assert.strictEqual result, value;
-        catch err
-          error = err
+          try
+            mock.verify();
+            assert.strictEqual result, value;
+          catch err
+            error = err
 
-        done(error);
-      )
+          done(error);
+        )
       .catch(done);
 
     # ================
@@ -426,19 +426,19 @@ suite "dm.js", ->
 
       dm.parseString(string)
       .then((result)->
-        try
-          assert.isTrue getStub.calledTwice, "#get called twice";
-          assert.isTrue getStub.firstCall.calledWithExactly(service), "#get first called with service"
-          assert.isTrue getStub.secondCall.calledWithExactly(name, handler, [word, int, parameterValue, serviceValue]), "#get second called with name";
+          try
+            assert.isTrue getStub.calledTwice, "#get called twice";
+            assert.isTrue getStub.firstCall.calledWithExactly(service), "#get first called with service"
+            assert.isTrue getStub.secondCall.calledWithExactly(name, handler, [word, int, parameterValue, serviceValue]), "#get second called with name";
 
-          assert.equal parseStringSpy.callCount, 8, "#parseString called 8 times"
+            assert.equal parseStringSpy.callCount, 8, "#parseString called 8 times"
 
-          assert.strictEqual result, value;
-        catch err
-          error = err
+            assert.strictEqual result, value;
+          catch err
+            error = err
 
-        done(error);
-      )
+          done(error);
+        )
       .catch(done);
 
     # ================
@@ -453,23 +453,22 @@ suite "dm.js", ->
       sinon.stub(async, "resolve", RSVP.resolve);
       sinon.stub(async, "all",     RSVP.all);
 
-      mock = sinon.mock(dm)
-        .expects("getResource")
-        .on(dm)
-        .once()
-        .withExactArgs(path, handler, string)
-        .returns(RSVP.resolve(handled));
+      getResourceStub = sinon.stub(dm, "getResource", (path, handler) ->
+        return RSVP.resolve(handled);
+      );
 
       parseStringSpy = sinon.spy(dm, "parseString");
 
       dm.parseString(string).then((result)->
         try
-          mock.verify();
+          assert.isTrue getResourceStub.alwaysCalledOn(dm),               "#getResource is not called on DM";
+          assert.isTrue getResourceStub.calledOnce,                       "#getResource is not called once";
+          assert.isTrue getResourceStub.calledWithExactly(path, handler), "#getResource is not called once exactly with path and handler";
 
           assert.isTrue parseStringSpy.calledThrice,                          "#parseString is not called thrice"
           assert.isTrue parseStringSpy.alwaysCalledOn(dm),                    "#parseString is not always called on DM"
-          assert.isTrue parseStringSpy.firstCall.calledWithExactly(path),     "#parseString first call is not called on path"
-          assert.isTrue parseStringSpy.secondCall.calledWithExactly(handler), "#parseString second call is not called on handler"
+          assert.isTrue parseStringSpy.getCall(1).calledWithExactly(path),    "#parseString first call is not called on path"
+          assert.isTrue parseStringSpy.getCall(2).calledWithExactly(handler), "#parseString second call is not called on handler"
 
           assert.strictEqual result, handled;
         catch err
@@ -488,23 +487,25 @@ suite "dm.js", ->
 
       mock = sinon.mock(dm);
 
-      mock
-      .expects("getResource")
-      .on(dm)
-      .once()
-      .withArgs(path)
-      .returns(value);
+      sinon.stub(async, "resolve", RSVP.resolve);
+      sinon.stub(async, "all",     RSVP.all);
 
-      mock
-      .expects("parseString")
-      .on(dm)
-      .once()
-      .withExactArgs(path)
-      .returns(RSVP.all([RSVP.resolve(path)]));
+      getResourceStub = sinon.stub(dm, "getResource", () ->
+        return RSVP.resolve(value);
+      );
+
+      parseStringSpy = sinon.spy(dm, "parseString");
 
       dm.parseString(string).then((result)->
         try
-          mock.verify();
+          assert.isTrue getResourceStub.alwaysCalledOn(dm),      "#getResource is not called on DM";
+          assert.isTrue getResourceStub.calledOnce,              "#getResource is not called once";
+          assert.isTrue getResourceStub.calledWithExactly(path), "#getResource is not called once exactly with path and handler";
+
+          assert.isTrue parseStringSpy.calledTwice,                           "#parseString is not called twice"
+          assert.isTrue parseStringSpy.alwaysCalledOn(dm),                    "#parseString is not always called on DM"
+          assert.isTrue parseStringSpy.getCall(1).calledWithExactly(path),    "#parseString first call is not called on path"
+
           assert.strictEqual result, value;
         catch err
           error = err;
@@ -702,25 +703,25 @@ suite "dm.js", ->
 
       sinon.stub(async, "all",     (promises) -> RSVP.all(promises));
       sinon.stub(async, "resolve", (value)    -> RSVP.resolve(value));
+      sinon.stub(async, "reject",  (err)      -> RSVP.reject(err));
 
       dm.setAsync(async);
       dm.setLoader(loader.setAsync(async));
 
     # ================
 
-    test "Should pass require's result direct in handler function", (done) ->
+    test "Should pass require's result directly in handler function", (done) ->
       path     = chance.word();
       resource = chance.word();
-      handlerLink = chance.word();
 
       handler = sinon.spy();
 
-      sinon.stub(loader, "require", -> RSVP.resolve(resource));
+      sinon.stub(loader, "require", (path) -> RSVP.resolve(resource));
 
-      dm.getResource(path, handlerLink)
+      dm.getResource(path, handler)
       .then(->
           try
-            assert.isTrue handler.calledOnce, "handler function is not called once";
+            assert.isTrue handler.calledOnce,           "handler function is not called once";
             assert.isTrue handler.calledWith(resource), "handler function is not called with result of require";
           catch err
             error = err;
@@ -735,13 +736,11 @@ suite "dm.js", ->
     test "Should return handler function result", (done) ->
       path   = chance.word();
       handled = chance.word();
-      handlerLink = chance.word();
-
       handler = sinon.spy(->handled);
 
       sinon.stub(loader, "require", (path) -> RSVP.resolve());
 
-      dm.getResource(path, handlerLink)
+      dm.getResource(path, handler)
       .then((result)->
           try
             assert.strictEqual result, handled, "#getResource result is not strict equal to expected";
@@ -753,115 +752,105 @@ suite "dm.js", ->
         )
       .catch(done);
 
-      # ================
+    # ================
 
     test "Should call require for path if parsed handler is function", (done) ->
       path = chance.word();
-      hanlderLink = chance.word();
+      handler = ->;
 
-      handler = ->
+      requireStub = sinon.stub(loader, "require", (path) -> RSVP.resolve());
 
-      mock = sinon.mock(loader)
-      .expects("require")
-      .once()
-      .on(loader)
-      .withExactArgs(path);
+      dm.getResource(path, handler)
+      .then((result)->
+          try
+            assert.isTrue requireStub.calledOnce,              "require function is not called once";
+            assert.isTrue requireStub.calledWithExactly(path), "require function is not called with path";
+          catch err
+            error = err;
 
-      dm.getResource(path, hanlderLink).then(->
-        try
-          mock.verify();
-        catch err
-          error = err;
-
-        done(error);
-      )
+          done(error);
+        )
 
     # ================
 
     test "Should call require for handler!path, if parsed handler is string", (done) ->
       path = chance.word();
-      hanlderLink = chance.word();
-
       handler = chance.word();
 
-      mock = sinon.mock(loader)
-      .expects("require")
-      .once()
-      .on(loader)
-      .withExactArgs(handler + "!" + path);
+      requireStub = sinon.stub(loader, "require", (path) -> RSVP.resolve());
 
-      dm.getResource(path, hanlderLink).then(->
-        try
-          mock.verify();
-        catch err
-          error = err;
+      dm.getResource(path, handler)
+      .then((result)->
+          try
+            assert.isTrue requireStub.calledOnce,                              "require function is not called once";
+            assert.isTrue requireStub.calledWithExactly(handler + "!" + path), "require function is not called with path";
+          catch err
+            error = err;
 
-        done(error);
-      )
+          done(error);
+        )
 
     # ================
 
     test "Should not call require and throw error if parsed handler neither function or string", (done) ->
       path = chance.word();
-      hanlderLink = chance.word();
-
       handler = {};
 
-      mock = sinon.mock(loader)
-      .expects("require")
-      .never();
+      requireStub = sinon.stub(loader, "require", (path) -> RSVP.resolve());
 
-      tester = (result) ->
-        try
-          mock.verify();
-          assert.instanceOf Error, result;
-        catch err
-          error = err;
+      dm.getResource(path, handler)
+      .then((result)->
+          done(new Error("#getResource is successfully resolved instead"))
+        )
+      .catch((error) ->
+          try
+            assert.isTrue requireStub.callCount == 0, "require function was called";
+            assert.instanceOf error, Error;
+          catch err
+            _error = err;
 
-        done(error);
-
-      dm.getResource(path, hanlderLink)
-      .then(tester, tester);
+          done(_error)
+        )
 
     # ================
 
     test "Should call require for path if handler is not given", (done) ->
       path = chance.word();
 
-      mock = sinon.mock(loader)
-      .expects("require")
-      .once()
-      .on(loader)
-      .withExactArgs(path);
+      requireStub = sinon.stub(loader, "require", (path) -> RSVP.resolve());
 
-      dm.getResource(path).then(->
-        try
-          mock.verify();
-        catch err
-          error = err;
+      dm.getResource(path)
+      .then((result)->
+          try
+            assert.isTrue requireStub.calledOnce,              "require function is not called once";
+            assert.isTrue requireStub.calledWithExactly(path), "require function is not called with path";
+          catch err
+            error = err;
 
-        done(error);
-      )
+          done(error);
+        )
 
     # ================
 
     test "Should throw an error if path is not string", (done) ->
       path = null;
+      handler = ->;
 
-      mock = sinon.mock(loader)
-      .expects("require")
-      .never();
+      requireStub = sinon.stub(loader, "require", (path) -> RSVP.resolve());
 
-      tester = (result) ->
-        try
-          mock.verify();
-          assert.instanceOf Error, result;
-        catch err
-          error = err;
+      dm.getResource(path, handler)
+      .then((result)->
+          done(new Error("#getResource is successfully resolved instead"))
+        )
+      .catch((error) ->
+          try
+            assert.isTrue requireStub.callCount == 0, "require function was called";
+            assert.instanceOf error, Error;
+          catch err
+            _error = err;
 
-        done(error);
-
-      dm.getResource(path).then(tester,tester);
+          done(_error)
+        )
 
 
 
