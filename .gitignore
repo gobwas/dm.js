@@ -4,3 +4,4 @@ dist
 *.iml
 node_modules
 Gruntfile.js
+npm-debug.log

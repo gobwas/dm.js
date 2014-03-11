@@ -1,19 +1,19 @@
 import {
     objectType,
-    isString,
-    isNumber,
-    isFunction,
-    isBoolean,
-    isDate,
-    isObject,
-    isRegExp,
-    isArray,
-    isUndefined,
-    forEachOwn,
-    forEachSimple,
-    map,
-    clone,
-    sprintf
+        isString,
+        isNumber,
+        isFunction,
+        isBoolean,
+        isDate,
+        isObject,
+        isRegExp,
+        isArray,
+        isUndefined,
+        forEachOwn,
+        forEachSimple,
+        map,
+        clone,
+        sprintf
 } from "./dm/utils";
 import Async from "./dm/adapter/async";
 import Loader from "./dm/adapter/loader";
@@ -162,81 +162,76 @@ DependencyManager.prototype = (function() {
         parseString: function(string) {
             var self = this,
                 args, name,
-                handler, isCall, callArgs,
+                property, handler, isCall, callArgs,
                 path,
                 promise, promises;
 
-
-            if (isString(string)) {
-                if (args = string.match(PROPERTY_REGEX)) {
-                    name = args[1];
-                    return self.async.resolve(self.getParameter(name));
-                }
-
-                if (args = string.match(SERVICE_REGEX)) {
-                    name    = args[1];
-                    handler = args[2];
-                    isCall  = args[3];
-
-                    promises = [this.parseString(name)];
-
-                    if (isString(handler)) {
-                        promises.push(this.parseString(handler));
-
-                        if (isCall) {
-                            callArgs = (callArgs = args[4]) ? callArgs.split(',') : [];
-
-                            promise = this.async.all(callArgs.map(this.parseString, this))
-                                .then(function(callArgs) {
-                                    return callArgs.map(function(argument) {
-                                        if (isString(argument)) {
-                                            try {
-                                                // trying to cast values to primitive js types
-                                                return JSON.parse(argument);
-                                            } catch (err){}
-                                        }
-
-                                        return argument;
-                                    })
-                                });
-
-
-                            promises.push(promise);
-                        }
-                    }
-
-                    return this.async.all(promises).then(function(args) {
-                        return self.get.apply(self, args);
-                    });
-                }
-
-                if (args = string.match(RESOURCE_REGEX)) {
-                    path    = args[2];
-                    handler = args[1];
-
-                    promises = [this.parseString(path)];
-                    isString(handler) && promises.push(this.parseString(handler));
-
-                    return this.async.all(promises).then(function(args) {
-                        return self.getResource.apply(self, args);
-                    });
-                }
-
-                return this.async.resolve(string);
+            if (!isString(string)) {
+                return self.async.reject(new Error("String is expected"));
             }
 
-            return self.async.reject(new Error("String is expected"));
+            // Property
+            if (args = string.match(PROPERTY_REGEX)) {
+                name = args[1];
+                return self.async.resolve(self.getParameter(name));
+            }
+
+            // Service
+            if (args = string.match(SERVICE_REGEX)) {
+                name     = args[1];
+                property = args[2];
+                isCall   = args[3];
+
+                promises = [this.parseString(name)];
+
+                if (isString(property)) {
+                    promises.push(this.parseString(property));
+
+                    if (isCall) {
+                        callArgs = (callArgs = args[4]) ? callArgs.split(',') : [];
+
+                        promise = this.async.all(callArgs.map(this.parseString, this))
+                            .then(function(callArgs) {
+                                return callArgs.map(function(argument) {
+                                    if (isString(argument)) {
+                                        try {
+                                            // try to cast values to primitive js types
+                                            return JSON.parse(argument);
+                                        } catch (err){}
+                                    }
+
+                                    return argument;
+                                })
+                            });
+
+
+                        promises.push(promise);
+                    }
+                }
+
+                return this.async.all(promises)
+                    .then(function(args) {
+                        return self.get.apply(self, args);
+                    });
+            }
+
+            // Resource
+            if (args = string.match(RESOURCE_REGEX)) {
+                path    = args[2];
+                handler = args[1];
+
+                promises = [this.parseString(path)];
+                isString(handler) && promises.push(this.parseString(handler));
+
+                return this.async.all(promises).then(function(args) {
+                    return self.getResource.apply(self, args);
+                });
+            }
+
+            return this.async.resolve(string);
         },
 
-        /**
-         * Finds out references to services, parameters and resources in given object.
-         * Returns promise of getting them, which is resolved then with object having
-         * parsed values.
-         *
-         * @param config {Object|Array}
-         */
-        parse: (function() {
-
+        parseObject: (function() {
             var escaper = function(obj) {
                 if (obj[DependencyManager.ESCAPE_FLAG] === true) {
                     return obj[DependencyManager.ESCAPE_VALUE];
@@ -245,50 +240,60 @@ DependencyManager.prototype = (function() {
                 return null;
             };
 
-            return function(config) {
+            return function(object) {
                 var self = this,
-                    parsed, iterator;
+                    iterator, parsed, promises, escaped;
 
-                if (isArray(config)) {
-                    parsed = [];
-                    iterator = forEachSimple;
-                } else if (isObject(config)) {
-                    parsed = {};
-                    iterator = forEachOwn;
-                } else {
-                    return config;
+                switch (objectType(object)) {
+                    case "Object":
+                        parsed = {};
+                        iterator = forEachOwn;
+                        break;
+                    case "Array":
+                        parsed = [];
+                        iterator = forEachSimple;
+                        break;
+                    default:
+                        return self.async.reject(new Error("Object or Array is expected"));
                 }
 
-                var promises = [];
+                if (escaped = escaper(object)) {
+                    return this.async.resolve(escaped)
+                }
 
-                iterator(config, function(value, key) {
-                    var promise, escaped;
+                promises = [];
 
-                    switch (objectType(value)) {
-                        case 'String':
-                            promise = self.parseString(value);
-                            break;
-                        case 'Object':
-                        case 'Array':
-                            promise = (escaped = escaper(value)) ? self.async.resolve(escaped) : self.parse(value);
-                            break;
-                        default:
-                            promise = self.async.resolve(value);
-                            break;
-                    }
-
-                    promises.push(promise);
-
-                    promise.then(function(value) {
+                iterator(object, function(value, key) {
+                    promises.push(self.parse(value).then(function(value) {
                         parsed[key] = value;
-                    });
+                    }));
                 });
 
-                return self.async.all(promises).then(function() {
-                    return parsed;
-                });
+                return self.async.all(promises)
+                    .then(function() {
+                        return parsed;
+                    });
             }
         })(),
+
+        /**
+         * Finds out references to services, parameters and resources in given object.
+         * Returns promise of getting them, which is resolved then with object having
+         * parsed values.
+         *
+         * @param config {*}
+         */
+        parse: function(config) {
+            switch (objectType(config)) {
+                case 'String':
+                    return this.parseString(config);
+                case 'Object':
+                case 'Array':
+                    return this.parseObject(config);
+                default:
+                    return this.async.resolve(config);
+            }
+        },
 
         /**
          * Собирает сервис.
