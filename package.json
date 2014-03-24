@@ -1,5 +1,5 @@
 {
-    "name": "dependency-manager",
+    "name": "dm",
     "version": "0.1.0",
     "description": "Dependency Injection Manager",
     "main": "index.js",

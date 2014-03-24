@@ -1,25 +1,29 @@
 var Loader = require("../loader"),
-    Requirejs;
+    fs     = require("fs"),
+    CJS;
 
-Requirejs = Loader.extend({
-    constructor: function() {
-        Loader.prototype.constructor.apply(this, arguments);
-        this.requirejs = this.adaptee;
-    },
-
+CJS = Loader.extend({
     require: function(path) {
-        var self = this;
         return this.async.promise(function(resolve, reject) {
-            self.requirejs([path], resolve, reject);
+            try {
+                resolve(require(path));
+            } catch (err) {
+                reject(err);
+            }
         });
     },
 
-    read: function(path, handler) {
-        var self = this;
+    read: function(path) {
         return this.async.promise(function(resolve, reject) {
-            self.requirejs([[handler || "text", path].join('!')], resolve, reject);
+            fs.readFile(path, function(err, src) {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(src);
+                }
+            });
         });
     }
 });
 
-module.exports = Requirejs;
+module.exports = CJS;
