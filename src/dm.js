@@ -170,14 +170,20 @@ DependencyManager.prototype = (function() {
             if (!(adapter instanceof Async)) {
                 throw new Error("Async is expected");
             }
+
             this.async = adapter;
+
+            return this;
         },
 
         setLoader: function(adapter) {
             if (!(adapter instanceof Loader)) {
                 throw new Error("Loader is expected");
             }
+
             this.loader = adapter;
+
+            return this;
         },
 
         // @service:getSome(@service:getVar(text, hello, @someService, %property%))

@@ -1,5 +1,5 @@
 {
-    "name": "DM.js",
+    "name": "dependency-manager",
     "version": "0.1.0",
     "description": "Dependency Injection Manager",
     "main": "index.js",
@@ -11,10 +11,14 @@
     },
     "repository": "",
     "keywords": [
-        "Dependency",
-        "Injection",
-        "Javascript",
-        "Requirejs"
+        "dependency",
+        "injection",
+        "manager",
+        "javascript",
+        "amd",
+        "cjs",
+        "commonjs",
+        "dm.js"
     ],
     "author": "Sergey Kamardin",
     "license": "MIT",
