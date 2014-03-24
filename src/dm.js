@@ -431,18 +431,12 @@ DependencyManager.prototype = (function() {
                 return this.async.reject(new Error("Path must be a string"));
             }
 
-            if (!isUndefined(handler)) {
-                if (isFunction(handler)) {
-                    return self.loader.require(path).then(handler);
-                } else if (isString(handler)) {
-                    return self.loader.require(handler + "!" + path);
-                }
-
-                return self.async.reject(new Error("Handler must be a string or function"));
+            if (isFunction(handler)) {
+                return self.loader.read(path).then(handler);
             }
 
 
-            return this.loader.require(path);
+            return this.loader.read(path, handler);
         },
 
         /**

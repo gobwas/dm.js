@@ -23,6 +23,15 @@ Loader = Adapter.extend({
      */
     require: function(path) {
         throw new Error("Method must be implemented");
+    },
+
+    /**
+     *
+     * @param path
+     * @param handler
+     */
+    read: function(path, handler) {
+        throw new Error("Method must be implemented");
     }
 });
 

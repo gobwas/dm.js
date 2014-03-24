@@ -757,13 +757,13 @@ suite "dm.js", ->
 
     # ================
 
-    test "Should pass require's result directly in handler function", (done) ->
+    test "Should pass #read result directly in #handler", (done) ->
       path     = chance.word();
       resource = chance.word();
 
       handler = sinon.spy();
 
-      sinon.stub(loader, "require", (path) -> RSVP.resolve(resource));
+      sinon.stub(loader, "read", (path) -> RSVP.resolve(resource));
 
       dm.getResource(path, handler)
       .then(->
@@ -780,12 +780,12 @@ suite "dm.js", ->
 
     # ================
 
-    test "Should return handler function result", (done) ->
+    test "Should return #handler result", (done) ->
       path   = chance.word();
       handled = chance.word();
       handler = sinon.spy(->handled);
 
-      sinon.stub(loader, "require", (path) -> RSVP.resolve());
+      sinon.stub(loader, "read", (path) -> RSVP.resolve());
 
       dm.getResource(path, handler)
       .then((result)->
@@ -801,17 +801,17 @@ suite "dm.js", ->
 
     # ================
 
-    test "Should call require for path if parsed handler is function", (done) ->
+    test "Should call #read for path if parsed handler is function", (done) ->
       path = chance.word();
       handler = ->;
 
-      requireStub = sinon.stub(loader, "require", (path) -> RSVP.resolve());
+      readStub = sinon.stub(loader, "read", (path) -> RSVP.resolve());
 
       dm.getResource(path, handler)
       .then((result)->
           try
-            assert.isTrue requireStub.calledOnce,              "require function is not called once";
-            assert.isTrue requireStub.calledWithExactly(path), "require function is not called with path";
+            assert.isTrue readStub.calledOnce,              "#read is not called once";
+            assert.isTrue readStub.calledWithExactly(path), "#read is not called with path";
           catch err
             error = err;
 
@@ -820,17 +820,17 @@ suite "dm.js", ->
 
     # ================
 
-    test "Should call require for handler!path, if parsed handler is string", (done) ->
+    test "Should call #read with path and handler, if parsed handler is string", (done) ->
       path = chance.word();
       handler = chance.word();
 
-      requireStub = sinon.stub(loader, "require", (path) -> RSVP.resolve());
+      readStub = sinon.stub(loader, "read", (path) -> RSVP.resolve());
 
       dm.getResource(path, handler)
       .then((result)->
           try
-            assert.isTrue requireStub.calledOnce,                              "require function is not called once";
-            assert.isTrue requireStub.calledWithExactly(handler + "!" + path), "require function is not called with path";
+            assert.isTrue readStub.calledOnce,                       "#read is not called once";
+            assert.isTrue readStub.calledWithExactly(path, handler), "#read is not called with path";
           catch err
             error = err;
 
@@ -839,38 +839,16 @@ suite "dm.js", ->
 
     # ================
 
-    test "Should not call require and throw error if parsed handler neither function or string", (done) ->
-      path = chance.word();
-      handler = {};
-
-      requireStub = sinon.stub(loader, "require", (path) -> RSVP.resolve());
-
-      dm.getResource(path, handler)
-      .then((result)->
-          done(new Error("#getResource is successfully resolved instead"))
-        )
-      .catch((error) ->
-          try
-            assert.isTrue requireStub.callCount == 0, "require function was called";
-            assert.instanceOf error, Error;
-          catch err
-            _error = err;
-
-          done(_error)
-        )
-
-    # ================
-
-    test "Should call require for path if handler is not given", (done) ->
+    test "Should call #read for path if handler is not given", (done) ->
       path = chance.word();
 
-      requireStub = sinon.stub(loader, "require", (path) -> RSVP.resolve());
+      readStub = sinon.stub(loader, "read", (path) -> RSVP.resolve());
 
       dm.getResource(path)
       .then((result)->
           try
-            assert.isTrue requireStub.calledOnce,              "require function is not called once";
-            assert.isTrue requireStub.calledWithExactly(path), "require function is not called with path";
+            assert.isTrue readStub.calledOnce,       "#read is not called once";
+            assert.isTrue readStub.calledWith(path), "#read is not called with path";
           catch err
             error = err;
 
@@ -883,7 +861,7 @@ suite "dm.js", ->
       path = null;
       handler = ->;
 
-      requireStub = sinon.stub(loader, "require", (path) -> RSVP.resolve());
+      readStub = sinon.stub(loader, "read", (path) -> RSVP.resolve());
 
       dm.getResource(path, handler)
       .then((result)->
@@ -891,7 +869,7 @@ suite "dm.js", ->
         )
       .catch((error) ->
           try
-            assert.isTrue requireStub.callCount == 0, "require function was called";
+            assert.isTrue readStub.callCount == 0, "#read was called";
             assert.instanceOf error, Error;
           catch err
             _error = err;

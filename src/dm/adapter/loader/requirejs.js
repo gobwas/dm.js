@@ -12,6 +12,13 @@ Requirejs = Loader.extend({
         return this.async.promise(function(resolve, reject) {
             self.requirejs([path], resolve, reject);
         });
+    },
+
+    read: function(path, handler) {
+        var self = this;
+        return this.async.promise(function(resolve, reject) {
+            self.requirejs([[handler || "text", path].join('!')], resolve, reject);
+        });
     }
 });
 
