@@ -1,6 +1,7 @@
-import Adapter from "../adapter";
+var Adapter = require("../adapter"),
+    Async;
 
-var Async = Adapter.extend({
+Async = Adapter.extend({
     /**
      *
      * @param {Function} actor
@@ -35,4 +36,4 @@ var Async = Adapter.extend({
 });
 
 
-export default Async;
+module.exports = Async;

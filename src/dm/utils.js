@@ -1,54 +1,54 @@
 var toString = Object.prototype.toString;
 
-export function objectType(obj) {
+function objectType(obj) {
     if (obj === void 0) {
         return 'Undefined';
-    } else if (obj == null) {
-        return 'Null'
+    } else if (obj === null) {
+        return 'Null';
     } else {
         return toString.call(obj).replace(/\[object ([a-zA-Z]+)\]/i, '$1');
     }
 }
 
-export function isString(obj) {
+function isString(obj) {
     return toString.call(obj) == '[object String]';
 }
 
-export function isNumber(obj) {
+function isNumber(obj) {
     return toString.call(obj) == '[object Number]';
 }
 
-export function isFunction(obj) {
+function isFunction(obj) {
     return toString.call(obj) == '[object Function]';
 }
 
-export function isBoolean(obj) {
+function isBoolean(obj) {
     return toString.call(obj) == '[object Boolean]';
 }
 
-export function isDate(obj) {
+function isDate(obj) {
     return toString.call(obj) == '[object Date]';
 }
 
-export function isObject(obj) {
+function isObject(obj) {
     return toString.call(obj) == '[object Object]' && obj !== void 0;
 }
 
-export function isRegExp(obj) {
+function isRegExp(obj) {
     return toString.call(obj) == '[object RegExp]';
 }
 
-export function isArray(obj) {
+function isArray(obj) {
     return toString.call(obj) == '[object Array]';
 }
 
-export function isUndefined(obj) {
+function isUndefined(obj) {
     return toString.call(obj) == '[object Undefined]' || obj === void 0;
 }
 
 // Iterates over object
 // Breaks, if iterator return the value
-export function forEachOwn(obj, iterator, context) {
+function forEachOwn(obj, iterator, context) {
     var result;
 
     for (var x in obj) {
@@ -66,7 +66,7 @@ export function forEachOwn(obj, iterator, context) {
 
 // Iterates over array
 // Breaks, if iterator return the value
-export function forEachSimple(arr, iterator, context) {
+function forEachSimple(arr, iterator, context) {
     var result;
 
     for (var x = 0; x < arr.length; x++) {
@@ -80,18 +80,20 @@ export function forEachSimple(arr, iterator, context) {
     return result;
 }
 
-export function map(array, iterator, context) {
+function map(array, iterator, context) {
     // todo make real map if native isnt exists
     return array.map(iterator.bind(context));
 }
 
 // Shallow copy of sprintf
 // Only uses '%s' placeholder
-export function sprintf(pattern) {
+function sprintf(pattern) {
     var args = Array.prototype.slice.call(arguments, 1),
         counter = 0;
 
-    if (!isString(pattern)) throw new Error("String is expected");
+    if (!isString(pattern)) {
+        throw new Error("String is expected");
+    }
 
     return pattern.replace(/%s/g, function(match) {
         return (args[counter++]).toString() || match;
@@ -99,15 +101,27 @@ export function sprintf(pattern) {
 }
 
 // Clone deeply
-export function clone(value) {
+function clone(value) {
     var result, isArr;
 
     if (typeof value == "object") {
+        /* jshint ignore:start */
+        if (isBoolean(value)) {
+            return new Boolean(+value);
+        }
 
-        if (isBoolean(value)) return new Boolean(+value);
-        if (isDate(value))    return new Date(+value);
-        if (isNumber(value))  return new Number(value);
-        if (isString(value))  return new String(value);
+        if (isDate(value)) {
+            return new Date(+value);
+        }
+
+        if (isNumber(value)) {
+            return new Number(value);
+        }
+
+        if (isString(value)) {
+            return new String(value);
+        }
+
 
         if (isRegExp(value)) {
             result = new RegExp(value.source, /\w*$/.exec(value));
@@ -118,6 +132,7 @@ export function clone(value) {
         isArr = isArray(value);
 
         result = isArr ? new Array(value.length) : new Object();
+        /* jshint ignore:end */
 
     } else {
         return value;
@@ -129,3 +144,21 @@ export function clone(value) {
 
     return result;
 }
+
+module.exports = {
+    objectType:    objectType,
+    isString:      isString,
+    isNumber:      isNumber,
+    isFunction:    isFunction,
+    isBoolean:     isBoolean,
+    isDate:        isDate,
+    isObject:      isObject,
+    isRegExp:      isRegExp,
+    isArray:       isArray,
+    isUndefined:   isUndefined,
+    forEachOwn:    forEachOwn,
+    forEachSimple: forEachSimple,
+    map:           map,
+    sprintf:       sprintf,
+    clone:         clone
+};

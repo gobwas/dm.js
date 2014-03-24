@@ -1,13 +1,17 @@
-import Adapter from "../adapter";
-import Async from "./async";
+var Adapter = require("../adapter"),
+    Async = require("./async"),
+    Loader;
 
-var Loader = Adapter.extend({
+Loader = Adapter.extend({
     /**
      *
      * @param adapter
      */
     setAsync: function(adapter) {
-        if (!adapter instanceof Async) throw new Error("Async is expected");
+        if (!adapter instanceof Async) {
+            throw new Error("Async is expected");
+        }
+
         this.async = adapter;
 
         return this;
@@ -23,4 +27,4 @@ var Loader = Adapter.extend({
 });
 
 
-export default Loader;
+module.exports = Loader;

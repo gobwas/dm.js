@@ -10,7 +10,7 @@
 var each = function(props, func, context) {
     var result;
 
-    context || (context = null);
+    context = context || null;
 
     for (var x in props) {
         if (props.hasOwnProperty(x)) {
@@ -58,13 +58,13 @@ var extend = function(to) {
 var inherits = function(Parent, protoProps, staticProps) {
     var Child;
 
-    protoProps || (protoProps = {});
-    staticProps || (staticProps = {});
+    protoProps = protoProps || {};
+    staticProps = staticProps || {};
 
     if (protoProps.hasOwnProperty("constructor") && typeof protoProps.constructor === 'function') {
         Child = protoProps.constructor;
     } else {
-        Child = function Child(){Parent.apply(this, arguments);};
+        Child = function Child() {Parent.apply(this, arguments);};
     }
 
     // set the static props to the new Enum
@@ -78,7 +78,7 @@ var inherits = function(Parent, protoProps, staticProps) {
     //     |                 |
     //   Parent            Child
     //
-    function Surrogate(){}
+    function Surrogate() {}
     Surrogate.prototype = Parent.prototype;
     Child.prototype = new Surrogate();
 
@@ -91,4 +91,5 @@ var inherits = function(Parent, protoProps, staticProps) {
     return Child;
 };
 
-export default inherits;
+
+module.exports = inherits;

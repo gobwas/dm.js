@@ -2,10 +2,9 @@ _      = require('lodash');
 chance = require('chance');
 sinon  = require('sinon');
 chai   = require('chai');
-# TODO check this out https://github.com/square/es6-module-transpiler/issues/85
-DM     = require('./dist/dm.js').default;
-Loader = require('./dist/dm/adapter/loader').default;
-Async  = require('./dist/dm/adapter/async').default;
+DM     = require('./dist/dm.js');
+Loader = require('./dist/dm/adapter/loader');
+Async  = require('./dist/dm/adapter/async');
 RSVP   = require('rsvp');
 
 chance = new chance;
@@ -109,6 +108,17 @@ suite "dm.js", ->
 
       _.each copy,       (value, key) -> assert.strictEqual config[key], value,          "Config values must be strict equal";
       _.each parameters, (value, key) -> assert.strictEqual value, dm.getParameter(key), "Parameters values must be strict equal";
+
+    # ================
+
+    test "Should return value by key", ->
+      key = chance.word();
+      config[key] = value = randomPrimitivesHash();
+      dm.setConfig(config);
+      result = dm.getConfig(key);
+
+      assert.notEqual(result, value, "Must not be equal objects");
+      _.each result, (val, key) -> assert.strictEqual value[key], val, "Config values must be strict equal";
 
 
 
@@ -334,7 +344,7 @@ suite "dm.js", ->
 
     # ================
 
-    test "Should parse as service with handler", (done) ->
+    test "Should parse as service's method", (done) ->
       name    = chance.word();
       handler = chance.word();
       string = "@" + name + ":" + handler;
@@ -364,10 +374,10 @@ suite "dm.js", ->
 
     # ================
 
-    test "Should parse as service with calling handler", (done) ->
+    test "Should parse as call of service's method", (done) ->
       name    = chance.word();
       handler = chance.word();
-      string = "@" + name + ":" + handler + "()";
+      string = "@" + name + ":" + handler + "[]";
       value = chance.word();
 
       sinon.stub(async, "resolve", RSVP.resolve);
@@ -394,24 +404,28 @@ suite "dm.js", ->
 
     # ================
 
-    test "Should parse as service with calling handler and arguments", (done) ->
+    test "Should parse as call of service's method with arguments", (done) ->
       name    = chance.word();
       handler = chance.word();
 
       word      = chance.word();
       int       = chance.integer();
+      object    = {a: chance.integer(), b: chance.word()};
       parameter = chance.word();
       parameterValue = chance.integer();
       service   = chance.word();
       serviceValue = chance.word();
-      args = [word, int, "%" + parameter + "%", "@" + service];
 
-      string = "@" + name + ":" + handler + "(" + args.join(",") + ")";
+      args = [word, int, object, "%" + parameter + "%", "@" + service];
+
+      string = "@" + name + ":" + handler + JSON.stringify(args);
 
       value = chance.word();
 
       sinon.stub(async, "resolve", RSVP.resolve);
       sinon.stub(async, "all", RSVP.all);
+
+      sinon.stub(dm, "getParameter", (key) -> parameterValue)
 
       parseStringSpy = sinon.spy(dm, "parseString");
 
@@ -420,18 +434,12 @@ suite "dm.js", ->
         if (key == service) then return serviceValue;
       );
 
-      getParameterStub = sinon.stub(dm, "getParameter", (key) ->
-        if (key == parameter) then return parameterValue;
-      )
-
       dm.parseString(string)
       .then((result)->
           try
             assert.isTrue getStub.calledTwice, "#get called twice";
-            assert.isTrue getStub.firstCall.calledWithExactly(service), "#get first called with service"
-            assert.isTrue getStub.secondCall.calledWithExactly(name, handler, [word, int, parameterValue, serviceValue]), "#get second called with name";
-
-            assert.equal parseStringSpy.callCount, 8, "#parseString called 8 times"
+            assert.isTrue getStub.firstCall.calledWithExactly(service), "#get first time called with service from arguments"
+            assert.isTrue getStub.secondCall.calledWithExactly(name, handler, [word, int, object, parameterValue, serviceValue]), "#get second time called with methods service, name of method, and its arguments";
 
             assert.strictEqual result, value;
           catch err
@@ -484,8 +492,6 @@ suite "dm.js", ->
       path = chance.word();
       string = "#" + path + "#";
       value = chance.word();
-
-      mock = sinon.mock(dm);
 
       sinon.stub(async, "resolve", RSVP.resolve);
       sinon.stub(async, "all",     RSVP.all);
@@ -894,27 +900,106 @@ suite "dm.js", ->
         )
 
 
-
-  # initialize
-  # ------------
-
-  suite "#initialize", ->
-
-    dm = null;
-
-    setup ->
-      dm = new DM;
-
-
   # build
   # ------------
 
   suite "#build", ->
 
-    dm = null;
+    dm          = null;
+    key         = null;
+    constructor = null;
+    spy         = null;
+    calls       = null;
+    spyA        = null;
+    spyB        = null;
+    spyC        = null;
+    args        = null;
+    argA        = null;
+    argB        = null;
+    argC        = null;
+    properties  = null;
+    propA       = null;
+    propB       = null;
+    propC       = null;
+    config      = null;
 
     setup ->
       dm = new DM;
+      async  = new Async;
+      loader = new Loader;
+
+      key = chance.word();
+      path = chance.word();
+      constructor = sinon.spy();
+      constructor.prototype.spy = spy = sinon.spy();
+      config = {};
+      config[key] = {
+        path: path,
+        arguments: args = [argA = chance.word(), argB = chance.integer(), argC = {}],
+        calls:     calls = [["spy", [spyA = chance.word(), spyB = chance.integer(), spyC = {}]]],
+        properties: properties = {
+          a: propA = chance.word(),
+          b: propB = chance.integer(),
+          c: propC = {a:1}
+        }
+      };
+
+      sinon.stub(async,  "all",     (promises) -> RSVP.all(promises));
+      sinon.stub(async,  "resolve", (value)    -> RSVP.resolve(value));
+      sinon.stub(async,  "reject",  (err)      -> RSVP.reject(err));
+      sinon.stub(loader, "require", (_path)    -> if _path == path then return RSVP.resolve(constructor));
+
+      dm.setAsync(async);
+      dm.setLoader(loader.setAsync(async));
+
+    # ================
+
+    test "Should instantiate object of given constructor, with given args, calls and setting properties", (done) ->
+      dm.setConfig(config);
+
+      dm.build(key)
+      .then((service) ->
+        try
+          assert.isTrue constructor.calledOnce,                          "Constructor was not called once";
+          assert.isTrue constructor.calledWithExactly(argA, argB, argC), "Constructor was not called exactly with given arguments";
+
+          assert.instanceOf service, constructor;
+
+          assert.isTrue spy.calledOnce,                          "Instance call was not called once"
+          assert.isTrue spy.calledWithExactly(spyA, spyB, spyC), "Instance call was not called exactly with given arguments"
+
+          assert.propertyVal service, "a", propA
+          assert.propertyVal service, "b", propB
+
+          assert.property service, "c"
+          _.each service.c, (value, key) -> assert.strictEqual propC[key], value, "Instance sub properties values must be strict equal";
+
+        catch err
+          error = err;
+
+        done(error);
+      )
+      .catch(done);
+
+    # ================
+
+    test "Should call custom factory with constructor, args, calls and properties", (done) ->
+      config[key].factory = factory = sinon.spy();
+      dm.setConfig(config);
+
+      dm.build(key)
+      .then(() ->
+        try
+          assert.isTrue factory.calledOnce, "Custom factory is not called once"
+          assert.isTrue factory.calledWithExactly(constructor, args, calls, properties), "Custom factory is not called once"
+
+        catch err
+          error = err;
+
+        done(error);
+      )
+      .catch(done);
+
 
 
   # get
@@ -926,6 +1011,108 @@ suite "dm.js", ->
 
     setup ->
       dm = new DM;
+      async  = new Async;
+      loader = new Loader;
+
+      sinon.stub(async,  "all",     (promises) -> RSVP.all(promises));
+      sinon.stub(async,  "resolve", (value)    -> RSVP.resolve(value));
+      sinon.stub(async,  "reject",  (err)      -> RSVP.reject(err));
+
+      dm.setAsync(async);
+      dm.setLoader(loader.setAsync(async));
+
+    # ================
+
+    test "Should create just one instance of service", (done) ->
+      key = chance.word();
+      service = new Object;
+
+
+      buildStub = sinon.stub(dm, "build", (_key) -> if _key == key then RSVP.resolve(service));
+
+      dm.get(key).then((serviceA)->
+        dm.get(key)
+        .then((serviceB) ->
+            try
+              assert.isTrue buildStub.calledOnce,      "#build not called once";
+              assert.strictEqual serviceA, serviceB, "#get returned different services"
+            catch err
+              error = err;
+
+            done(error);
+          )
+        .catch(done);
+      );
+
+    # ================
+
+    test "Should return property of service", (done) ->
+      service = new Object;
+      prop = chance.word();
+      val  = chance.integer();
+      service[prop] = val;
+
+      sinon.stub(dm, "build", -> RSVP.resolve(service));
+
+      dm.get(chance.word(), prop)
+      .then((value) ->
+          try
+            assert.strictEqual value, val;
+          catch err
+            error = err;
+
+          done(error);
+        )
+      .catch(done);
+
+    # ================
+
+    test "Should return method of service, contexted in service", (done) ->
+      service = new Object;
+      prop = chance.word();
+      val  = () ->
+        assert.strictEqual this, service, "Method not contexted in service";
+      service[prop] = val;
+
+      sinon.stub(dm, "build", -> RSVP.resolve(service));
+
+      dm.get(chance.word(), prop)
+      .then((value) ->
+          try
+            value();
+          catch err
+            error = err;
+
+          done(error);
+        )
+      .catch(done);
+
+    # ================
+
+    test "Should return result of service's method call", (done) ->
+      service = new Object;
+      prop = chance.word();
+      args = [argA = chance.word(), argB = chance.integer(), argC = {}]
+      result = chance.word();
+
+      val  = () ->
+        assert.strictEqual this, service, "Method not contexted in service";
+        return result;
+
+      service[prop] = val;
+
+      sinon.stub(dm, "build", -> RSVP.resolve(service));
+
+      dm.get(chance.word(), prop, args)
+      .then((value) ->
+          try
+            assert.strictEqual value, result;
+          catch err
+            error = err;
+
+          done(error);
+        )
+      .catch(done);
 
 
   # escape
@@ -933,10 +1120,29 @@ suite "dm.js", ->
 
   suite "#escape", ->
 
-    dm = null;
+    test "Should return escaped value", () ->
+      value = chance.word();
+      escaped = DM.escape(value);
 
-    setup ->
-      dm = new DM;
+      assert.isObject escaped;
+
+  # unEscape
+  # ------------
+
+  suite "#unEscape", ->
+
+    test "Should return unescaped value", () ->
+      value = chance.word();
+      escaped = DM.escape(value);
+      unescaped = DM.unEscape(escaped);
+
+      assert.strictEqual unescaped, value;
+
+    test "Should return null if it not escaped", () ->
+      value = chance.word();
+      unescaped = DM.unEscape(value);
+
+      assert.isNull unescaped;
 
 
 

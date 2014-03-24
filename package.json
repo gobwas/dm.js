@@ -20,30 +20,24 @@
     "license": "MIT",
     "devDependencies": {
         "lodash":                "*",
-        "jquery":                "*",
-        "grunt":                 "*",
-        "karma":                 "*",
-        "karma-mocha":           "*",
-
         "mocha":                 "*",
         "chai":                  "*",
         "chance":                "*",
         "sinon":                 "*",
-
+        "grunt":                 "*",
+        "karma":                 "*",
+        "karma-mocha":           "*",
         "coffee-script":         "*",
-
         "rsvp":                  "*",
 
-        "grunt-es6-module-transpiler": "*",
-        "grunt-browserify":            "*",
         "grunt-mocha-test":            "*",
-
         "grunt-karma":                 "*",
         "grunt-contrib-coffee":        "*",
         "grunt-contrib-jshint":        "*",
         "grunt-contrib-uglify":        "*",
         "grunt-contrib-clean":         "*",
         "grunt-contrib-copy" :         "*",
-        "grunt-contrib-concat" :       "*"
+        "grunt-contrib-concat" :       "*",
+        "grunt-jscs-checker" :         "*"
     }
 }

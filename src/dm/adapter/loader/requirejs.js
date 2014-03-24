@@ -1,6 +1,7 @@
-import Loader from "../loader";
+var Loader = require("../loader"),
+    Requirejs;
 
-var Requirejs = Loader.extend({
+Requirejs = Loader.extend({
     constructor: function() {
         Loader.prototype.constructor.apply(this, arguments);
         this.requirejs = this.adaptee;
@@ -14,4 +15,4 @@ var Requirejs = Loader.extend({
     }
 });
 
-export default Requirejs;
+module.exports = Requirejs;

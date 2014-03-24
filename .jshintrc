@@ -1,0 +1,8 @@
+{
+    "strict": true,
+    "undef": true,
+    "unused": true,
+    "node": true,
+    "curly": true,
+    "eqeqeq": true
+}

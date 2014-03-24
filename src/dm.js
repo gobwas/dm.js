@@ -1,30 +1,56 @@
-import {
-    objectType,
-        isString,
-        isNumber,
-        isFunction,
-        isBoolean,
-        isDate,
-        isObject,
-        isRegExp,
-        isArray,
-        isUndefined,
-        forEachOwn,
-        forEachSimple,
-        map,
-        clone,
-        sprintf
-} from "./dm/utils";
-import Async from "./dm/adapter/async";
-import Loader from "./dm/adapter/loader";
+/*
+ import {
+ objectType,
+ isString,
+ isNumber,
+ isFunction,
+ isBoolean,
+ isDate,
+ isObject,
+ isRegExp,
+ isArray,
+ isUndefined,
+ forEachOwn,
+ forEachSimple,
+ map,
+ clone,
+ sprintf
+ } from "./dm/utils";
+ import Async from "./dm/adapter/async";
+ import Loader from "./dm/adapter/loader";
+ */
+
+
+var utils  = require("./dm/utils"),
+    Async  = require("./dm/adapter/async"),
+    Loader = require("./dm/adapter/loader"),
+
+    objectType    = utils.objectType,
+    isString      = utils.isString,
+    isNumber      = utils.isNumber,
+    isFunction    = utils.isFunction,
+    isBoolean     = utils.isBoolean,
+    isDate        = utils.isDate,
+    isObject      = utils.isObject,
+    isRegExp      = utils.isRegExp,
+    isArray       = utils.isArray,
+    isUndefined   = utils.isUndefined,
+    forEachOwn    = utils.forEachOwn,
+    forEachSimple = utils.forEachSimple,
+    map           = utils.map,
+    clone         = utils.clone,
+    sprintf       = utils.sprintf,
+
+    DependencyManager;
+
 
 /**
  * DM Constructor.
  * @constructor
  */
-var DependencyManager = function(options) {
+DependencyManager = function(options) {
 
-    options || (options = {});
+    options = options || {};
 
     /**
      * Service map.
@@ -33,6 +59,8 @@ var DependencyManager = function(options) {
      * @type {Object}
      */
     var _config = null;
+
+    var _configCopy = null;
 
     /**
      * Global properties.
@@ -50,7 +78,7 @@ var DependencyManager = function(options) {
      * @throws {Error}
      */
     this.setConfig = function(config, parameters) {
-        if (_config != null) {
+        if (_config !== null) {
             throw new Error("Dependency Manager is already configured");
         }
 
@@ -65,6 +93,7 @@ var DependencyManager = function(options) {
         }
 
         _config = config;
+        _configCopy = clone(config);
     };
 
     /**
@@ -72,8 +101,8 @@ var DependencyManager = function(options) {
      *
      * @returns {Object}
      */
-    this.getConfig = function() {
-        return clone(_config);
+    this.getConfig = function(key) {
+        return key ? _configCopy[key] : _configCopy;
     };
 
     /**
@@ -98,8 +127,7 @@ var DependencyManager = function(options) {
         return !isUndefined(_parameters[key]) ? _parameters[key] : null;
     };
 
-
-    this.initialize(options);
+    this.services = {};
 };
 
 DependencyManager.prototype = (function() {
@@ -108,13 +136,13 @@ DependencyManager.prototype = (function() {
      * Template for checking reference to service.
      *
      * Could be applied to string in format:
-     * @<service>[:<method>[(<argument-1>,[<argument-n>])]]
+     * @<service>[:<method>[\[<argument-1>,[<argument-n>]\]]]
      *
      * @type {RegExp}
      * @private
      * @static
      */
-    var	SERVICE_REGEX = /^@([^:]*)(?::([^()]+)(\((.+)?\))?)?$/i;
+    var	SERVICE_REGEX = /^@([^:]*)(?::([^\[\]]+)(\[.*\])?)?$/i;
 
     /**
      * Template for checking reference to property.
@@ -138,74 +166,59 @@ DependencyManager.prototype = (function() {
     return {
         constructor: DependencyManager,
 
-        /**
-         * Initialization.
-         *
-         * @param {Object} options
-         */
-        initialize: function(options) {
-            this.services = {};
-            this.servicesInstances = {};
-        },
-
         setAsync: function(adapter) {
-            if (!(adapter instanceof Async)) throw new Error("Async is expected");
+            if (!(adapter instanceof Async)) {
+                throw new Error("Async is expected");
+            }
             this.async = adapter;
         },
 
         setLoader: function(adapter) {
-            if (!(adapter instanceof Loader)) throw new Error("Loader is expected");
+            if (!(adapter instanceof Loader)) {
+                throw new Error("Loader is expected");
+            }
             this.loader = adapter;
         },
 
-        // @service:getSome!@service:getVar(text, hello, @someService, %property%)
+        // @service:getSome(@service:getVar(text, hello, @someService, %property%))
         parseString: function(string) {
             var self = this,
                 args, name,
-                property, handler, isCall, callArgs,
+                property, handler, callArgs,
                 path,
-                promise, promises;
+                promises;
 
             if (!isString(string)) {
                 return self.async.reject(new Error("String is expected"));
             }
 
             // Property
-            if (args = string.match(PROPERTY_REGEX)) {
+            if ((args = string.match(PROPERTY_REGEX))) {
                 name = args[1];
                 return self.async.resolve(self.getParameter(name));
             }
 
             // Service
-            if (args = string.match(SERVICE_REGEX)) {
+            if ((args = string.match(SERVICE_REGEX))) {
                 name     = args[1];
                 property = args[2];
-                isCall   = args[3];
+                callArgs = args[3];
 
                 promises = [this.parseString(name)];
 
                 if (isString(property)) {
                     promises.push(this.parseString(property));
 
-                    if (isCall) {
-                        callArgs = (callArgs = args[4]) ? callArgs.split(',') : [];
+                    if (callArgs) {
+                        try {
+                            callArgs = JSON.parse(args[3]);
+                        } catch (err) {
+                            return self.async.reject(new Error("Service method call parse error"));
+                        }
 
-                        promise = this.async.all(callArgs.map(this.parseString, this))
-                            .then(function(callArgs) {
-                                return callArgs.map(function(argument) {
-                                    if (isString(argument)) {
-                                        try {
-                                            // try to cast values to primitive js types
-                                            return JSON.parse(argument);
-                                        } catch (err){}
-                                    }
+                        callArgs = callArgs.map(this.parse, this);
 
-                                    return argument;
-                                })
-                            });
-
-
-                        promises.push(promise);
+                        promises.push(this.async.all(callArgs));
                     }
                 }
 
@@ -216,65 +229,64 @@ DependencyManager.prototype = (function() {
             }
 
             // Resource
-            if (args = string.match(RESOURCE_REGEX)) {
+            if ((args = string.match(RESOURCE_REGEX))) {
                 path    = args[2];
                 handler = args[1];
 
                 promises = [this.parseString(path)];
-                isString(handler) && promises.push(this.parseString(handler));
+
+                if (isString(handler)) {
+                    promises.push(this.parseString(handler));
+                }
 
                 return this.async.all(promises).then(function(args) {
                     return self.getResource.apply(self, args);
                 });
             }
 
+
             return this.async.resolve(string);
         },
 
-        parseObject: (function() {
-            var escaper = function(obj) {
-                if (obj[DependencyManager.ESCAPE_FLAG] === true) {
-                    return obj[DependencyManager.ESCAPE_VALUE];
+        parseObject: function(object) {
+            var self = this,
+                iterator, parsed, promises, escaped;
+
+            switch (objectType(object)) {
+                case "Object": {
+                    parsed = {};
+                    iterator = forEachOwn;
+                    break;
                 }
 
-                return null;
-            };
-
-            return function(object) {
-                var self = this,
-                    iterator, parsed, promises, escaped;
-
-                switch (objectType(object)) {
-                    case "Object":
-                        parsed = {};
-                        iterator = forEachOwn;
-                        break;
-                    case "Array":
-                        parsed = [];
-                        iterator = forEachSimple;
-                        break;
-                    default:
-                        return self.async.reject(new Error("Object or Array is expected"));
+                case "Array": {
+                    parsed = [];
+                    iterator = forEachSimple;
+                    break;
                 }
 
-                if (escaped = escaper(object)) {
-                    return this.async.resolve(escaped)
+                default: {
+                    return self.async.reject(new Error("Object or Array is expected"));
                 }
-
-                promises = [];
-
-                iterator(object, function(value, key) {
-                    promises.push(self.parse(value).then(function(value) {
-                        parsed[key] = value;
-                    }));
-                });
-
-                return self.async.all(promises)
-                    .then(function() {
-                        return parsed;
-                    });
             }
-        })(),
+
+            if ((escaped = DependencyManager.unEscape(object))) {
+                return this.async.resolve(escaped);
+            }
+
+            promises = [];
+
+            iterator(object, function(value, key) {
+                promises.push(self.parse(value).then(function(value) {
+                    parsed[key] = value;
+                }));
+            });
+
+            return self.async.all(promises)
+                .then(function() {
+                    return parsed;
+                });
+        },
 
         /**
          * Finds out references to services, parameters and resources in given object.
@@ -285,13 +297,18 @@ DependencyManager.prototype = (function() {
          */
         parse: function(config) {
             switch (objectType(config)) {
-                case 'String':
+                case 'String': {
                     return this.parseString(config);
+                }
+
                 case 'Object':
-                case 'Array':
+                case 'Array': {
                     return this.parseObject(config);
-                default:
+                }
+
+                default: {
                     return this.async.resolve(config);
+                }
             }
         },
 
@@ -303,84 +320,104 @@ DependencyManager.prototype = (function() {
          * @returns {$.Deferred.promise}
          */
         build: (function() {
+            var defaultFactory = (function() {
+                /**
+                 * Инстанцирует объект.
+                 * Передает массив переменной длины параметров в конструктор.
+                 *
+                 * @param constructor
+                 * @param args
+                 *
+                 * @returns {object}
+                 * @private
+                 */
+                // default factory
+                var newInstanceArgs = function(constructor, args) {
+                    var service;
 
-            /**
-             * Инстанцирует объект.
-             * Передает массив переменной длины параметров в конструктор.
-             *
-             * @param constructor
-             * @param args
-             *
-             * @returns {object}
-             * @private
-             */
-            var newInstanceArgs = function(constructor, args) {
-                function Service(){}
-                Service.prototype = constructor.prototype;
+                    function Service() {}
+                    Service.prototype = constructor.prototype;
 
-                var service = new Service();
-                try {
-                    constructor.apply(service, args);
-                } catch (error) {
-                    console.error("Cannot instantiate service", error);
-//                            throw error;
-                }
+                    service = new Service();
 
-                return service;
-            };
+                    try {
+                        constructor.apply(service, args);
+                    } catch (error) {
+                        console.error("Cannot instantiate service", error);
+                        throw error;
+                    }
 
-            var makeCall = function(service, key, args) {
-                if (isFunction(service[key])) {
-                    service[key].apply(service, args);
-                }
-            };
+                    return service;
+                };
+
+                var makeCall = function(service, key, args) {
+                    if (isFunction(service[key])) {
+                        service[key].apply(service, args);
+                    }
+                };
+
+
+                return function(constructor, args, calls, properties) {
+                    var service;
+
+                    // Arguments
+                    service = newInstanceArgs(constructor, args);
+
+                    // Calls
+                    forEachSimple(calls, function(call) {
+                        makeCall(service, call[0], call[1]);
+                    });
+
+                    // Properties
+                    forEachOwn(properties, function(value, key) {
+                        service[key] = value;
+                    });
+
+
+                    return service;
+                };
+            })();
+
 
             return function(key) {
                 var self = this,
-                    config, path, args, calls, properties;
+                    config;
 
                 if (!(config = this.getConfig(key))) {
-                    throw new Error(sprintf("Service with key '%s' is not present in configuration", key));
+                    return this.async.reject(new Error(sprintf("Service with key '%s' is not present in configuration", key)));
                 }
 
-                path       = config.path;
-                args       = config.arguments  || [];
-                calls      = config.calls      || [];
-                properties = config.properties || {};
+                if (!isString(config.path)) {
+                    return this.async.reject(new Error(sprintf("Path is expected in service configuration with key '%s'", key)));
+                }
 
 
-                return self.loader.require(path)
+                // do not combine path loading and parsing arguments, cause it can produce side effects
+                // on amd builds - when dependencies compiled in 'path' file, but loaded earlier from separate files
+                return this.loader.require(config.path)
                     .then(function(constructor) {
-                        // Need parse things here to prevent premature load of service dependencies
-                        // They could be included via r.js in upper module level
-                        var args       = self.parse(args),
-                            calls      = self.parse(calls),
-                            properties = self.parse(properties);
-
-                        self.async.all([args, calls, properties])
+                        return self.async.all([
+                                self.parse(config.arguments  || []),
+                                self.parse(config.calls      || []),
+                                self.parse(config.properties || {}),
+                                self.parse(config.factory)
+                            ])
                             .then(function(inputs) {
-                                var args       = inputs[0],
-                                    calls      = inputs[1],
-                                    properties = inputs[2],
-                                    service;
+                                var args, calls, properties, factory;
 
-                                // Arguments
-                                service = newInstanceArgs(constructor, args);
+                                args       = inputs[0];
+                                calls      = inputs[1];
+                                properties = inputs[2];
 
-                                // Calls
-                                forEachSimple(calls, function(call) {
-                                    makeCall(service, call[0], call[1]);
-                                });
+                                if (!isFunction(factory = inputs[3])) {
+                                    factory = defaultFactory;
+                                }
 
-                                // Properties
-                                forEachOwn(properties, function(value, key) {
-                                    service[key] = value;
-                                });
 
-                                return service;
+                                return factory(constructor, args, calls, properties);
                             });
                     });
-            }
+            };
         })(),
 
 
@@ -411,40 +448,38 @@ DependencyManager.prototype = (function() {
         /**
          *
          */
-        get: function(name, prop, args) {
-            var self = this,
-                promise;
+        get: function(key, prop, args) {
+            var promise;
 
-            if (!isString(name)) {
-                throw new Error(sprintf("Necessary string parameter expected, '%s' given", typeof name));
+            if (!isString(key)) {
+                return this.async.reject(new Error(sprintf("Key is expected to be string, %s given", typeof key)));
             }
 
-            if (!(promise = this.services[name])) {
-                promise = this.services[name] = this.build(name)
-                    .then(function(service) {
-                        self.servicesInstances[name] = service;
-                        return service;
-                    });
+            if (!(promise = this.services[key])) {
+                promise = this.services[key] = this.build(key);
             }
+
 
             return promise.then(function(service) {
                 var property, isFunc;
 
                 if (isString(prop)) {
-
                     property = service[prop];
                     isFunc = isFunction(property);
 
                     if (isArray(args)) {
                         if (!isFunc) {
-                            throw new TypeError(sprintf("Service '%s' does not have the method '%s'", name, prop));
+                            throw new TypeError(sprintf("Service '%s' does not have the method '%s'", key, prop));
                         }
+
 
                         return property.apply(service, args);
                     }
 
+
                     return isFunc ? property.bind(service) : property; // todo use universal bind
                 }
+
 
                 return service;
             });
@@ -464,7 +499,15 @@ DependencyManager.escape = function(value) {
     return wrapper;
 };
 
-export default DependencyManager;
+DependencyManager.unEscape = function(obj) {
+    if (obj[DependencyManager.ESCAPE_FLAG] === true) {
+        return obj[DependencyManager.ESCAPE_VALUE];
+    }
+
+    return null;
+};
+
+module.exports = DependencyManager;
 
 // Module registration
 // -------------------
