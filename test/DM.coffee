@@ -292,6 +292,20 @@ suite "dm.js", ->
 
     # ================
 
+    test "Should parse as self link", (done) ->
+      sinon.stub(async, "resolve", RSVP.resolve);
+      dm.parseString(DM.SELF).then((result) ->
+        try
+          assert.strictEqual result, dm;
+        catch err
+          error = err;
+
+        done(error);
+      );
+
+
+    # ================
+
     test "Should parse as parameter", ->
       key    = chance.word();
       string = "%" + key + "%";

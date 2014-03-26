@@ -203,6 +203,11 @@ DependencyManager.prototype = (function() {
                 return self.async.reject(new Error("String is expected"));
             }
 
+            // Self link
+            if (string === DependencyManager.SELF) {
+                return this.async.resolve(this);
+            }
+
             // Property
             if ((args = string.match(PROPERTY_REGEX))) {
                 name = args[1];
@@ -511,6 +516,7 @@ DependencyManager.prototype = (function() {
 
 DependencyManager.ESCAPE_FLAG  = '__escape__';
 DependencyManager.ESCAPE_VALUE = '__value__';
+DependencyManager.SELF         = "@_@";
 
 DependencyManager.escape = function(value) {
     var wrapper = {};
