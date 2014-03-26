@@ -327,7 +327,7 @@ suite "dm.js", ->
       .expects("get")
       .on(dm)
       .once()
-      .withArgs(name)
+      .withExactArgs(name, {property: undefined, arguments: undefined})
       .returns(value);
 
       dm.parseString(string)
@@ -357,7 +357,7 @@ suite "dm.js", ->
       .expects("get")
       .on(dm)
       .once()
-      .withExactArgs(name, handler)
+      .withExactArgs(name, {property: handler, arguments: undefined})
       .returns(value);
 
       dm.parseString(string)
@@ -381,18 +381,20 @@ suite "dm.js", ->
       value = chance.word();
 
       sinon.stub(async, "resolve", RSVP.resolve);
-      sinon.stub(async, "all", RSVP.all);
+      sinon.stub(async, "reject",  RSVP.resolve);
+      sinon.stub(async, "all",     RSVP.all);
 
       mock = sinon.mock(dm)
       .expects("get")
       .on(dm)
       .once()
-      .withExactArgs(name, handler, [])
+      .withExactArgs(name, {property: handler, arguments: []})
       .returns(value);
 
       dm.parseString(string)
       .then((result)->
           try
+            console.log('veriu');
             mock.verify();
             assert.strictEqual result, value;
           catch err
@@ -408,13 +410,13 @@ suite "dm.js", ->
       name    = chance.word();
       handler = chance.word();
 
-      word      = chance.word();
-      int       = chance.integer();
-      object    = {a: chance.integer(), b: chance.word()};
-      parameter = chance.word();
+      word           = chance.word();
+      int            = chance.integer();
+      object         = {a: chance.integer(), b: chance.word()};
+      parameter      = chance.word();
       parameterValue = chance.integer();
-      service   = chance.word();
-      serviceValue = chance.word();
+      service        = chance.word();
+      serviceValue   = chance.word();
 
       args = [word, int, object, "%" + parameter + "%", "@" + service];
 
@@ -429,7 +431,7 @@ suite "dm.js", ->
 
       parseStringSpy = sinon.spy(dm, "parseString");
 
-      getStub = sinon.stub(dm, "get", (key, handler, args) ->
+      getStub = sinon.stub(dm, "get", (key, options) ->
         if (key == name) then return value;
         if (key == service) then return serviceValue;
       );
@@ -438,8 +440,8 @@ suite "dm.js", ->
       .then((result)->
           try
             assert.isTrue getStub.calledTwice, "#get called twice";
-            assert.isTrue getStub.firstCall.calledWithExactly(service), "#get first time called with service from arguments"
-            assert.isTrue getStub.secondCall.calledWithExactly(name, handler, [word, int, object, parameterValue, serviceValue]), "#get second time called with methods service, name of method, and its arguments";
+            assert.isTrue getStub.firstCall.calledWith(service), "#get first time called with service from arguments"
+            assert.isTrue getStub.secondCall.calledWithExactly(name, {property: handler, arguments: [word, int, object, parameterValue, serviceValue]}), "#get second time called with methods service, name of method, and its arguments";
 
             assert.strictEqual result, value;
           catch err
@@ -734,8 +736,8 @@ suite "dm.js", ->
           done(error);
 
 
-      # getResource
-      # ------------
+  # getResource
+  # ------------
 
   suite "#getResource", ->
 
@@ -885,6 +887,7 @@ suite "dm.js", ->
 
     dm          = null;
     key         = null;
+    path        = null;
     constructor = null;
     spy         = null;
     calls       = null;
@@ -910,17 +913,21 @@ suite "dm.js", ->
       path = chance.word();
       constructor = sinon.spy();
       constructor.prototype.spy = spy = sinon.spy();
-      config = {};
-      config[key] = {
-        path: path,
-        arguments: args = [argA = chance.word(), argB = chance.integer(), argC = {}],
-        calls:     calls = [["spy", [spyA = chance.word(), spyB = chance.integer(), spyC = {}]]],
-        properties: properties = {
-          a: propA = chance.word(),
-          b: propB = chance.integer(),
-          c: propC = {a:1}
-        }
-      };
+      args = [argA = chance.word(), argB = chance.integer(), argC = {}];
+      calls = [["spy", [spyA = chance.word(), spyB = chance.integer(), spyC = {}]]];
+      properties = {
+        a: propA = chance.word(),
+        b: propB = chance.integer(),
+        c: propC = {a:1}
+      }
+
+      config = {
+        path:        path,
+        constructor: constructor,
+        calls:       calls,
+        properties:  properties,
+        arguments:   args
+      }
 
       sinon.stub(async,  "all",     (promises) -> RSVP.all(promises));
       sinon.stub(async,  "resolve", (value)    -> RSVP.resolve(value));
@@ -933,49 +940,46 @@ suite "dm.js", ->
     # ================
 
     test "Should instantiate object of given constructor, with given args, calls and setting properties", (done) ->
-      dm.setConfig(config);
-
-      dm.build(key)
+      dm.build(config)
       .then((service) ->
-        try
-          assert.isTrue constructor.calledOnce,                          "Constructor was not called once";
-          assert.isTrue constructor.calledWithExactly(argA, argB, argC), "Constructor was not called exactly with given arguments";
+          try
+            assert.isTrue constructor.calledOnce,                          "Constructor was not called once";
+            assert.isTrue constructor.calledWithExactly(argA, argB, argC), "Constructor was not called exactly with given arguments";
 
-          assert.instanceOf service, constructor;
+            assert.instanceOf service, constructor;
 
-          assert.isTrue spy.calledOnce,                          "Instance call was not called once"
-          assert.isTrue spy.calledWithExactly(spyA, spyB, spyC), "Instance call was not called exactly with given arguments"
+            assert.isTrue spy.calledOnce,                          "Instance call was not called once"
+            assert.isTrue spy.calledWithExactly(spyA, spyB, spyC), "Instance call was not called exactly with given arguments"
 
-          assert.propertyVal service, "a", propA
-          assert.propertyVal service, "b", propB
+            assert.propertyVal service, "a", propA
+            assert.propertyVal service, "b", propB
 
-          assert.property service, "c"
-          _.each service.c, (value, key) -> assert.strictEqual propC[key], value, "Instance sub properties values must be strict equal";
+            assert.property service, "c"
+            _.each service.c, (value, key) -> assert.strictEqual propC[key], value, "Instance sub properties values must be strict equal";
 
-        catch err
-          error = err;
+          catch err
+            error = err;
 
-        done(error);
-      )
+          done(error);
+        )
       .catch(done);
 
     # ================
 
     test "Should call custom factory with constructor, args, calls and properties", (done) ->
-      config[key].factory = factory = sinon.spy();
-      dm.setConfig(config);
+      config.factory = factory = sinon.spy();
 
-      dm.build(key)
+      dm.build(config)
       .then(() ->
-        try
-          assert.isTrue factory.calledOnce, "Custom factory is not called once"
-          assert.isTrue factory.calledWithExactly(constructor, args, calls, properties), "Custom factory is not called once"
+          try
+            assert.isTrue factory.calledOnce, "Custom factory is not called once"
+            assert.isTrue factory.calledWithExactly({constructor: constructor, calls: calls,properties:  properties, arguments: args}), "Custom factory is not called with definition"
 
-        catch err
-          error = err;
+          catch err
+            error = err;
 
-        done(error);
-      )
+          done(error);
+        )
       .catch(done);
 
 
@@ -985,9 +989,47 @@ suite "dm.js", ->
 
   suite "#get", ->
 
-    dm = null;
+    dm          = null;
+    key         = null;
+    path        = null;
+    constructor = null;
+    spy         = null;
+    calls       = null;
+    spyA        = null;
+    spyB        = null;
+    spyC        = null;
+    args        = null;
+    argA        = null;
+    argB        = null;
+    argC        = null;
+    properties  = null;
+    propA       = null;
+    propB       = null;
+    propC       = null;
+    config      = null;
 
     setup ->
+      key = chance.word();
+      path = chance.word();
+      constructor = sinon.spy();
+      constructor.prototype.spy = spy = sinon.spy();
+      args = [argA = chance.word(), argB = chance.integer(), argC = {}];
+      calls = [["spy", [spyA = chance.word(), spyB = chance.integer(), spyC = {}]]];
+      properties = {
+        a: propA = chance.word(),
+        b: propB = chance.integer(),
+        c: propC = {a:1}
+      }
+
+      config = {};
+      config[key] = {
+        path:        path,
+        constructor: constructor,
+        calls:       calls,
+        properties:  properties,
+        arguments:   args
+      }
+
       dm = new DM;
       async  = new Async;
       loader = new Loader;
@@ -1001,19 +1043,40 @@ suite "dm.js", ->
 
     # ================
 
-    test "Should create just one instance of service", (done) ->
-      key = chance.word();
+    test "Should create just one instance of service if share is true", (done) ->
+      config[key].share = true;
+      dm.setConfig(config);
+
       service = new Object;
-
-
       buildStub = sinon.stub(dm, "build", (_key) -> if _key == key then RSVP.resolve(service));
 
       dm.get(key).then((serviceA)->
         dm.get(key)
         .then((serviceB) ->
             try
-              assert.isTrue buildStub.calledOnce,      "#build not called once";
-              assert.strictEqual serviceA, serviceB, "#get returned different services"
+              assert.isTrue buildStub.calledOnce, "#build not called once";
+            catch err
+              error = err;
+
+            done(error);
+          )
+        .catch(done);
+      );
+
+    # ================
+
+    test "Should create multiple instance of service if share is false", (done) ->
+      config[key].share = false;
+      dm.setConfig(config);
+
+      service = new Object;
+      buildStub = sinon.stub(dm, "build", (_key) -> if _key == key then RSVP.resolve(service));
+
+      dm.get(key).then((serviceA)->
+        dm.get(key)
+        .then((serviceB) ->
+            try
+              assert.isTrue buildStub.calledTwice, "#build not called twice";
             catch err
               error = err;
 
@@ -1025,6 +1088,8 @@ suite "dm.js", ->
     # ================
 
     test "Should return property of service", (done) ->
+      dm.setConfig(config);
+
       service = new Object;
       prop = chance.word();
       val  = chance.integer();
@@ -1032,7 +1097,7 @@ suite "dm.js", ->
 
       sinon.stub(dm, "build", -> RSVP.resolve(service));
 
-      dm.get(chance.word(), prop)
+      dm.get(key, {property: prop})
       .then((value) ->
           try
             assert.strictEqual value, val;
@@ -1046,6 +1111,8 @@ suite "dm.js", ->
     # ================
 
     test "Should return method of service, contexted in service", (done) ->
+      dm.setConfig(config);
+
       service = new Object;
       prop = chance.word();
       val  = () ->
@@ -1054,7 +1121,7 @@ suite "dm.js", ->
 
       sinon.stub(dm, "build", -> RSVP.resolve(service));
 
-      dm.get(chance.word(), prop)
+      dm.get(key, {property: prop})
       .then((value) ->
           try
             value();
@@ -1068,6 +1135,8 @@ suite "dm.js", ->
     # ================
 
     test "Should return result of service's method call", (done) ->
+      dm.setConfig(config);
+
       service = new Object;
       prop = chance.word();
       args = [argA = chance.word(), argB = chance.integer(), argC = {}]
@@ -1081,7 +1150,7 @@ suite "dm.js", ->
 
       sinon.stub(dm, "build", -> RSVP.resolve(service));
 
-      dm.get(chance.word(), prop, args)
+      dm.get(key, {property: prop, arguments: args})
       .then((value) ->
           try
             assert.strictEqual value, result;
@@ -1121,6 +1190,29 @@ suite "dm.js", ->
       unescaped = DM.unEscape(value);
 
       assert.isNull unescaped;
+
+  # extend
+  # ------------
+
+  suite "#extend", ->
+
+    test "Should return proper prototyped object", () ->
+      protos = {};
+      methodProtoName = chance.word();
+      methodProtoValue = ->;
+      protos[methodProtoName] = methodProtoValue;
+
+      statics = {};
+      methodStaticName = chance.word();
+      methodStaticValue = chance.word();
+      statics[methodStaticName] = methodStaticValue
+
+      Child = DM.extend(protos, statics);
+
+      child = new Child();
+
+      assert.instanceOf child, DM;
+      assert.propertyVal Child, methodStaticName, methodStaticValue
 
 
 

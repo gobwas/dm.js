@@ -145,6 +145,20 @@ function clone(value) {
     return result;
 }
 
+// Extend object with others
+function extend(obj) {
+    forEachSimple(Array.prototype.slice.call(arguments, 1), function(source) {
+        if (source) {
+            forEachOwn(source, function(value, key) {
+                obj[key] = value;
+            });
+        }
+    });
+
+
+    return obj;
+}
+
 module.exports = {
     objectType:    objectType,
     isString:      isString,
@@ -160,5 +174,6 @@ module.exports = {
     forEachSimple: forEachSimple,
     map:           map,
     sprintf:       sprintf,
-    clone:         clone
+    clone:         clone,
+    extend:        extend
 };

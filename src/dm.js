@@ -21,9 +21,10 @@
  */
 
 
-var utils  = require("./dm/utils"),
-    Async  = require("./dm/adapter/async"),
-    Loader = require("./dm/adapter/loader"),
+var utils    = require("./dm/utils"),
+    Async    = require("./dm/adapter/async"),
+    Loader   = require("./dm/adapter/loader"),
+    inherits = require("./dm/inherits"),
 
     objectType    = utils.objectType,
     isString      = utils.isString,
@@ -39,6 +40,7 @@ var utils  = require("./dm/utils"),
     forEachSimple = utils.forEachSimple,
     map           = utils.map,
     clone         = utils.clone,
+    extend        = utils.extend,
     sprintf       = utils.sprintf,
 
     DependencyManager;
@@ -102,6 +104,9 @@ DependencyManager = function(options) {
      * @returns {Object}
      */
     this.getConfig = function(key) {
+        if (_config === null) {
+            throw new Error("Dependency Manager is not configured yet");
+        }
         return key ? _configCopy[key] : _configCopy;
     };
 
@@ -142,7 +147,7 @@ DependencyManager.prototype = (function() {
      * @private
      * @static
      */
-    var	SERVICE_REGEX = /^@([^:]*)(?::([^\[\]]+)(\[.*\])?)?$/i;
+    var	SERVICE_REGEX = /^@(.+?)(?::([^\[\]]+)(\[.*\])?)?$/i;
 
     /**
      * Template for checking reference to property.
@@ -229,8 +234,16 @@ DependencyManager.prototype = (function() {
                 }
 
                 return this.async.all(promises)
-                    .then(function(args) {
-                        return self.get.apply(self, args);
+                    .then(function(results) {
+                        var key, options;
+
+                        key = results[0];
+                        options = {
+                            property:  results[1],
+                            arguments: results[2]
+                        };
+
+                        return self.get(key, options);
                     });
             }
 
@@ -363,19 +376,19 @@ DependencyManager.prototype = (function() {
                 };
 
 
-                return function(constructor, args, calls, properties) {
+                return function(definition) {
                     var service;
 
                     // Arguments
-                    service = newInstanceArgs(constructor, args);
+                    service = newInstanceArgs(definition.constructor, definition.arguments);
 
                     // Calls
-                    forEachSimple(calls, function(call) {
+                    forEachSimple(definition.calls, function(call) {
                         makeCall(service, call[0], call[1]);
                     });
 
                     // Properties
-                    forEachOwn(properties, function(value, key) {
+                    forEachOwn(definition.properties, function(value, key) {
                         service[key] = value;
                     });
 
@@ -385,18 +398,8 @@ DependencyManager.prototype = (function() {
             })();
 
 
-            return function(key) {
-                var self = this,
-                    config;
-
-                if (!(config = this.getConfig(key))) {
-                    return this.async.reject(new Error(sprintf("Service with key '%s' is not present in configuration", key)));
-                }
-
-                if (!isString(config.path)) {
-                    return this.async.reject(new Error(sprintf("Path is expected in service configuration with key '%s'", key)));
-                }
-
+            return function(config) {
+                var self = this;
 
                 // do not combine path loading and parsing arguments, cause it can produce side effects
                 // on amd builds - when dependencies compiled in 'path' file, but loaded earlier from separate files
@@ -409,18 +412,21 @@ DependencyManager.prototype = (function() {
                                 self.parse(config.factory)
                             ])
                             .then(function(inputs) {
-                                var args, calls, properties, factory;
+                                var definition, factory;
 
-                                args       = inputs[0];
-                                calls      = inputs[1];
-                                properties = inputs[2];
+                                definition = {
+                                    constructor: constructor,
+                                    arguments:   inputs[0],
+                                    calls:       inputs[1],
+                                    properties:  inputs[2]
+                                };
 
                                 if (!isFunction(factory = inputs[3])) {
                                     factory = defaultFactory;
                                 }
 
 
-                                return factory(constructor, args, calls, properties);
+                                return factory(definition);
                             });
                     });
             };
@@ -448,32 +454,48 @@ DependencyManager.prototype = (function() {
         /**
          *
          */
-        get: function(key, prop, args) {
-            var promise;
+        get: function(key, options) {
+            var config, promise, share;
 
             if (!isString(key)) {
                 return this.async.reject(new Error(sprintf("Key is expected to be string, %s given", typeof key)));
             }
 
-            if (!(promise = this.services[key])) {
-                promise = this.services[key] = this.build(key);
+            if (!(config = this.getConfig(key))) {
+                return this.async.reject(new Error(sprintf("Service with key '%s' is not present in configuration", key)));
+            }
+
+            if (!isString(config.path)) {
+                return this.async.reject(new Error(sprintf("Path is expected in service configuration with key '%s'", key)));
+            }
+
+            options = options || {};
+
+            share = isBoolean(config.share) ? config.share : true;
+
+            if (share) {
+                if (!(promise = this.services[key])) {
+                    promise = this.services[key] = this.build(key);
+                }
+            } else {
+                promise = this.build(key);
             }
 
 
             return promise.then(function(service) {
                 var property, isFunc;
 
-                if (isString(prop)) {
-                    property = service[prop];
+                if (isString(options.property)) {
+                    property = service[options.property];
                     isFunc = isFunction(property);
 
-                    if (isArray(args)) {
+                    if (isArray(options.arguments)) {
                         if (!isFunc) {
-                            throw new TypeError(sprintf("Service '%s' does not have the method '%s'", key, prop));
+                            throw new TypeError(sprintf("Service '%s' does not have the method '%s'", key, options.property));
                         }
 
 
-                        return property.apply(service, args);
+                        return property.apply(service, options.arguments);
                     }
 
 
@@ -506,6 +528,11 @@ DependencyManager.unEscape = function(obj) {
 
     return null;
 };
+
+DependencyManager.extend = function(prototypeProps, staticProps) {
+    return inherits(this, prototypeProps, staticProps);
+};
+
 
 module.exports = DependencyManager;
 
