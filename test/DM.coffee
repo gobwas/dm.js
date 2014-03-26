@@ -394,7 +394,6 @@ suite "dm.js", ->
       dm.parseString(string)
       .then((result)->
           try
-            console.log('veriu');
             mock.verify();
             assert.strictEqual result, value;
           catch err
@@ -1048,13 +1047,14 @@ suite "dm.js", ->
       dm.setConfig(config);
 
       service = new Object;
-      buildStub = sinon.stub(dm, "build", (_key) -> if _key == key then RSVP.resolve(service));
+      buildStub = sinon.stub(dm, "build", -> RSVP.resolve(service));
 
       dm.get(key).then((serviceA)->
         dm.get(key)
         .then((serviceB) ->
             try
               assert.isTrue buildStub.calledOnce, "#build not called once";
+              assert.isTrue buildStub.calledWithExactly(config[key]), "#build is not called with config";
             catch err
               error = err;
 
@@ -1070,13 +1070,14 @@ suite "dm.js", ->
       dm.setConfig(config);
 
       service = new Object;
-      buildStub = sinon.stub(dm, "build", (_key) -> if _key == key then RSVP.resolve(service));
+      buildStub = sinon.stub(dm, "build", -> RSVP.resolve(service));
 
       dm.get(key).then((serviceA)->
         dm.get(key)
         .then((serviceB) ->
             try
               assert.isTrue buildStub.calledTwice, "#build not called twice";
+              assert.isTrue buildStub.calledWithExactly(config[key]), "#build is not called with config";
             catch err
               error = err;
 

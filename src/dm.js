@@ -147,7 +147,7 @@ DependencyManager.prototype = (function() {
      * @private
      * @static
      */
-    var	SERVICE_REGEX = /^@(.+?)(?::([^\[\]]+)(\[.*\])?)?$/i;
+    var	SERVICE_REGEX = /^@([^:]+)(?::([^\[\]]+)(\[.*\])?)?$/i;
 
     /**
      * Template for checking reference to property.
@@ -475,10 +475,10 @@ DependencyManager.prototype = (function() {
 
             if (share) {
                 if (!(promise = this.services[key])) {
-                    promise = this.services[key] = this.build(key);
+                    promise = this.services[key] = this.build(config);
                 }
             } else {
-                promise = this.build(key);
+                promise = this.build(config);
             }
 
 
