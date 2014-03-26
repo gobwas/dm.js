@@ -6,11 +6,12 @@ ______________________
 
 + Unique flag (create new service or get it from cache) for configuration file and arguments for #get method;
 + If factory present in configuration, path in config is optional;
-+ Make DependencyManager extendable.
++ Make DependencyManager extendable;
++ Ability to link for dm in configurations via "@_@" key;
 
 
 ### 0.1.2 (24-03-2014)
 ______________________
 
 + Implement base logic;
-+ Finalize tests.
++ Finalize tests;
