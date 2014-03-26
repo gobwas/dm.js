@@ -8,6 +8,7 @@ ______________________
 + If factory present in configuration, path in config is optional;
 + Make DependencyManager extendable;
 + Ability to link for dm in configurations via "@_@" key;
++ Default property "factory" for factory objects;
 
 
 ### 0.1.2 (24-03-2014)

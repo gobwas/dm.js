@@ -979,7 +979,7 @@ suite "dm.js", ->
 
     # ================
 
-    test "Should call custom factory with constructor, args, calls and properties", (done) ->
+    test "Should call custom factory function with constructor, args, calls and properties", (done) ->
       config.factory = factory = sinon.spy();
 
       dm.build(config)
@@ -987,6 +987,25 @@ suite "dm.js", ->
           try
             assert.isTrue factory.calledOnce, "Custom factory is not called once"
             assert.isTrue factory.calledWithExactly({constructor: constructor, calls: calls,properties:  properties, arguments: args}), "Custom factory is not called with definition"
+
+          catch err
+            error = err;
+
+          done(error);
+        )
+      .catch(done);
+
+
+    # ================
+
+    test "Should call custom factory object#factory with constructor, args, calls and properties", (done) ->
+      config.factory = factory = {factory: sinon.spy()};
+
+      dm.build(config)
+      .then(() ->
+          try
+            assert.isTrue factory.factory.calledOnce, "Custom factory is not called once"
+            assert.isTrue factory.factory.calledWithExactly({constructor: constructor, calls: calls,properties:  properties, arguments: args}), "Custom factory is not called with definition"
 
           catch err
             error = err;

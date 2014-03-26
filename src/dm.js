@@ -426,7 +426,13 @@ DependencyManager.prototype = (function() {
                                     properties:  inputs[2]
                                 };
 
-                                if (!isFunction(factory = inputs[3])) {
+                                factory = inputs[3];
+
+                                if (isObject(factory)) {
+                                    factory = factory.factory;
+                                }
+
+                                if (!isFunction(factory)) {
                                     factory = defaultFactory;
                                 }
 
