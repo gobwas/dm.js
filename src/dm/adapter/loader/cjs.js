@@ -14,13 +14,17 @@ CJS = Loader.extend({
     },
 
     read: function(path) {
-        return this.async.promise(function(resolve, reject) {
-            fs.readFile(path, function(err, src) {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(src);
-                }
+        var self = this;
+
+        return this.require(path).catch(function() {
+            return self.async.promise(function(resolve, reject) {
+                fs.readFile(path, function(err, src) {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve(src);
+                    }
+                });
             });
         });
     }

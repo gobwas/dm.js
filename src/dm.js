@@ -429,7 +429,7 @@ DependencyManager.prototype = (function() {
                                 factory = inputs[3];
 
                                 if (isObject(factory)) {
-                                    factory = factory.factory;
+                                    factory = factory.factory.bind(factory);
                                 }
 
                                 if (!isFunction(factory)) {
