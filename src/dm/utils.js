@@ -81,8 +81,37 @@ function forEachSimple(arr, iterator, context) {
 }
 
 function map(array, iterator, context) {
-    // todo make real map if native isnt exists
-    return array.map(iterator.bind(context));
+    var results = [];
+
+    if (array === null) {
+        return results;
+    }
+
+    if (isFunction(array.map)) {
+        return array.map(iterator, context);
+    }
+
+    forEachSimple(array, function(value, index, list) {
+        results[results.length] = iterator.call(context, value, index, list);
+    });
+
+    return results;
+}
+
+function bind(func, context) {
+    var args, slice;
+
+    slice = Array.prototype.slice;
+
+    if (isFunction(func.bind)) {
+        return func.bind.apply(func, slice.call(arguments, 1));
+    }
+
+    args = slice.call(arguments, 2);
+
+    return function() {
+        return func.apply(context, args.concat(slice.call(arguments)));
+    };
 }
 
 // Shallow copy of sprintf
@@ -175,5 +204,6 @@ module.exports = {
     map:           map,
     sprintf:       sprintf,
     clone:         clone,
-    extend:        extend
+    extend:        extend,
+    bind:          bind
 };

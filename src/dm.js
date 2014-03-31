@@ -39,6 +39,7 @@ var utils    = require("./dm/utils"),
     forEachOwn    = utils.forEachOwn,
     forEachSimple = utils.forEachSimple,
     map           = utils.map,
+    bind          = utils.bind,
     clone         = utils.clone,
     extend        = utils.extend,
     sprintf       = utils.sprintf,
@@ -222,7 +223,7 @@ DependencyManager.prototype = (function() {
 
                 promises = [this.parseString(name)];
 
-                if (isString(property)) {
+                if (property && isString(property)) {
                     promises.push(this.parseString(property));
 
                     if (callArgs) {
@@ -232,7 +233,7 @@ DependencyManager.prototype = (function() {
                             return self.async.reject(new Error("Service method call parse error"));
                         }
 
-                        callArgs = callArgs.map(this.parse, this);
+                        callArgs = map(callArgs, this.parse, this);
 
                         promises.push(this.async.all(callArgs));
                     }
@@ -259,7 +260,7 @@ DependencyManager.prototype = (function() {
 
                 promises = [this.parseString(path)];
 
-                if (isString(handler)) {
+                if (handler && isString(handler)) {
                     promises.push(this.parseString(handler));
                 }
 
@@ -429,7 +430,7 @@ DependencyManager.prototype = (function() {
                                 factory = inputs[3];
 
                                 if (isObject(factory)) {
-                                    factory = factory.factory.bind(factory);
+                                    factory = bind(factory.factory, factory);
                                 }
 
                                 if (!isFunction(factory)) {
@@ -510,7 +511,7 @@ DependencyManager.prototype = (function() {
                     }
 
 
-                    return isFunc ? property.bind(service) : property; // todo use universal bind
+                    return isFunc ? bind(property, service) : property;
                 }
 
 

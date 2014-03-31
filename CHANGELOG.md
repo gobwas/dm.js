@@ -11,6 +11,9 @@ ______________________
 + Default property "factory" for factory objects;
 + CJS Adapters #read method is now trying to require path first;
 + Bugfix on factory calling - now on factory object;
++ Bugfix in IE8 on #catch method of promises;
++ Bugfix in IE on parsing strings;
++ Implemented universal #bind and #map methods in utils package;
 
 
 ### 0.1.2 (24-03-2014)
