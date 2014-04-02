@@ -1,7 +1,12 @@
 Change log
 ==========
 
-### 0.1.3 (xx-03-2014)
+### 0.1.4 (xx-xx-2014)
+______________________
+
++ n/a
+
+### 0.1.3 (02-04-2014)
 ______________________
 
 + Option 'share' for service (create new service or get it from cache);
