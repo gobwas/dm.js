@@ -16,6 +16,8 @@ CJS = Loader.extend({
     read: function(path) {
         var self = this;
 
+        // todo is this hack for client-side loading? (i.e. browserify building)
+        // todo maybe need to use browserify features to stub 'fs' module
         return this.require(path)
             ['catch'](function() {
                 return self.async.promise(function(resolve, reject) {

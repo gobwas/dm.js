@@ -6,4 +6,5 @@ TODOS
 + Lazy service wrapper;
 + Think about throwing exception on factory object has no #factory method;
 + Maybe add fallback adapters for loading resources. For examples, when we load some web library online, we could not
-load it via cjs loader. Then we try to get some amd loader, that could.
+load it via cjs loader. Then we try to get some amd loader, that could;
++ Rewrite tests from coffeescript to javascript (simply compile it and format the code);
