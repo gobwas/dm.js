@@ -154,7 +154,8 @@ Symbol     | Type
 @xxx       | Object
 @xxx:xxx   | Object's method
 @xxx:xxx[] | Object's method calling
-%xxx%      | Parameter
+%xxx%      | Parameter (with type safe)
+%{xxx}     | Live insertion parameter (without type safe)
 #xxx#      | Resource
 #xxx!xxx#  | Handler
 
@@ -162,7 +163,7 @@ All of this symbols are recursively parsing, while DM cant get the primitive typ
 
 Examples:
 
-Link to                                            | Format
+String                                             | Link to
 ---------------------------------------------------|--------
 "@my_service"                                      | object
 "@my_service:method"                               | object's method
@@ -170,6 +171,7 @@ Link to                                            | Format
 "#my_resource.html#"                               | resource content
 "#@my_parser!my_resource.html#"                    | resource content handled by this object's method
 "%my_parameter%"                                   | parameter
+"%{my_parameter}/replaces/live"                    | parameter (replaces with stringified parameter)
 "@my_service:method[%my_argument%]"                | object's method's call result with this property
 "%my_parser%!my_resource.html"                     | resource content handled by the object's method, linked in this parameter
 

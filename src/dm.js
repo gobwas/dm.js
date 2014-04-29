@@ -160,6 +160,15 @@ DependencyManager.prototype = (function() {
     var PROPERTY_REGEX = /^%(.*)%$/i;
 
     /**
+     * Template for checking reference to property in string context.
+     *
+     * @type {RegExp}
+     * @private
+     * @static
+     */
+    var LIVE_PROPERTY_REGEX = /%\{([^%]+?)\}/gi;
+
+    /**
      * Template for checking reference to resource.
      *
      * @type {RegExp}
@@ -204,15 +213,22 @@ DependencyManager.prototype = (function() {
                 return self.async.reject(new Error("String is expected"));
             }
 
-            // Self link
-            if (string === DependencyManager.SELF) {
-                return this.async.resolve(this);
+            // Live replacement property
+            if (string.match(LIVE_PROPERTY_REGEX)) {
+                string = string.replace(LIVE_PROPERTY_REGEX, function(match, name) {
+                    return self.getParameter(name) || match;
+                });
             }
 
             // Property
             if ((args = string.match(PROPERTY_REGEX))) {
                 name = args[1];
                 return self.async.resolve(self.getParameter(name));
+            }
+
+            // Self link
+            if (string === DependencyManager.SELF) {
+                return this.async.resolve(this);
             }
 
             // Service

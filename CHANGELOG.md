@@ -5,6 +5,7 @@ Change log
 ______________________
 
 + Project structure;
++ Ability to use parameter links in part of string (live properties);
 
 ### 0.1.3 (02-04-2014)
 ______________________

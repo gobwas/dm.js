@@ -308,6 +308,7 @@ suite "dm.js", ->
 
     test "Should parse as parameter", ->
       key    = chance.word();
+      wrap   = chance.word();
       string = "%" + key + "%";
       value  = chance.word();
 
@@ -326,6 +327,37 @@ suite "dm.js", ->
 
       mock.verify();
       assert.strictEqual result, value;
+
+
+    # ================
+
+    test "Should parse as parameters", ->
+      keys   = Array.prototype.slice.apply(new Int8Array(5)).map(->chance.word());
+
+      links  = keys.map((key)->["%{", key, "}"].join(''));
+      wrap   = chance.word();
+      string = wrap + links.join(wrap) + wrap;
+
+      values = keys.map(->chance.word());
+      expect = wrap + values.join(wrap) + wrap;
+
+      sinon.stub(async, "resolve", (value) ->
+        return value;
+      );
+
+      getParameterStub = sinon.stub(dm, "getParameter", (key) ->
+        return values[keys.indexOf(key)];
+      );
+      
+      result = dm.parseString(string);
+
+      assert.strictEqual getParameterStub.callCount, keys.length, "#getParameterStub is not called " + keys.length + " times";
+
+      keys.forEach((key, index)->
+        assert.isTrue getParameterStub.getCall(index).calledWith(key), "#getParameterStub call #" + index + " is not called with '" + key + "'";
+      )
+
+      assert.strictEqual result, expect;
 
     # ================
 
@@ -431,14 +463,14 @@ suite "dm.js", ->
       service        = chance.word();
       serviceValue   = chance.word();
 
-      args = [word, int, object, "%" + parameter + "%", "@" + service];
+      args = [word, int, object, "%" + parameter + "%", "%{" + parameter + "}", "@" + service];
 
       string = "@" + name + ":" + handler + JSON.stringify(args);
 
       value = chance.word();
 
       sinon.stub(async, "resolve", RSVP.resolve);
-      sinon.stub(async, "all", RSVP.all);
+      sinon.stub(async, "all",     RSVP.all);
 
       sinon.stub(dm, "getParameter", (key) -> parameterValue)
 
@@ -454,7 +486,7 @@ suite "dm.js", ->
           try
             assert.isTrue getStub.calledTwice, "#get called twice";
             assert.isTrue getStub.firstCall.calledWith(service), "#get first time called with service from arguments"
-            assert.isTrue getStub.secondCall.calledWithExactly(name, {property: handler, arguments: [word, int, object, parameterValue, serviceValue]}), "#get second time called with methods service, name of method, and its arguments";
+            assert.isTrue getStub.secondCall.calledWithExactly(name, {property: handler, arguments: [word, int, object, parameterValue, parameterValue.toString(), serviceValue]}), "#get second time called with methods service, name of method, and its arguments";
 
             assert.strictEqual result, value;
           catch err
