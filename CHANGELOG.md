@@ -1,11 +1,12 @@
 Change log
 ==========
 
-### 0.1.4 (xx-xx-2014)
+### 0.2.0 (xx-xx-2014)
 ______________________
 
 + Project structure;
 + Ability to use parameter links in part of string (live properties);
++ Ability to set base path for loading modules and resources [issue#1](https://github.com/gobwas/dm.js/issues/1);
 
 ### 0.1.3 (02-04-2014)
 ______________________

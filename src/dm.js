@@ -52,9 +52,6 @@ var utils    = require("./dm/utils"),
  * @constructor
  */
 DependencyManager = function(options) {
-
-    options = options || {};
-
     /**
      * Service map.
      *
@@ -72,6 +69,12 @@ DependencyManager = function(options) {
      * @type {Object}
      */
     var _parameters = {};
+
+    /**
+     * Options for DM.
+     * @type {Object}
+     */
+    this.options = extend({}, this.constructor.DEFAULTS, options || {});
 
     /**
      * Sets up the service map.
@@ -421,11 +424,16 @@ DependencyManager.prototype = (function() {
 
 
             return function(config) {
-                var self = this;
+                var self = this,
+                    options;
+
+                options = {
+                    base: this.options.base
+                };
 
                 // do not combine path loading and parsing arguments, cause it can produce side effects
                 // on amd builds - when dependencies compiled in 'path' file, but loaded earlier from separate files
-                return this.loader.require(config.path)
+                return this.loader.require(config.path, options)
                     .then(function(constructor) {
                         return self.async.all([
                                 self.parse(config.arguments  || []),
@@ -465,18 +473,24 @@ DependencyManager.prototype = (function() {
         // %tpl%!/var/template.html
         // %tpl%!%path%
         getResource: function(path, handler) {
-            var self = this;
+            var options;
 
             if (!isString(path)) {
                 return this.async.reject(new Error("Path must be a string"));
             }
 
+            options = {
+                base: this.options.base
+            };
+
             if (isFunction(handler)) {
-                return self.loader.read(path).then(handler);
+                return this.loader.read(path, options).then(handler);
             }
 
+            // path handler to loader for any cases
+            options.handler = handler;
 
-            return this.loader.read(path, handler);
+            return this.loader.read(path, options);
         },
 
         /**
@@ -536,6 +550,11 @@ DependencyManager.prototype = (function() {
         }
     };
 })();
+
+// Default options
+DependencyManager.DEFAULTS = {
+    base: null
+};
 
 DependencyManager.ESCAPE_FLAG  = '__escape__';
 DependencyManager.ESCAPE_VALUE = '__value__';

@@ -3,14 +3,16 @@ var Adapter = require("../adapter"),
 
 Async = Adapter.extend({
     /**
+     * Creates new Promise with given resolver.
      *
-     * @param {Function} actor
+     * @param {Function} resolver
      */
     promise: function(resolver) {
         throw new Error("Method 'promise' must be implemented");
     },
 
     /**
+     * Creates new Promise, that waiting for all given promises/values is resolved.
      *
      * @param {Array} list
      */
@@ -19,6 +21,7 @@ Async = Adapter.extend({
     },
 
     /**
+     * Creates new resolved with given value Promise.
      *
      * @param {*} value
      */
@@ -27,6 +30,7 @@ Async = Adapter.extend({
     },
 
     /**
+     * Creates new rejected with given value Promise.
      *
      * @param {*} value
      */

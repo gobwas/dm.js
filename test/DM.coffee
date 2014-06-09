@@ -35,9 +35,25 @@ suite "dm.js", ->
     # ...
 
 
+  # constructor
+  # -----------
 
-    # setConfig
-    # ---------
+  suite "#constructor", ->
+    dm = null;
+
+    setup ->
+      dm = new DM;
+
+    # ==========
+
+    test "Should set default options for DM instance", ->
+      assert.isObject(dm.options);
+      _.forEach(dm.options, (val, key) ->
+        assert.strictEqual(val, DM.DEFAULTS[key]);
+      )
+
+  # setConfig
+  # ---------
 
   suite "#setConfig", ->
 
@@ -804,6 +820,55 @@ suite "dm.js", ->
 
     # ================
 
+    test "Should call #read without handler in options if it function", (done) ->
+      path     = chance.word();
+      resource = chance.word();
+
+      handler = ->;
+
+      readStub = sinon.stub(loader, "read", (path) -> RSVP.resolve(resource));
+
+      dm.getResource(path, handler)
+      .then(->
+          try
+            options = readStub.getCall(0).args[1];
+            assert.isObject    options;
+            assert.isUndefined options.handler, "handler is passed in options";
+          catch err
+            error = err;
+
+          done(error);
+
+        )
+      .catch(done);
+
+    # ================
+
+    test "Should call #read with handler in options if it is not a function", (done) ->
+      path     = chance.word();
+      resource = chance.word();
+
+      handler = chance.word();
+
+      readStub = sinon.stub(loader, "read", (path) -> RSVP.resolve(resource));
+
+      dm.getResource(path, handler)
+      .then(->
+          try
+            options = readStub.getCall(0).args[1];
+            assert.isObject    options;
+            assert.isDefined   options.handler,          "handler is not passed in options";
+            assert.strictEqual handler, options.handler, "handler is not the same as expected";
+          catch err
+            error = err;
+
+          done(error);
+
+        )
+      .catch(done);
+
+    # ================
+
     test "Should pass #read result directly in #handler", (done) ->
       path     = chance.word();
       resource = chance.word();
@@ -848,7 +913,7 @@ suite "dm.js", ->
 
     # ================
 
-    test "Should call #read for path if parsed handler is function", (done) ->
+    test "Should call #read for path", (done) ->
       path = chance.word();
       handler = ->;
 
@@ -857,27 +922,8 @@ suite "dm.js", ->
       dm.getResource(path, handler)
       .then((result)->
           try
-            assert.isTrue readStub.calledOnce,              "#read is not called once";
-            assert.isTrue readStub.calledWithExactly(path), "#read is not called with path";
-          catch err
-            error = err;
-
-          done(error);
-        )
-
-    # ================
-
-    test "Should call #read with path and handler, if parsed handler is string", (done) ->
-      path = chance.word();
-      handler = chance.word();
-
-      readStub = sinon.stub(loader, "read", (path) -> RSVP.resolve());
-
-      dm.getResource(path, handler)
-      .then((result)->
-          try
-            assert.isTrue readStub.calledOnce,                       "#read is not called once";
-            assert.isTrue readStub.calledWithExactly(path, handler), "#read is not called with path";
+            assert.isTrue readStub.calledOnce,       "#read is not called once";
+            assert.isTrue readStub.calledWith(path), "#read is not called with path";
           catch err
             error = err;
 

@@ -1,6 +1,6 @@
 {
     "name": "dm",
-    "version": "0.1.3",
+    "version": "0.2.0-rc2",
     "description": "Dependency Injection Manager",
     "main": "index.js",
     "directories": {
@@ -9,7 +9,7 @@
     "scripts": {
         "test": "grunt test"
     },
-    "repository": "",
+    "repository": "https://github.com/gobwas/dm.js",
     "keywords": [
         "dependency",
         "injection",
