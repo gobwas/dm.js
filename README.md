@@ -220,7 +220,7 @@ Simply put this string ```"@_@"```.
 
 ### Parameters
 
-## Interface
+## API
 
 ### DM
 
@@ -229,3 +229,8 @@ Simply put this string ```"@_@"```.
 #### Async Adapter
 
 #### Loader Adapter
+
+## Contributing
+
+All developing version are available to install from npm as `dm@x.y.z-rc`.
+To publish new release candidate (rc abbr) just do `npm publish --tag x.y.z-rc` and bump version in package.json `x.y.z-rc0`.
