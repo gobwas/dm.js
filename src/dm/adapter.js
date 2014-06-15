@@ -1,4 +1,4 @@
-var inherits = require("./inherits"),
+var inherits = require("inherits-js"),
     Adapter;
 
 Adapter = function(adaptee) {

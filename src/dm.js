@@ -24,7 +24,7 @@
 var utils    = require("./dm/utils"),
     Async    = require("./dm/adapter/async"),
     Loader   = require("./dm/adapter/loader"),
-    inherits = require("./dm/inherits"),
+    inherits = require("inherits-js"),
 
     objectType    = utils.objectType,
     isString      = utils.isString,
@@ -217,6 +217,8 @@ DependencyManager.prototype = (function() {
             }
 
             // Live replacement property
+            // We do not resolve promise with this
+            // Cause it can contain another useful matching
             if (string.match(LIVE_PROPERTY_REGEX)) {
                 string = string.replace(LIVE_PROPERTY_REGEX, function(match, name) {
                     return self.getParameter(name) || match;
@@ -495,9 +497,48 @@ DependencyManager.prototype = (function() {
 
         /**
          *
+         * @param {string} key
+         * @param {Object} [options]
+         */
+        has: function(key, options) {
+            return !!this.getConfig(key);
+        },
+
+        /**
+         *
+         * @param {string} key
+         * @param {Object} [options]
+         */
+        initialized: function(key, options) {
+            return !!this.services[key];
+        },
+
+        /**
+         *
+         * @param {string} key
+         * @param {*} service
+         * @param {Object} [options]
+         */
+        set: function(key, service, options) {
+            var config;
+
+            if (!(config = this.getConfig(key))) {
+                throw new Error(sprintf("Service with key '%s' is not present in configuration", key));
+            }
+
+            if (!config.synthetic) {
+                throw new Error(sprintf("Could not inject service with key '%s', cause it is not synthetic", key));
+            }
+
+            this.services[key] = this.async.resolve(service);
+        },
+
+        /**
+         *
          */
         get: function(key, options) {
-            var config, promise, share;
+            var config, promise,
+                isShared, isSynthetic, isSingleProperty;
 
             if (!isString(key)) {
                 return this.async.reject(new Error(sprintf("Key is expected to be string, %s given", typeof key)));
@@ -507,20 +548,26 @@ DependencyManager.prototype = (function() {
                 return this.async.reject(new Error(sprintf("Service with key '%s' is not present in configuration", key)));
             }
 
-            if (!isString(config.path)) {
+            options = options || {};
+
+            isShared    = isBoolean(config.share)     ? config.share     : true;
+            isSynthetic = isBoolean(config.synthetic) ? config.synthetic : false;
+
+            // Sign of custom property (synthetic, aliased or smth)
+            isSingleProperty = isSynthetic;
+
+            if (!isSingleProperty && !isString(config.path)) {
                 return this.async.reject(new Error(sprintf("Path is expected in service configuration with key '%s'", key)));
             }
 
-            options = options || {};
+            if (isSynthetic && !this.initialized(key)) {
+                return this.async.reject(new Error(sprintf("Service with key '%s' is synthetic, and not injected yet")));
+            }
 
-            share = isBoolean(config.share) ? config.share : true;
-
-            if (share) {
-                if (!(promise = this.services[key])) {
-                    promise = this.services[key] = this.build(config);
-                }
-            } else {
+            if (!isShared) {
                 promise = this.build(config);
+            } else if (!(promise = this.services[key])) {
+                promise = this.services[key] = this.build(config);
             }
 
 

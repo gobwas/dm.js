@@ -1080,7 +1080,7 @@ suite "dm.js", ->
       config.factory = factory = {factory: sinon.spy()};
 
       dm.build(config)
-      .then(() ->
+      .then(->
           try
             assert.isTrue factory.factory.calledOnce, "Custom factory is not called once"
             assert.isTrue factory.factory.calledWithExactly({constructor: constructor, calls: calls,properties:  properties, arguments: args}), "Custom factory is not called with definition"
@@ -1093,6 +1093,162 @@ suite "dm.js", ->
       .catch(done);
 
 
+  # set
+  # ---
+
+  suite "#set", ->
+
+    dm = null;
+    async  = null;
+    loader = null;
+    config = null;
+
+    setup ->
+      dm = new DM;
+      async  = new Async;
+      loader = new Loader;
+
+      config = {
+        "synth":
+          synthetic: true
+        "not":
+          path: "/some/path"
+      }
+
+      sinon.stub(async,  "all",     (promises) -> RSVP.all(promises));
+      sinon.stub(async,  "resolve", (value)    -> RSVP.resolve(value));
+      sinon.stub(async,  "reject",  (err)      -> RSVP.reject(err));
+      sinon.stub(loader, "require", ()         -> RSVP.resolve(->));
+
+      dm.setAsync(async);
+      dm.setLoader(loader.setAsync(async));
+
+
+    # ================
+
+    test "Should not inject service if it is not synthetic", () ->
+      dm.setConfig(config);
+
+      try
+        dm.set("not", new Object);
+      catch err
+        error = err;
+
+      assert.instanceOf error, Error
+
+    # ================
+
+    test "Should not inject service if it is not present in config", () ->
+      dm.setConfig(config);
+
+      try
+        dm.set(chance.word(), new Object);
+      catch err
+        error = err;
+
+      assert.instanceOf error, Error
+
+    # ================
+
+    test "Should inject service if it is synthetic", () ->
+      dm.setConfig(config);
+
+      service = new Object;
+
+      try
+        dm.set("synth", service);
+      catch err
+        error = err;
+
+      assert.notInstanceOf error, Error;
+      assert.isTrue dm.initialized("synth");
+
+  # initialized
+  # -----------
+
+  suite "#initialized", ->
+
+    dm = null;
+    async  = null;
+    loader = null;
+    config = null;
+
+    setup ->
+      dm = new DM;
+      async  = new Async;
+      loader = new Loader;
+
+      config = {
+        "service":
+          path: "/some/path"
+      }
+
+      sinon.stub(async,  "all",     (promises) -> RSVP.all(promises));
+      sinon.stub(async,  "resolve", (value)    -> RSVP.resolve(value));
+      sinon.stub(async,  "reject",  (err)      -> RSVP.reject(err));
+      sinon.stub(loader, "require", ()         -> RSVP.resolve(->));
+
+      dm.setAsync(async);
+      dm.setLoader(loader.setAsync(async));
+
+
+    # ================
+
+    test "Should return false for not initialized service", () ->
+      dm.setConfig(config);
+      assert.isFalse dm.initialized("service");
+
+    # ================
+
+    test "Should return true for initialized service", (done) ->
+      dm.setConfig(config);
+
+      dm.get("service")
+      .then(->
+        dm.initialized("service");
+      )
+      .then((isInitialized) ->
+          try
+            assert.isTrue isInitialized;
+          catch err
+            error = err;
+
+          done(error);
+      )
+      .catch(done);
+
+  # has
+  # ---
+
+  suite "#has", ->
+
+    dm = null;
+    async  = null;
+    loader = null;
+    config = null;
+
+    setup ->
+      dm = new DM;
+      async  = new Async;
+      loader = new Loader;
+
+      config = {
+        "service":
+          path: "/some/path"
+      }
+
+
+    # ================
+
+    test "Should return false for not configured service", () ->
+      dm.setConfig(config);
+      assert.isFalse dm.has(chance.word())
+
+    # ================
+
+    test "Should return true for configured service", () ->
+      dm.setConfig(config);
+      assert.isTrue dm.has("service");
 
   # get
   # ------------
@@ -1131,7 +1287,12 @@ suite "dm.js", ->
         c: propC = {a:1}
       }
 
-      config = {};
+      config = {
+        synth: {
+          synthetic: true
+        }
+      };
+
       config[key] = {
         path:        path,
         constructor: constructor,
@@ -1139,6 +1300,7 @@ suite "dm.js", ->
         properties:  properties,
         arguments:   args
       }
+
 
       dm = new DM;
       async  = new Async;
@@ -1196,6 +1358,26 @@ suite "dm.js", ->
           )
         .catch(done);
       );
+
+    # ================
+
+    test "Should return injected synthetic service", (done) ->
+      dm.setConfig(config);
+
+      service = new Object;
+
+      dm.set("synth", service);
+
+      dm.get("synth")
+      .then((value) ->
+          try
+            assert.strictEqual value, service;
+          catch err
+            error = err;
+
+          done(error);
+        )
+      .catch(done);
 
     # ================
 

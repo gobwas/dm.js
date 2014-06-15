@@ -7,6 +7,8 @@ ______________________
 + Project structure;
 + Ability to use parameter links in part of string (live properties);
 + Ability to set base path for loading modules and resources [issue#1](https://github.com/gobwas/dm.js/issues/1);
++ Synthetic services [issue#8](https://github.com/gobwas/dm.js/issues/8);
++ Added dependency for `inherits-js` instead of using self developed;
 
 ### 0.1.3 (02-04-2014)
 ______________________
