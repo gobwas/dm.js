@@ -1,4 +1,4 @@
-# dm.[js](https://developer.mozilla.org/en/docs/JavaScript)
+# dm.[js](https://developer.mozilla.org/en/docs/JavaScript) [![Build Status](https://travis-ci.org/gobwas/dm.js.svg?branch=master)](https://travis-ci.org/gobwas/dm.js)
 
 > Dependency Injection Manager for javascript.
 
