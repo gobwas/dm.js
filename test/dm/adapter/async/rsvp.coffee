@@ -3,7 +3,7 @@ chance      = require('chance');
 sinon       = require('sinon');
 chai        = require('chai');
 rsvp        = require('rsvp');
-RsvpAdapter = require('../../../dist/dm/adapter/async/rsvp');
+RsvpAdapter = require('../../../../src/dm/adapter/async/rsvp');
 
 chance = new chance;
 assert = chai.assert;

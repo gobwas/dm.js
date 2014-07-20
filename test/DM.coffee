@@ -2,9 +2,9 @@ _      = require('lodash');
 chance = require('chance');
 sinon  = require('sinon');
 chai   = require('chai');
-DM     = require('./dist/dm.js');
-Loader = require('./dist/dm/adapter/loader');
-Async  = require('./dist/dm/adapter/async');
+DM     = require('../src/dm.js');
+Loader = require('../src/dm/adapter/loader');
+Async  = require('../src/dm/adapter/async');
 RSVP   = require('rsvp');
 
 chance = new chance;

@@ -9,6 +9,14 @@
     "scripts": {
         "test": "./node_modules/grunt-cli/bin/grunt test"
     },
+    "testling": {
+        "preprocess": "./node_modules/grunt-cli/bin/grunt testling",
+        "harness": "mocha-tdd",
+        "files": "test/**/*.bundle.js",
+        "browsers": [
+            "chrome/latest"
+        ]
+    },
     "repository": "https://github.com/gobwas/dm.js",
     "keywords": [
         "dependency",
@@ -35,7 +43,7 @@
         "coffee-script": "*",
         "rsvp": "*",
         "grunt-mocha-test": "*",
-        "grunt-karma": "*",
+        "grunt-browserify": "*",
         "grunt-contrib-coffee": "*",
         "grunt-contrib-jshint": "*",
         "grunt-contrib-uglify": "*",

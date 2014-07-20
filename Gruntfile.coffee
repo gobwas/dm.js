@@ -8,16 +8,23 @@ module.exports = (grunt) ->
       tmp:
         src: ["tmp"]
       test:
-        src: ["test/dist"]
+        src: ["test/**/*.js"]
 
-    copy:
+    coffee:
       test:
-        files: [
-          expand: true
-          cwd: "src/"
-          src: ["**"]
-          dest: "test/dist/"
-        ]
+        expand: true,
+        cwd: './test',
+        src: ['**/*.coffee'],
+        dest: './test',
+        ext: '.js'
+
+    browserify:
+      test:
+        expand: true,
+        cwd: './test',
+        src: ['**/*.js'],
+        dest: './test',
+        ext: '.bundle.js'
 
     mochaTest:
       test:
@@ -35,7 +42,8 @@ module.exports = (grunt) ->
       source:
         src: ["src/**/*.js"]
 
-#  grunt.loadNpmTasks("grunt-browserify");
+  grunt.loadNpmTasks("grunt-browserify");
+  grunt.loadNpmTasks("grunt-contrib-coffee");
   grunt.loadNpmTasks("grunt-contrib-clean");
   grunt.loadNpmTasks("grunt-mocha-test");
   grunt.loadNpmTasks("grunt-contrib-copy");
@@ -47,6 +55,14 @@ module.exports = (grunt) ->
       "jshint:source"
       "jscs:source"
       "clean:test"
-      "copy:test"
       "mochaTest:test"
+    ]
+
+  grunt.registerTask "testling",
+    [
+      "jshint:source"
+      "jscs:source"
+      "clean:test"
+      "coffee:test"
+      "browserify:test"
     ]
