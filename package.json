@@ -1,49 +1,50 @@
 {
-  "name": "dm",
-  "version": "0.2.0-rc3",
-  "description": "Dependency Injection Manager",
-  "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
-  "scripts": {
-    "test": "grunt test"
-  },
-  "repository": "https://github.com/gobwas/dm.js",
-  "keywords": [
-    "dependency",
-    "injection",
-    "manager",
-    "javascript",
-    "amd",
-    "cjs",
-    "commonjs",
-    "dm.js"
-  ],
-  "author": "Sergey Kamardin",
-  "license": "MIT",
-  "devDependencies": {
-    "lodash": "*",
-    "mocha": "*",
-    "chai": "*",
-    "chance": "*",
-    "sinon": "*",
-    "grunt": "*",
-    "karma": "*",
-    "karma-mocha": "*",
-    "coffee-script": "*",
-    "rsvp": "*",
-    "grunt-mocha-test": "*",
-    "grunt-karma": "*",
-    "grunt-contrib-coffee": "*",
-    "grunt-contrib-jshint": "*",
-    "grunt-contrib-uglify": "*",
-    "grunt-contrib-clean": "*",
-    "grunt-contrib-copy": "*",
-    "grunt-contrib-concat": "*",
-    "grunt-jscs-checker": "*"
-  },
-  "dependencies": {
-    "inherits-js": "^0.1.0"
-  }
+    "name": "dm",
+    "version": "0.2.0-rc3",
+    "description": "Dependency Injection Manager",
+    "main": "index.js",
+    "directories": {
+        "test": "test"
+    },
+    "scripts": {
+        "test": "./node_modules/grunt-cli/bin/grunt test"
+    },
+    "repository": "https://github.com/gobwas/dm.js",
+    "keywords": [
+        "dependency",
+        "injection",
+        "manager",
+        "javascript",
+        "amd",
+        "cjs",
+        "commonjs",
+        "dm.js"
+    ],
+    "author": "Sergey Kamardin",
+    "license": "MIT",
+    "devDependencies": {
+        "lodash": "*",
+        "mocha": "*",
+        "chai": "*",
+        "chance": "*",
+        "sinon": "*",
+        "grunt": "*",
+        "grunt-cli": "*",
+        "karma": "*",
+        "karma-mocha": "*",
+        "coffee-script": "*",
+        "rsvp": "*",
+        "grunt-mocha-test": "*",
+        "grunt-karma": "*",
+        "grunt-contrib-coffee": "*",
+        "grunt-contrib-jshint": "*",
+        "grunt-contrib-uglify": "*",
+        "grunt-contrib-clean": "*",
+        "grunt-contrib-copy": "*",
+        "grunt-contrib-concat": "*",
+        "grunt-jscs-checker": "*"
+    },
+    "dependencies": {
+        "inherits-js": "*"
+    }
 }
