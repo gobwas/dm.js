@@ -35,7 +35,7 @@ module.exports = (grunt) ->
       source:
         src: ["src/**/*.js"]
 
-  grunt.loadNpmTasks("grunt-browserify");
+#  grunt.loadNpmTasks("grunt-browserify");
   grunt.loadNpmTasks("grunt-contrib-clean");
   grunt.loadNpmTasks("grunt-mocha-test");
   grunt.loadNpmTasks("grunt-contrib-copy");

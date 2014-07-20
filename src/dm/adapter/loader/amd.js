@@ -14,10 +14,13 @@ Requirejs = Loader.extend({
         });
     },
 
-    read: function(path, handler) {
+    read: function(path, options) {
         var self = this;
+
+        options = options || {};
+
         return this.async.promise(function(resolve, reject) {
-            self.requirejs([[handler || "text", path].join('!')], resolve, reject);
+            self.requirejs([[options.handler || "text", path].join('!')], resolve, reject);
         });
     }
 });

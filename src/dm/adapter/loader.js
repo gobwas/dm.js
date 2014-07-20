@@ -4,8 +4,9 @@ var Adapter = require("../adapter"),
 
 Loader = Adapter.extend({
     /**
+     * Injects async adapter.
      *
-     * @param adapter
+     * @param {Async} adapter
      */
     setAsync: function(adapter) {
         if (!adapter instanceof Async) {
@@ -18,19 +19,22 @@ Loader = Adapter.extend({
     },
 
     /**
+     * Requires a module.
      *
-     * @param {Function} actor
+     * @param {string} path
+     * @param {Object} options
      */
-    require: function(path) {
+    require: function(path, options) {
         throw new Error("Method must be implemented");
     },
 
     /**
+     * Loads resource.
      *
-     * @param path
-     * @param handler
+     * @param {string} path
+     * @param {Object} options
      */
-    read: function(path, handler) {
+    read: function(path, options) {
         throw new Error("Method must be implemented");
     }
 });
