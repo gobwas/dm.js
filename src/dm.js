@@ -24,6 +24,7 @@
 var utils    = require("./dm/utils"),
     Async    = require("./dm/adapter/async"),
     Loader   = require("./dm/adapter/loader"),
+    Factory  = require("./dm/factory"),
     inherits = require("inherits-js"),
 
     objectType    = utils.objectType,
@@ -36,6 +37,7 @@ var utils    = require("./dm/utils"),
     isRegExp      = utils.isRegExp,
     isArray       = utils.isArray,
     isUndefined   = utils.isUndefined,
+    forEach       = utils.forEach,
     forEachOwn    = utils.forEachOwn,
     forEachSimple = utils.forEachSimple,
     map           = utils.map,
@@ -43,9 +45,16 @@ var utils    = require("./dm/utils"),
     clone         = utils.clone,
     extend        = utils.extend,
     sprintf       = utils.sprintf,
+    async         = utils.async,
+
+    DefaultFactory = require("./dm/factory/default"),
+    defaultFactory,
 
     DependencyManager;
 
+
+// may be turn it inside as internal service? "@:::factory.default"
+defaultFactory = new DefaultFactory();
 
 /**
  * DM Constructor.
@@ -216,6 +225,20 @@ DependencyManager.prototype = (function() {
                 return self.async.reject(new Error("String is expected"));
             }
 
+            // todo Refactor parsing in this way:
+            //
+            // [PropertyTemplateParser, PropertyLinkParser, ContainerLinkParser, ServiceLinkParser, ResourceParser]
+            // chain.add(...);
+            // chain.add(...);
+            // chain.parse(string);
+            //
+            // Finally there could be:
+            // - final (returning) link parsers
+            // - continuous (not returning) template parses
+            //
+            // Links are @, #...#, %...%
+            // Templates are @{service[method|property|toString]}, #{resource}, %{parameter}
+
             // Live replacement property
             // We do not resolve promise with this
             // Cause it can contain another useful matching
@@ -361,114 +384,55 @@ DependencyManager.prototype = (function() {
         /**
          * Собирает сервис.
          *
-         * @param key {String}
+         * @param config {Object}
          *
-         * @returns {$.Deferred.promise}
+         * @returns {Promise}
          */
-        build: (function() {
-            var defaultFactory = (function() {
-                /**
-                 * Инстанцирует объект.
-                 * Передает массив переменной длины параметров в конструктор.
-                 *
-                 * @param constructor
-                 * @param args
-                 *
-                 * @returns {object}
-                 * @private
-                 */
-                // default factory
-                var newInstanceArgs = function(constructor, args) {
-                    var service;
+        build: function(config) {
+            var self = this,
+                options;
 
-                    function Service() {}
-                    Service.prototype = constructor.prototype;
-
-                    service = new Service();
-
-                    try {
-                        constructor.apply(service, args);
-                    } catch (error) {
-                        console.error("Cannot instantiate service", error);
-                        throw error;
-                    }
-
-                    return service;
-                };
-
-                var makeCall = function(service, key, args) {
-                    if (isFunction(service[key])) {
-                        service[key].apply(service, args);
-                    }
-                };
-
-
-                return function(definition) {
-                    var service;
-
-                    // Arguments
-                    service = newInstanceArgs(definition.constructor, definition.arguments);
-
-                    // Calls
-                    forEachSimple(definition.calls, function(call) {
-                        makeCall(service, call[0], call[1]);
-                    });
-
-                    // Properties
-                    forEachOwn(definition.properties, function(value, key) {
-                        service[key] = value;
-                    });
-
-
-                    return service;
-                };
-            })();
-
-
-            return function(config) {
-                var self = this,
-                    options;
-
-                options = {
-                    base: this.options.base
-                };
-
-                // do not combine path loading and parsing arguments, cause it can produce side effects
-                // on amd builds - when dependencies compiled in 'path' file, but loaded earlier from separate files
-                return this.loader.require(config.path, options)
-                    .then(function(constructor) {
-                        return self.async.all([
-                                self.parse(config.arguments  || []),
-                                self.parse(config.calls      || []),
-                                self.parse(config.properties || {}),
-                                self.parse(config.factory)
-                            ])
-                            .then(function(inputs) {
-                                var definition, factory;
-
-                                definition = {
-                                    constructor: constructor,
-                                    arguments:   inputs[0],
-                                    calls:       inputs[1],
-                                    properties:  inputs[2]
-                                };
-
-                                factory = inputs[3];
-
-                                if (isObject(factory)) {
-                                    factory = bind(factory.factory, factory);
-                                }
-
-                                if (!isFunction(factory)) {
-                                    factory = defaultFactory;
-                                }
-
-
-                                return factory(definition);
-                            });
-                    });
+            options = {
+                base: this.options.base
             };
-        })(),
+
+            // do not combine path loading and parsing arguments, cause it can produce side effects
+            // on amd builds - when dependencies compiled in 'path' file, but loaded earlier from separate files
+            return this.loader.require(config.path, options)
+                .then(function(constructor) {
+                    return self.async.all([
+                            self.parse(config.arguments  || []),
+                            self.parse(config.calls      || []),
+                            self.parse(config.properties || {}),
+                            self.parse(config.factory)
+                        ])
+                        .then(function(inputs) {
+                            var definition, factory;
+
+                            definition = {
+                                constructor: constructor,
+                                arguments:   inputs[0],
+                                calls:       inputs[1],
+                                properties:  inputs[2]
+                            };
+
+                            factory = inputs[3] || defaultFactory;
+
+                            if (isObject(factory)) {
+                                if (!isFunction(factory.factory)) {
+                                    throw new TypeError("Given factory object does not have #factory method");
+                                }
+
+                                factory = bind(factory.factory, factory);
+                            } else if (!isFunction(factory)) {
+                                throw new TypeError("Given factory must be a function");
+                            }
+
+                            // could be a value or a Promise
+                            return factory(definition);
+                        });
+                });
+        },
 
 
         // @handler:handle!/var/resource
@@ -538,7 +502,8 @@ DependencyManager.prototype = (function() {
          */
         get: function(key, options) {
             var config, promise,
-                isShared, isSynthetic, isSingleProperty;
+                alias,
+                isShared, isSynthetic, isAlias, isSingleProperty;
 
             if (!isString(key)) {
                 return this.async.reject(new Error(sprintf("Key is expected to be string, %s given", typeof key)));
@@ -552,16 +517,25 @@ DependencyManager.prototype = (function() {
 
             isShared    = isBoolean(config.share)     ? config.share     : true;
             isSynthetic = isBoolean(config.synthetic) ? config.synthetic : false;
+            isAlias     = isString(config.alias)      ? true             : false;
 
             // Sign of custom property (synthetic, aliased or smth)
-            isSingleProperty = isSynthetic;
+            isSingleProperty = isSynthetic || isAlias;
 
             if (!isSingleProperty && !isString(config.path)) {
                 return this.async.reject(new Error(sprintf("Path is expected in service configuration with key '%s'", key)));
             }
 
             if (isSynthetic && !this.initialized(key)) {
-                return this.async.reject(new Error(sprintf("Service with key '%s' is synthetic, and not injected yet")));
+                return this.async.reject(new Error(sprintf("Service with key '%s' is synthetic, and not injected yet", key)));
+            }
+
+            if (isAlias) {
+                if (!this.has(alias = config.alias)) {
+                    return this.async.reject(new Error(sprintf("Service with key '%s' could not be alias for not existing '%s' service", key, alias)));
+                }
+
+                return this.get(alias);
             }
 
             if (!isShared) {

@@ -46,6 +46,137 @@ function isUndefined(obj) {
     return toString.call(obj) == '[object Undefined]' || obj === void 0;
 }
 
+function noop() {
+    //
+}
+
+
+
+var async = {
+    each: function(obj, iterator, callback) {
+        var remain, next;
+
+        callback = callback || noop;
+
+        remain = keys(obj).length;
+
+        if (!remain) {
+            return callback();
+        }
+
+        next = function(err) {
+            if (err) {
+                callback(err);
+                callback = noop;
+            } else {
+                remain--;
+
+                if (!remain) {
+                    callback();
+                }
+            }
+        };
+
+        forEach(obj, function(value, index) {
+            iterator(value, index, next);
+        });
+
+        return null;
+    },
+
+    eachSeries: function(obj, iterator, callback) {
+        var index, iteration, next, indexes, remain;
+
+        callback = callback || noop;
+
+        indexes = keys(obj);
+        remain = indexes.length;
+        index = 0;
+
+        next = function(err) {
+            if (err) {
+                callback(err);
+                callback = noop;
+            } else {
+                remain--;
+                index++;
+
+                if (!remain) {
+                    callback();
+                } else {
+                    iteration();
+                }
+            }
+        };
+
+        iteration = function() {
+            var key;
+
+            key = indexes[index];
+
+            iterator(obj[key], key, next);
+        };
+
+        iteration();
+    },
+
+    map: function(arr, iterator, callback) {
+        var result;
+
+        result = [];
+
+        this.each(arr, function(value, index, next) {
+            iterator(value, index, function(err, value) {
+                result[index] = value;
+                next(err);
+            });
+        }, function(err) {
+            callback(err, result);
+        });
+    },
+
+    reduce: function(obj, memo, iterator, callback) {
+        this.eachSeries(obj, function(value, index, next) {
+            iterator(memo, value, index, function(err, value) {
+                memo = value;
+                next(err);
+            });
+        }, function(err) {
+            callback(err, memo);
+        });
+    }
+};
+
+function keys(obj) {
+    var result;
+
+    result = [];
+
+    if (!isObject(obj) && !isArray(obj)) {
+        throw new TypeError("Object or Array is expected");
+    }
+
+    if (Object.keys) {
+        return Object.keys(obj);
+    }
+
+    forEach(obj, function(value, key) {
+        result.push(key);
+    });
+
+    return result;
+}
+
+function forEach(obj, iterator, context) {
+    if (isArray(obj)) {
+        return forEachSimple(obj, iterator, context);
+    } else if (isObject(obj)) {
+       return forEachOwn(obj, iterator, context);
+    }
+
+    throw new TypeError("Array or Object is expected");
+}
+
 // Iterates over object
 // Breaks, if iterator return the value
 function forEachOwn(obj, iterator, context) {
@@ -199,11 +330,14 @@ module.exports = {
     isRegExp:      isRegExp,
     isArray:       isArray,
     isUndefined:   isUndefined,
+    forEach:       forEach,
     forEachOwn:    forEachOwn,
     forEachSimple: forEachSimple,
     map:           map,
     sprintf:       sprintf,
     clone:         clone,
     extend:        extend,
-    bind:          bind
+    bind:          bind,
+    async:         async,
+    keys:          keys
 };

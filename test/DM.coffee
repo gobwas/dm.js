@@ -1381,6 +1381,36 @@ suite "dm.js", ->
 
     # ================
 
+    test "Should return aliased service", (done) ->
+      dm.setConfig({
+        aliased: {
+          alias: "some_alias"
+        }
+      });
+
+      realGet = dm.get;
+      getStub = sinon.stub(dm, "get", (key) ->
+        if key == "aliased" then return realGet.call(dm, key);
+        return RSVP.resolve()
+      );
+
+      sinon.stub(dm, "has").withArgs("some_alias").returns(true);
+
+      dm.get("aliased")
+      .then(() ->
+          try
+            assert.isTrue getStub.calledTwice, "#get called twice";
+            assert.isTrue getStub.firstCall.calledWith("aliased");
+            assert.isTrue getStub.secondCall.calledWith("some_alias");
+          catch err
+            error = err;
+
+          done(error);
+        )
+      .catch(done);
+
+    # ================
+
     test "Should return property of service", (done) ->
       dm.setConfig(config);
 
