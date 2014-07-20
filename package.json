@@ -1,6 +1,6 @@
 {
     "name": "dm",
-    "version": "0.2.0-rc3",
+    "version": "0.2.0",
     "description": "Dependency Injection Manager",
     "main": "index.js",
     "directories": {
