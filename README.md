@@ -1,29 +1,54 @@
 # dm.[js](https://developer.mozilla.org/en/docs/JavaScript) [![Build Status](https://travis-ci.org/gobwas/dm.js.svg?branch=master)](https://travis-ci.org/gobwas/dm.js)
 
-> Dependency Injection Manager for javascript.
+> Dependency [Injection](http://en.wikipedia.org/wiki/Dependency_injection) Manager for javascript.
 
 ## Introduction
 
 **dm.js** is a small javascript library for dependency injection. It could work both in node or browser.
 
-In few words, this is a library, that makes your job of creating, configuring and injecting other objects inside of your application.
+It takes care of creating, configuring and injecting objects of your application.
 
-If you interested in theory, you can check things about [the inversion of control](http://en.wikipedia.org/wiki/Inversion_of_control)
-and software design patterns like [dependency injection](http://en.wikipedia.org/wiki/Dependency_injection), [service locator](http://en.wikipedia.org/wiki/Service_locator_pattern), etc.
+There is a good chance to keep your application design loose coupled, well structured and flexible with dependency injection pattern.
 
-There is a many explanations in the Internet about why it is a good design principle, and which advantages does it gives.
+So, dm.js is just one, that implements it.
 
-There is just few of them:
-+ loose coupling;
-+ easy configuring;
-+ easy switching implementations;
-+ sweet unit testing;
-+ one place where all dependencies are.
+If you interested in theory you can check things about:
++ [the inversion of control](http://en.wikipedia.org/wiki/Inversion_of_control),
++ [dependency injection](http://en.wikipedia.org/wiki/Dependency_injection),
++ [service locator](http://en.wikipedia.org/wiki/Service_locator_pattern).
 
+## What is Service?
+
+Service is just a javascript object. It realize some piece of logic of your application.
+
+It is good idea, to think like your application is many to many services negotiations.
+Since each service is responsible just for one job, you can use its functionality in any place of your application.
+Each service can be simply tested and configured, when it sliced out from other logic of your application.
+
+What do you need to create a service? Nothing special - just create some javascript constructor function, as usual.
+Put it in separate file, as good guidelines tell you to do, and register it in **dm**.
+
+## What is Dependency?
+
+Dependency is just another javascript object, or, simply, service, that some service is depends on to make his job. For example,
+you have cache service, that stores some data in some place, but it needs to have the way to generate hash for each item, so it depends on
+hash generator service. This example shows, that you can easily:
++ switch hash generation algorithms without changing cache service;
++ mock hash generator for easy unit testing;
++ configure each of services independently;
++ store all the configuration in one place.
+
+## What is Injection and who is Manager?
+
+Dependency Injection Manager (also known as Service Locator) is an object, that knows about all of dependencies.
+It also knows all about services - what service implementation to use, which arguments pass to its constructor,
+which calls to do after instantiating, and finally, which properties with which values set up for created instance.
+
+Now, when all things are clear, lets code!
 
 ## The Hello World
 
-In few lines of code, dm.js is:
+Lets greet the Great Big World in best principles of software architect:
 
 ```javascript
 
@@ -32,7 +57,7 @@ var config;
 config = {
     // the 'world' service
     "world": {
-        path: "/script/world/big-world.js",
+        path: "/script/world/great-big-white-world.js",
         arguments: [{
             options: {
                 worldId: "world-unique-identifier"
@@ -40,12 +65,15 @@ config = {
         }]
     },
 
-    // the 'hello' service
-    "hello": {
-        path: "/script/greeting/hello.js",
+    // the 'greeter' service
+    "greeter": {
+        path: "/script/greeter/hello.js",
         calls: [
             ["injectTheWorld", ["@world"]]
-        ]
+        ],
+        properties: {
+            greeting: "Hello!"
+        }
     }
 }
 
@@ -53,15 +81,13 @@ config = {
 
 What happens here?
 
-We just created object ```config```. It contains our application's objects (we could name they as services) configuration.
-Configuration says what object implementation to use, which arguments pass to constructor, which calls to do after instantiating, and finally,
-which properties with which values set up for created instance.
+We just created object ```config```. It contains our application's services configuration.
 
-There are two objects in our configuration - "world" and "hello". The "world" object contains some logic for interacting with world.
+There are two objects in our configuration - "world" and "greeter". The "world" object contains some logic for interacting with world.
 
-The "hello" object contains some logic for greeting some injected, not known as well, but known as an interface **world**.
+The "greeter" object contains some logic for greeting some injected, not known as well, but known as an interface **world**.
 
-> Also, later, some client of "hello" object will not know which implementation he use, nor the world, that he greeting.
+> Also, later, some client of "greeter" service will not know which implementation he use, nor the world, that he greeting.
 > He just know the interface of world greeter. And call the #greet method from it.
 
 So where the magic? Simply, just create the ```DM``` object, configure it and greet the world!
