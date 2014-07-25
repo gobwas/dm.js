@@ -26,7 +26,7 @@ Since each service is responsible just for one job, you can use its functionalit
 Each service can be simply tested and configured, when it sliced out from other logic of your application.
 
 What do you need to create a service? Nothing special - just create some javascript constructor function, as usual.
-Put it in separate file, as good guidelines tell you to do, and register it in **dm**.
+Put it in separate file, as good guidelines tell you to do, and register it in **dm**. Then dm will load it by your [preferred type of resolving](#loader).
 
 ## What is Dependency?
 
@@ -100,8 +100,8 @@ var dm,
 dm = new DM();
 dm.setConfig(config);
 
-hello = dm.get("hello");
-hello.greet("Hello everybody, I am dm.js!");
+greeter = dm.get("greeter");
+greeter.greet("Everybody, I am dm.js!");
 
 ```
 
@@ -135,7 +135,7 @@ DM caches created instance and resolving given Promise with it.
 
 For detailed explanation of all configuration properties see doc section below.
 
-### Async Adapter
+### Async
 
 There are few built in adapters for most popular async libraries:
 
@@ -146,7 +146,7 @@ There are few built in adapters for most popular async libraries:
 
 Of course, you can write adapter for your favorite library and successfully use it.
 
-### Loader Adapter
+### Loader
 
 There are also two built in adapters for most popular resource loading libraries:
 
