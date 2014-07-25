@@ -2,12 +2,26 @@
 
 > Dependency Injection Manager for javascript.
 
+## Introduction
+
+**dm.js** is a small javascript library for dependency injection. It could work both in node or browser.
+
+In few words, this is a library, that makes your job of creating, configuring and injecting other objects inside of your application.
+
+If you interested in theory, you can check things about [the inversion of control](http://en.wikipedia.org/wiki/Inversion_of_control)
+and software design patterns like [dependency injection](http://en.wikipedia.org/wiki/Dependency_injection), [service locator](http://en.wikipedia.org/wiki/Service_locator_pattern), etc.
+
+There is a many explanations in the Internet about why it is a good design principle, and which advantages does it gives.
+
+There is just few of them:
++ loose coupling;
++ easy configuring;
++ easy switching implementations;
++ sweet unit testing;
++ one place where all dependencies are.
+
+
 ## The Hello World
-
-**dm.js** is a small javascript library for dependency injection in your javascript applications.
-
-If you interested in theory, you can check things about [the inversion of control](https://wikipedia.org/en/inversion_of_control)
-and design patterns of programming like [dependency injection](), [service locator] and etc.
 
 In few lines of code, dm.js is:
 
@@ -21,7 +35,6 @@ config = {
         path: "/script/world/big-world.js",
         arguments: [{
             options: {
-                planet: "Earth",
                 worldId: "world-unique-identifier"
             }
         }]
