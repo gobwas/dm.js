@@ -145,6 +145,10 @@ DependencyManager = function(options) {
         return !isUndefined(_parameters[key]) ? _parameters[key] : null;
     };
 
+    /**
+     * Services map
+     * @type {{}}
+     */
     this.services = {};
 };
 
@@ -544,7 +548,7 @@ DependencyManager.prototype = (function() {
                 promise = this.services[key] = this.build(config);
             }
 
-
+            // todo move this logic in Service parser
             return promise.then(function(service) {
                 var property, isFunc;
 
