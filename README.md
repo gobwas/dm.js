@@ -24,7 +24,7 @@ Since each service is responsible just for one job, you can use its functionalit
 Each service can be simply tested and configured, when it sliced out from other logic of your application.
 
 What do you need to create a service? Nothing special - just create some javascript constructor function, as usual.
-Put it in separate file, as good guidelines tell you to do, and register it in **dm**. Then dm will load it by your [preferred way of resolving assets (amd, cjs etc)](#loader).
+Put it in separate file, as good guidelines tell you to do, and register it in **_dm_**. Then dm will load it by your [preferred way of resolving assets (amd, cjs etc)](#loader).
 
 ## What is Dependency?
 
@@ -61,7 +61,7 @@ And these loaders:
 + CJS (node way);
 + AMD (requirejs).
 
-If you want to not configure adapters and some other things, there is a prebuilt versions planned in future.
+If you want to not configure adapters and some other things, prebuilt versions are planned to the future.
 
 ## The Hello World Example
 
@@ -103,7 +103,7 @@ We just created `config` object. It contains our application's services configur
 
 There are two services in our configuration - "world" and "greeter". The "world" contains some logic for interacting with world.
 
-The "greeter" contains some logic for greeting some injected, not known as well, but known as an interface **world**.
+The "greeter" contains some logic for greeting some injected, not known as well, but known as an interface **_world_**.
 
 > Also, later, some client of "greeter" service will not know which implementation he use, nor the world, that he greeting.
 > He just know the interface of world greeter. And call the #greet method from it.
@@ -217,15 +217,15 @@ var config = {
 ## API
 
 ### DM
+______
 
 #### constructor([options])
-________________________________________________________________
 
 Creates new instance of DM.
 
 ##### Parameters
 
-**options**
+**_options_**
 
 Type: `Object`
 
@@ -234,32 +234,30 @@ Type: `Object`
 Type: `DM`
 
 #### setConfig(config, [parameters])
-________________________________________________________________
 
 Sets up configuration for DM.
 
 ##### Parameters
 
-**config**
+**_config_**
 
 Type: `Object`
 
 Services map.
 
-**parameters**
+**_parameters_**
 
 Type: `Object`
 
 Parameters hash.
 
 #### getConfig([key])
-________________________________________________________________
 
 Returns copy of a configuration.
 
 ##### Parameters
 
-**key**
+**_key_**
 
 Type: `string`
 
@@ -271,28 +269,26 @@ Type: `mixed`
 
 
 #### setParameter(key, value)
-________________________________________________________________
 
 Sets up parameter. Can not replace already existing parameter.
 
 ##### Parameters
 
-**key**
+**_key_**
 
 Type: `string`
 
-**value**
+**_value_**
 
 Type: `mixed`
 
 #### getParameter(key)
-________________________________________________________________
 
 Returns parameter if exists.
 
 ##### Parameters
 
-**key**
+**_key_**
 
 Type: `string`
 
@@ -300,11 +296,10 @@ Type: `string`
 
 
 #### setAsync(adapter)
-________________________________________________________________
 
 ##### Parameters
 
-**adapter**
+**_adapter_**
 
 Type: `Async`
 
@@ -312,7 +307,7 @@ Async adapter for some Promises library.
 
 #### setLoader(adapter)
 
-**adapter**
+**_adapter_**
 
 Type: `Loader`
 
@@ -322,26 +317,24 @@ Loader adapter for some module loader.
 
 
 #### set(key, service)
-________________________________________________________________
 
 Set up synthetic service in DM services map. Must be declared in configuration by given `key` as `synthetic`.
 
 ##### Parameters
 
-**key**
+**_key_**
 
 Type: `string`
 
-**service**
+**_service_**
 
 Type: `Object`
 
 #### has(key)
-________________________________________________________________
 
 ##### Parameters
 
-**key**
+**_key_**
 
 Type: `string`
 
@@ -349,11 +342,10 @@ Type: `string`
 
 
 #### initialized(key)
-________________________________________________________________
 
 ##### Parameters
 
-**key**
+**_key_**
 
 Type: `string`
 
@@ -361,11 +353,10 @@ Type: `string`
 
 
 #### get(key)
-________________________________________________________________
 
 ##### Parameters
 
-**key**
+**_key_**
 
 Type: `string`
 
@@ -373,13 +364,13 @@ Type: `string`
 
 
 ### Async
+_________
 
 #### constructor(adaptee)
-________________________________________________________________
 
 ##### Parameters
 
-**adaptee**
+**_adaptee_**
 
 Type: `Object`
 
@@ -387,11 +378,10 @@ Type: `Object`
 
 
 #### promise(resolver)
-________________________________________________________________
 
 ##### Parameters
 
-**resolver**
+**_resolver_**
 
 Type: `Function`
 
@@ -399,11 +389,10 @@ Type: `Function`
 
 
 #### all(promises)
-________________________________________________________________
 
 ##### Parameters
 
-**promises**
+**_promises_**
 
 Type: `Array`
 
@@ -411,11 +400,10 @@ Type: `Array`
 
 
 #### resolve(value)
-________________________________________________________________
 
 ##### Parameters
 
-**value**
+**_value_**
 
 Type: `mixed`
 
@@ -423,11 +411,10 @@ Type: `mixed`
 
 
 #### reject(error)
-________________________________________________________________
 
 ##### Parameters
 
-**error**
+**_error_**
 
 Type: `Error`
 
@@ -435,13 +422,13 @@ Type: `Error`
 
 
 ### Loader
+__________
 
 #### constructor(adaptee)
-________________________________________________________________
 
 ##### Parameters
 
-**adaptee**
+**_adaptee_**
 
 Type: `Object`
 
@@ -449,11 +436,10 @@ Type: `Object`
 
 
 #### setAsync(adapter)
-________________________________________________________________
 
 ##### Parameters
 
-**adapter**
+**_adapter_**
 
 Type: `Async`
 
@@ -461,15 +447,14 @@ Type: `Async`
 
 
 #### require(path, [options])
-________________________________________________________________
 
 ##### Parameters
 
-**path**
+**_path_**
 
 Type: `string`
 
-**options**
+**_options_**
 
 Type: `Object`
 
@@ -477,70 +462,19 @@ Type: `Object`
 
 
 #### read(path, [options])
-________________________________________________________________
 
 ##### Parameters
 
-**path**
+**_path_**
 
 Type: `string`
 
-**options**
+**_options_**
 
 Type: `Object`
 
 ##### Return value
 
-
-
-
-
-
-## What is inside?
-
-dm.js consists of few linked components:
-
-- core;
-- async adapter;
-- resource loader adapter;
-
-### Core
-
-DM class contains the core logic of parsing, resolving, constructing, injecting and storing dependent objects and resources.
-Because of known reasons, it uses async style of work - the [Promises](html 5 promises). But, because you can use different libraries of
-Promises, DM uses the abstraction over it, called 'async adapter'.
-
-Another abstraction is used by the same reason is 'loader adapter' - you could use CommonJS loader (in node, or browser with
-[browserified](browserify) content), or, AMD loader, like [require.js](require.js), or, whatever you want other.
-
-So, when someone asking for some object, DM returns the Promise for this query, that will be resolved with configured object,
-of rejected, when error occurs. Then DM gets the object configuration from config. If configuration says, that object needs
-to be cached (by default all objects are needed to be cached) DM tries to get it from cache (see detailed section of
-readme about object configuration). If asked service is not cached, DM loads constructor of object, located in
-```path``` property of config. When it loaded, DM tries to load all dependencies, placed in ```calls```, ```arguments```
-and ```properties``` properties of configuration. Then it calls constructor of an object with necessary ```arguments```,
-then makes necessary ```calls```, and, finally, sets up necessary ```properties```. Then, if object is needs to be cached,
-DM caches created instance and resolving given Promise with it.
-
-For detailed explanation of all configuration properties see doc section below.
-
-### Async
-
-There are few built in adapters for most popular async libraries:
-
-- [RSVP.js](rsvp);
-- [Q.js](q.js);
-- [ES6 Harmony Promises](Promises);
-- [jquery deferred](jquery.com);
-
-Of course, you can write adapter for your favorite library and successfully use it.
-
-### Loader
-
-There are also two built in adapters for most popular resource loading libraries:
-
-- [Require.js](require.js);
-- [CommonJS](common.js);
 
 ## Contributing
 
