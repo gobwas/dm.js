@@ -15,6 +15,8 @@ If you interested in theory you can check things about:
 + [dependency injection](http://en.wikipedia.org/wiki/Dependency_injection),
 + [service locator](http://en.wikipedia.org/wiki/Service_locator_pattern).
 
+And it strongly recommended to read [Martin Fowler article about Dependency Injection](http://martinfowler.com/articles/injection.html).
+
 ## What is Service?
 
 Service is just a javascript object. It realize some piece of logic of your application.
@@ -28,7 +30,7 @@ Put it in separate file, as good guidelines tell you to do, and register it in *
 
 ## What is Dependency?
 
-Dependency is just another javascript object, or, simply, service, that some service is depends on to make his job. For example,
+Dependency is usually just another javascript object aka *service*, that some other service is depends on to make his job. For example,
 you have cache service, that stores some data in some place, but it needs to have the way to generate hash for each item, so it depends on
 hash generator service. If you realize this with DM, you can easily:
 + switch hash generation algorithms without changing cache service;
@@ -38,17 +40,19 @@ hash generator service. If you realize this with DM, you can easily:
 
 ## What is Injection and who is Manager?
 
-Dependency Injection Manager (also known as Service Locator) is an object, that knows all about dependencies.
-It also knows all about services - what service implementation to use, which arguments pass to its constructor,
-which calls to do after instantiating, and finally, which properties with which values set up for created instance. In other words, manager knows
-how to configure each service.
+Dependency Injection Manager is an object, that knows all about services - their dependencies and configuration.
+He knows which implementation of service to use, which arguments pass to constructor, which calls with which arguments to do after instantiating,
+and finally, which properties with which values set up for created instance.
 
 Its a good idea to keep all application configuration in one place. This gives ability for developers concentrate just on service developing,
-and not on how to get some other object, nor on the configuration parameters, that his service will use.
+and not on how to get some other object, nor on the configuration parameters, that service will use.
+
+> Note, that using DM as Service Locator removes this advantage from your design - because instead of controlling all services,
+you give ability to service ask whatever he wants and whenever he wants. This blurs control over your application.
 
 ## How it works together?
 
-**dm.js** use async way to resolve service building. It uses Promises/A+ compatible libraries, and most popular module definition notations.
+**dm.js** use async way to resolve service building. It uses [Promises/A+](http://promisesaplus.com/) compatible libraries, and most popular module definition notations.
 So, all you need to configure DM is select needed adapters for promises and module loaders. And of course, you can write your own adapters easily.
 
 Out of the box at the moment DM has these async adapters:
