@@ -30,11 +30,13 @@ Put it in separate file, as good guidelines tell you to do, and register it in *
 
 ## What is Dependency?
 
-Dependency is usually just another javascript object aka *service*, that some other service is depends on to make his job. For example,
-you have cache service, that stores some data in some place, but it needs to have the way to generate hash for each item, so it depends on
-hash generator service. If you realize this with DM, you can easily:
-+ switch hash generation algorithms without changing cache service;
-+ mock hash generator for easy unit testing;
+Dependency is usually just another javascript object aka *service*, that some other service is depends on to make his job.
+For example, some cache service for storing purposes needs to have the way to generate unique hash for each record.
+So it depends on unique hash generator service.
+
+Realizing services and their dependencies in that way gives you abilities to:
++ switch implementations of dependencies without changing dependent service;
++ mock dependencies for easy unit testing;
 + configure each of services independently;
 + store all the configuration in one place.
 
