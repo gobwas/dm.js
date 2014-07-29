@@ -10,6 +10,7 @@ module.exports = Factory.extend({
     newInstanceWithArgs: function(constructor, args) {
         var service;
 
+        // @see http://jsperf.com/dynamic-arguments-to-the-constructor
         function Service() {}
         Service.prototype = constructor.prototype;
 
