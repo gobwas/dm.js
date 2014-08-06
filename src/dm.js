@@ -230,6 +230,7 @@ DependencyManager.prototype = (function() {
             }
 
             // todo Refactor parsing in this way:
+            // todo Parsers in constructor, add ability to register custom parsers
             //
             // [PropertyTemplateParser, PropertyLinkParser, ContainerLinkParser, ServiceLinkParser, ResourceParser]
             // chain.add(...);
@@ -242,6 +243,11 @@ DependencyManager.prototype = (function() {
             //
             // Links are @, #...#, %...%
             // Templates are @{service[method|property|toString]}, #{resource}, %{parameter}
+
+
+
+
+
 
             // Live replacement property
             // We do not resolve promise with this

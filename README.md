@@ -15,7 +15,7 @@ If you interested in theory you can check things about:
 + [dependency injection](http://en.wikipedia.org/wiki/Dependency_injection),
 + [service locator](http://en.wikipedia.org/wiki/Service_locator_pattern).
 
-And it strongly recommended to read [Martin Fowler article about Dependency Injection](http://martinfowler.com/articles/injection.html).
+And it strongly recommended to read [Martin Fowler's article about Dependency Injection](http://martinfowler.com/articles/injection.html).
 
 ## What is Service?
 
@@ -42,15 +42,22 @@ Realizing services and their dependencies in that way gives you abilities to:
 
 ## What is Injection and who is Manager?
 
-Dependency Injection Manager is an object, that knows all about services - their dependencies and configuration.
+There are three types of injection:
++ Constructor injection;
++ Setter injection;
++ Property injection.
+
+Dependency Injection Manager is an object, very close to *Service Locator* pattern, that knows all about services - their dependencies and configuration.
 He knows which implementation of service to use, which arguments pass to constructor, which calls with which arguments to do after instantiating,
 and finally, which properties with which values set up for created instance.
 
 Its a good idea to keep all application configuration in one place. This gives ability for developers concentrate just on service developing,
 and not on how to get some other object, nor on the configuration parameters, that service will use.
 
-> Note, that using DM as Service Locator removes this advantage from your design - because instead of controlling all services,
-you give ability to service ask whatever he wants and whenever he wants. This blurs control over your application.
+> Note, that using DM as Service Locator (when service asks DM for other service) removes this advantage from your design - because,
+instead of controlling all services, you give ability to service ask whatever he wants and whenever he wants.
+This blurs control over your application. But in modern development there are some cases for purposes of optimization,
+when it needed to require services just when they really need. So it is your choice.
 
 ## How it works together?
 
