@@ -12,7 +12,7 @@
   "testling": {
     "preprocess": "./node_modules/grunt-cli/bin/grunt testling",
     "harness": "mocha-tdd",
-    "files": "test/**/*.bundle.js",
+    "files": "test/**/*.testling.js",
     "browsers": [
       "ie/6..latest",
       "chrome/22..latest",

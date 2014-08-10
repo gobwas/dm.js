@@ -7,6 +7,8 @@ module.exports = (grunt) ->
     clean:
       tmp:
         src: ["tmp"]
+      testling:
+        src: ["test/**/*.testling.js"]
 
     coffee:
       test:
@@ -17,12 +19,16 @@ module.exports = (grunt) ->
         ext: '.js'
 
     browserify:
-      test:
-        expand: true,
-        cwd: './test',
-        src: ['**/*.js'],
-        dest: './test',
-        ext: '.bundle.js'
+      testling:
+        options:
+          ignore: ["jsdom"]
+        files: [
+          expand: true,
+          cwd: './test',
+          src: ['**/*.js'],
+          dest: './test',
+          ext: '.testling.js'
+        ]
 
     mochaTest:
       all:
@@ -66,8 +72,9 @@ module.exports = (grunt) ->
 
   grunt.registerTask "testling",
     [
+      "clean:testling"
       "jshint:source"
       "jscs:source"
       "coffee:test"
-      "browserify:test"
+      "browserify:testling"
     ]
