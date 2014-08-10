@@ -7,7 +7,7 @@ module.exports = (grunt) ->
     clean:
       tmp:
         src: ["tmp"]
-      testling:
+      test:
         src: ["test/**/*.testling.js"]
 
     coffee:
@@ -64,6 +64,7 @@ module.exports = (grunt) ->
 
   grunt.registerTask "test",
     [
+      "clean:test"
       "jshint:source"
       "jscs:source"
       "coffee:test"
@@ -72,7 +73,7 @@ module.exports = (grunt) ->
 
   grunt.registerTask "testling",
     [
-      "clean:testling"
+      "clean:test"
       "jshint:source"
       "jscs:source"
       "coffee:test"

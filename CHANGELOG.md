@@ -5,7 +5,8 @@ Change log
 ______________________
 
 + Async adapters for jQuery, Broody-Promises, Q, Harmony;
-+ Tests for adapters.
++ Tests for adapters;
++ Testling.CI adaptation.
 
 ### 0.2.0 (19-07-2014)
 ______________________
