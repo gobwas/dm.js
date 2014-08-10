@@ -1,4 +1,7 @@
-# dm.[js](https://developer.mozilla.org/en/docs/JavaScript) [![Build Status](https://travis-ci.org/gobwas/dm.js.svg?branch=master)](https://travis-ci.org/gobwas/dm.js)
+# dm.[js](https://developer.mozilla.org/en/docs/JavaScript)
+
+[![NPM version](https://badge.fury.io/js/dm.svg)](http://badge.fury.io/js/dm)
+[![Build Status](https://travis-ci.org/gobwas/dm.js.svg?branch=master)](https://travis-ci.org/gobwas/dm.js)
 
 > Dependency [Injection](http://en.wikipedia.org/wiki/Dependency_injection) Manager for javascript.
 
