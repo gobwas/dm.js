@@ -1,65 +1,67 @@
 {
-    "name": "dm",
-    "version": "0.2.0",
-    "description": "Dependency Injection Manager",
-    "main": "index.js",
-    "directories": {
-        "test": "test"
-    },
-    "scripts": {
-        "test": "./node_modules/grunt-cli/bin/grunt test"
-    },
-    "testling": {
-        "preprocess": "./node_modules/grunt-cli/bin/grunt testling",
-        "harness": "mocha-tdd",
-        "files": "test/**/*.bundle.js",
-        "browsers": [
-            "ie/6..latest",
-            "chrome/22..latest",
-            "firefox/16..latest",
-            "safari/latest",
-            "opera/11.0..latest",
-            "iphone/6",
-            "ipad/6",
-            "android-browser/latest"
-        ]
-    },
-    "repository": "https://github.com/gobwas/dm.js",
-    "keywords": [
-        "dependency",
-        "injection",
-        "manager",
-        "javascript",
-        "amd",
-        "cjs",
-        "commonjs",
-        "dm.js"
-    ],
-    "author": "Sergey Kamardin",
-    "license": "MIT",
-    "devDependencies": {
-        "lodash": "*",
-        "mocha": "*",
-        "chai": "*",
-        "chance": "*",
-        "sinon": "*",
-        "grunt": "*",
-        "grunt-cli": "*",
-        "karma": "*",
-        "karma-mocha": "*",
-        "coffee-script": "*",
-        "rsvp": "*",
-        "grunt-mocha-test": "*",
-        "grunt-browserify": "*",
-        "grunt-contrib-coffee": "*",
-        "grunt-contrib-jshint": "*",
-        "grunt-contrib-uglify": "*",
-        "grunt-contrib-clean": "*",
-        "grunt-contrib-copy": "*",
-        "grunt-contrib-concat": "*",
-        "grunt-jscs-checker": "*"
-    },
-    "dependencies": {
-        "inherits-js": "*"
-    }
+  "name": "dm",
+  "version": "0.2.0",
+  "description": "Dependency Injection Manager",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "./node_modules/grunt-cli/bin/grunt test"
+  },
+  "testling": {
+    "preprocess": "./node_modules/grunt-cli/bin/grunt testling",
+    "harness": "mocha-tdd",
+    "files": "test/**/*.bundle.js",
+    "browsers": [
+      "ie/6..latest",
+      "chrome/22..latest",
+      "firefox/16..latest",
+      "safari/latest",
+      "opera/11.0..latest",
+      "iphone/6",
+      "ipad/6",
+      "android-browser/latest"
+    ]
+  },
+  "repository": "https://github.com/gobwas/dm.js",
+  "keywords": [
+    "dependency",
+    "injection",
+    "manager",
+    "javascript",
+    "amd",
+    "cjs",
+    "commonjs",
+    "dm.js"
+  ],
+  "author": "Sergey Kamardin",
+  "license": "MIT",
+  "devDependencies": {
+    "lodash": "*",
+    "mocha": "*",
+    "chai": "*",
+    "chance": "*",
+    "sinon": "*",
+    "grunt": "*",
+    "grunt-cli": "*",
+    "coffee-script": "*",
+    "rsvp": "*",
+    "grunt-mocha-test": "*",
+    "grunt-browserify": "*",
+    "grunt-contrib-coffee": "*",
+    "grunt-contrib-jshint": "*",
+    "grunt-contrib-uglify": "*",
+    "grunt-contrib-clean": "*",
+    "grunt-contrib-copy": "*",
+    "grunt-contrib-concat": "*",
+    "grunt-jscs-checker": "*",
+    "broody-promises": "^0.2.2",
+    "jquery": "^2.1.1",
+    "q": "^1.0.1",
+    "jsdom": "^0.11.1"
+  },
+  "dependencies": {
+    "inherits-js": "*"
+  }
 }

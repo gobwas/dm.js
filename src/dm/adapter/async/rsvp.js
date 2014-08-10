@@ -8,35 +8,19 @@ RSVP = Async.extend({
     },
 
     promise: function(resolver) {
-        if (!resolver) {
-            throw new Error("Resolver function is expected");
-        }
-
         return new this.RSVP.Promise(resolver);
     },
 
     all: function(promises) {
-        if (!promises) {
-            throw new TypeError("Array of promises is expected");
-        }
-
         return this.RSVP.all(promises);
     },
 
     resolve: function(value) {
-        var deferred = this.RSVP.defer();
-
-        deferred.resolve(value);
-
-        return deferred.promise;
+        return this.RSVP.Promise.resolve(value);
     },
 
-    reject: function(value) {
-        var deferred = this.RSVP.defer();
-
-        deferred.reject(value);
-
-        return deferred.promise;
+    reject: function(error) {
+        return this.RSVP.Promise.reject(error);
     }
 });
 

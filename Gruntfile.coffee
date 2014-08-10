@@ -7,8 +7,6 @@ module.exports = (grunt) ->
     clean:
       tmp:
         src: ["tmp"]
-      test:
-        src: ["test/**/*.js"]
 
     coffee:
       test:
@@ -27,12 +25,19 @@ module.exports = (grunt) ->
         ext: '.bundle.js'
 
     mochaTest:
-      test:
+      all:
         options:
           reporter: "spec"
           ui:       "tdd"
-          require: "coffee-script"
-        src: ["test/**/*.coffee"]
+        src: ["test/**/*.js"]
+
+#    mochacli:
+#      options:
+#        reporter: "spec"
+#        ui:       "tdd"
+#        harmony:  true
+#      all: ["test/**/*.js"]
+
 
     jshint:
       source:
@@ -46,6 +51,7 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks("grunt-contrib-coffee");
   grunt.loadNpmTasks("grunt-contrib-clean");
   grunt.loadNpmTasks("grunt-mocha-test");
+#  grunt.loadNpmTasks("grunt-mocha-cli");
   grunt.loadNpmTasks("grunt-contrib-copy");
   grunt.loadNpmTasks("grunt-contrib-jshint");
   grunt.loadNpmTasks("grunt-jscs-checker");
@@ -54,15 +60,14 @@ module.exports = (grunt) ->
     [
       "jshint:source"
       "jscs:source"
-      "clean:test"
-      "mochaTest:test"
+      "coffee:test"
+      "mochaTest:all"
     ]
 
   grunt.registerTask "testling",
     [
       "jshint:source"
       "jscs:source"
-      "clean:test"
       "coffee:test"
       "browserify:test"
     ]

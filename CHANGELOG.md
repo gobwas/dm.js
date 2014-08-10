@@ -1,7 +1,13 @@
 Change log
 ==========
 
-### 0.2.0 (xx-xx-2014)
+### 0.2.1 (10-08-2014)
+______________________
+
++ Async adapters for jQuery, Broody-Promises, Q, Harmony;
++ Tests for adapters.
+
+### 0.2.0 (19-07-2014)
 ______________________
 
 + Project structure;
