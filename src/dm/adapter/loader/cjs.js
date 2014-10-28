@@ -5,23 +5,27 @@ var Loader = require("../loader"),
     CJS;
 
 CJS = Loader.extend({
-    require: function(path, options) {
-        return this.async.promise(function(resolve, reject) {
-            var base, realPath;
+    _normalizePath: function(path, options) {
+        var base;
 
-            if ((base = options.base)) {
-                // normalize path
-                if (path.charAt(0) === "/") {
-                    path = path.slice(1);
-                }
-
-                realPath = _path.resolve(base, path);
-            } else {
-                realPath = path;
+        if ((base = options.base)) {
+            // normalize path
+            if (path.charAt(0) === "/") {
+                path = path.slice(1);
             }
 
+            return _path.resolve(base, path);
+        }
+
+        return path;
+    },
+
+    require: function(path, options) {
+        path = this._normalizePath(path, options);
+
+        return this.async.promise(function(resolve, reject) {
             try {
-                resolve(require(realPath));
+                resolve(require(path));
             } catch (err) {
                 reject(err);
             }
@@ -29,22 +33,23 @@ CJS = Loader.extend({
     },
 
     read: function(path, options) {
-        var self = this;
+        path = this._normalizePath(path, options);
 
-        // todo is this hack for client-side loading? (i.e. browserify building)
-        // todo maybe need to use browserify features to stub 'fs' module
-        return this.require(path, options)
-            ['catch'](function() {
-                return self.async.promise(function(resolve, reject) {
-                    fs.readFile(path, function(err, src) {
-                        if (err) {
-                            reject(err);
-                        } else {
-                            resolve(src);
-                        }
-                    });
+        // how it should work at client side with browserify?
+        if (fs && fs.readFile) {
+            return this.async.promise(function(resolve, reject) {
+                fs.readFile(path, function(err, src) {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve(src);
+                    }
                 });
             });
+        } else {
+            // fallback for client side
+            return this.require(path, options);
+        }
     }
 });
 
