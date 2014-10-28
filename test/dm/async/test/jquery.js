@@ -1,6 +1,6 @@
 var test          = require("./../test"),
     jQuery        = require('jquery'),
-    jQueryAdapter = require('../../../../../src/dm/adapter/async/jquery'),
+    jQueryAdapter = require('../../../../src/dm/async/jquery'),
     jsdom         = require("jsdom");
 
 // browser fallback

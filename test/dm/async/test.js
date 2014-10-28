@@ -3,33 +3,30 @@ var _        = require('lodash'),
     sinon    = require('sinon'),
     chai     = require('chai'),
 
-    assert, noop;
+    assert;
 
 chance = new chance;
 assert = chai.assert;
 
-noop = function() {};
-
 module.exports = function(Adaptee, AdapteePromise, ConcreteAdapter, options) {
-    suite(options.title, function() {
-        setup(noop);
+    describe(options.title, function() {
 
-        suite("#promise", function() {
+        describe("#promise", function() {
             var adapter;
 
-            setup(function() {
+            beforeEach(function() {
                 adapter = new ConcreteAdapter(Adaptee);
             });
 
-            test("Should return promise", function() {
+            it("Should return promise", function() {
                 var promise;
 
-                promise = adapter.promise(noop);
+                promise = adapter.promise(_.noop);
 
                 assert.instanceOf(promise, AdapteePromise);
             });
 
-            test("Should throw an error when resolver is not passed", function() {
+            it("Should throw an error when resolver is not passed", function() {
                 var error;
 
                 try {
@@ -43,14 +40,14 @@ module.exports = function(Adaptee, AdapteePromise, ConcreteAdapter, options) {
         });
 
 
-        suite("#all", function() {
+        describe("#all", function() {
             var adapter;
 
-            setup(function() {
+            beforeEach(function() {
                 adapter = new ConcreteAdapter(Adaptee);
             });
 
-            test("Should return promise", function() {
+            it("Should return promise", function() {
                 var promise;
 
                 promise = adapter.all([]);
@@ -58,7 +55,7 @@ module.exports = function(Adaptee, AdapteePromise, ConcreteAdapter, options) {
                 assert.instanceOf(promise, AdapteePromise);
             });
 
-            test("Should return parsed values", function(done) {
+            it("Should return parsed values", function(done) {
                 var promise, valueA, valueB;
 
                 valueA = chance.word();
@@ -83,14 +80,14 @@ module.exports = function(Adaptee, AdapteePromise, ConcreteAdapter, options) {
         });
 
 
-        suite("#resolve", function() {
+        describe("#resolve", function() {
             var adapter;
 
-            setup(function() {
+            beforeEach(function() {
                 adapter = new ConcreteAdapter(Adaptee);
             });
 
-            test("Should return promise", function() {
+            it("Should return promise", function() {
                 var promise;
 
                 promise = adapter.resolve();
@@ -98,7 +95,7 @@ module.exports = function(Adaptee, AdapteePromise, ConcreteAdapter, options) {
                 assert.instanceOf(promise, AdapteePromise);
             });
 
-            return test("Should return fullfilled promise", function(done) {
+            it("Should return fullfilled promise", function(done) {
                 var errorSpy, successSpy, promise, test, value;
 
                 value   = chance.word();
@@ -127,14 +124,14 @@ module.exports = function(Adaptee, AdapteePromise, ConcreteAdapter, options) {
         });
 
 
-        return suite("#reject", function() {
+        describe("#reject", function() {
             var adapter;
 
-            setup(function() {
+            beforeEach(function() {
                 adapter = new ConcreteAdapter(Adaptee);
             });
 
-            test("Should return promise", function() {
+            it("Should return promise", function() {
                 var promise;
 
                 promise = adapter.reject();
@@ -142,7 +139,7 @@ module.exports = function(Adaptee, AdapteePromise, ConcreteAdapter, options) {
                 assert.instanceOf(promise, AdapteePromise);
             });
 
-            return test("Should return rejected promise", function(done) {
+            it("Should return rejected promise", function(done) {
                 var err, errorSpy, promise, successSpy, test;
 
                 err     = chance.word();

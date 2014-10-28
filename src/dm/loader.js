@@ -1,8 +1,14 @@
-var Adapter = require("../adapter"),
-    Async = require("./async"),
+var inherits = require("inherits-js"),
+    Async    = require("./async"),
     Loader;
 
-Loader = Adapter.extend({
+Loader = function(adaptee) {
+    this.adaptee = adaptee;
+};
+
+Loader.prototype = {
+    constructor: Loader,
+
     /**
      * Injects async adapter.
      *
@@ -37,7 +43,10 @@ Loader = Adapter.extend({
     read: function(path, options) {
         throw new Error("Method must be implemented");
     }
-});
+};
 
+Loader.extend = function(prots, statics) {
+    return inherits(this, prots, statics);
+};
 
 module.exports = Loader;

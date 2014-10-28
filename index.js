@@ -1,8 +1,8 @@
 var DependencyManager = require("./src/dm"),
 
-    loaderAMD = require("./src/dm/adapter/loader/amd"),
-    loaderCJS = require("./src/dm/adapter/loader/cjs"),
-    asyncRSVP = require("./src/dm/adapter/async/rsvp");
+    loaderAMD = require("./src/dm/loader/amd"),
+    loaderCJS = require("./src/dm/loader/cjs"),
+    asyncRSVP = require("./src/dm/async/rsvp");
 
 
 module.exports = {

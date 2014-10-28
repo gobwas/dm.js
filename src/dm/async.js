@@ -1,7 +1,13 @@
-var Adapter = require("../adapter"),
+var inherits = require("inherits-js"),
     Async;
 
-Async = Adapter.extend({
+Async = function(adaptee) {
+    this.adaptee = adaptee;
+};
+
+Async.prototype = {
+    constructor: Async,
+
     /**
      * Creates new Promise with given resolver.
      *
@@ -37,7 +43,10 @@ Async = Adapter.extend({
     reject: function(value) {
         throw new Error("Method 'reject' must be implemented");
     }
-});
+};
 
+Async.extend = function(prots, statics) {
+    return inherits(this, prots, statics);
+};
 
 module.exports = Async;

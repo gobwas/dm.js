@@ -53,6 +53,22 @@ function noop() {
 
 
 var async = {
+    _doParallel: function(fn) {
+        var args;
+
+        args = Array.prototype.slice.call(arguments, 1);
+
+        return fn.apply(this, [ this.each ].concat(args));
+    },
+
+    _doSeries: function(fn) {
+        var args;
+
+        args = Array.prototype.slice.call(arguments, 1);
+
+        return fn.apply(this, [ this.eachSeries ].concat(args));
+    },
+
     each: function(obj, iterator, callback) {
         var remain, next;
 
@@ -96,7 +112,6 @@ var async = {
         next = function(err) {
             if (err) {
                 callback(err);
-                callback = noop;
             } else {
                 remain--;
                 index++;
@@ -118,6 +133,97 @@ var async = {
         };
 
         iteration();
+    },
+
+    _find: function(eacher, obj, iterator, callback) {
+        eacher(
+            obj,
+            function(value, key, next) {
+                iterator(value, key, function(err, result) {
+                    if (err) {
+                        callback(err);
+                        callback = noop;
+                        next(err);
+                        return;
+                    }
+
+                    if (result) {
+                        callback(null, value, key);
+                        callback = noop;
+                    } else {
+                        next();
+                    }
+                });
+            },
+            function(err) {
+                callback(err);
+            }
+        );
+    },
+
+    find: function(obj, iterator, callback) {
+        this._doParallel(this._find, obj, iterator, callback);
+    },
+
+    findSeries: function(obj, iterator, callback) {
+        this._doSeries(this._find, obj, iterator, callback);
+    },
+
+    whilst: function(test, iterator, callback) {
+        var self = this,
+            args;
+
+        args = Array.prototype.slice.call(arguments, 3);
+
+        test.apply(null, [ function(truth) {
+
+            if (truth) {
+                iterator.apply(null, [ function(err) {
+                    var args;
+
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+
+                    args = Array.prototype.slice.call(arguments, 1);
+
+                    self.whilst.apply(self, [ test, iterator, callback ].concat(args));
+                } ].concat(args));
+            } else {
+                callback.apply(null, [ null ].concat(args));
+            }
+
+        } ].concat(args));
+    },
+
+    doWhilst: function(test, iterator, callback) {
+        var self = this,
+            args;
+
+        args = Array.prototype.slice.call(arguments, 3);
+
+        iterator.apply(null, [ function(err) {
+            var args;
+
+            if (err) {
+                callback(err);
+                return;
+            }
+
+            args = Array.prototype.slice.call(arguments, 1);
+
+            test.apply(null, [ function(truth) {
+
+                if (truth) {
+                    self.whilst.apply(self, [ test, iterator, callback ].concat(args));
+                } else {
+                    callback.apply(null, [ null ].concat(args));
+                }
+
+            } ].concat(args));
+
+        } ].concat(args));
     },
 
     map: function(arr, iterator, callback) {
@@ -171,7 +277,7 @@ function forEach(obj, iterator, context) {
     if (isArray(obj)) {
         return forEachSimple(obj, iterator, context);
     } else if (isObject(obj)) {
-       return forEachOwn(obj, iterator, context);
+        return forEachOwn(obj, iterator, context);
     }
 
     throw new TypeError("Array or Object is expected");

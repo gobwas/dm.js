@@ -11,9 +11,9 @@
 
   DM = require('../src/dm.js');
 
-  Loader = require('../src/dm/adapter/loader');
+  Loader = require('../src/dm/loader');
 
-  Async = require('../src/dm/adapter/async');
+  Async = require('../src/dm/async');
 
   RSVP = require('rsvp');
 
@@ -21,7 +21,7 @@
 
   assert = chai.assert;
 
-  suite("dm.js", function() {
+  describe("dm.js", function() {
     var randomPrimitivesHash;
     randomPrimitivesHash = function() {
       return _.reduce(new Array(chance.natural({
@@ -34,31 +34,21 @@
         return rnd;
       }, {});
     };
-    setup(function() {});
-    suite("#constructor", function() {
-      var dm;
-      dm = null;
-      setup(function() {
-        return dm = new DM;
-      });
-      return test("Should set default options for DM instance", function() {
-        assert.isObject(dm.options);
-        return _.forEach(dm.options, function(val, key) {
-          return assert.strictEqual(val, DM.DEFAULTS[key]);
-        });
-      });
+    beforeEach(function() {});
+    describe("#constructor", function() {
+
     });
-    suite("#setConfig", function() {
+    describe("#setConfig", function() {
       var config, dm, parameters;
       dm = null;
       config = null;
       parameters = null;
-      setup(function() {
+      beforeEach(function() {
         dm = new DM;
         config = randomPrimitivesHash();
         return parameters = randomPrimitivesHash();
       });
-      test("Should set config without errors", function() {
+      it("Should set config without errors", function() {
         var err, error;
         try {
           dm.setConfig(config, parameters);
@@ -68,7 +58,7 @@
         }
         return assert.isUndefined(error);
       });
-      test("Should throw Error if nothing given", function() {
+      it("Should throw Error if nothing given", function() {
         var err, error;
         try {
           dm.setConfig();
@@ -78,7 +68,7 @@
         }
         return assert.instanceOf(error, Error);
       });
-      return test("Should throw Error when configuring twice", function() {
+      return it("Should throw Error when configuring twice", function() {
         var err, error;
         dm.setConfig(config);
         try {
@@ -90,17 +80,17 @@
         return assert.instanceOf(error, Error);
       });
     });
-    suite("#getConfig", function() {
+    describe("#getConfig", function() {
       var config, dm, parameters;
       dm = null;
       config = null;
       parameters = null;
-      setup(function() {
+      beforeEach(function() {
         dm = new DM;
         config = randomPrimitivesHash();
         return parameters = randomPrimitivesHash();
       });
-      test("Should return not exact copy of config", function() {
+      it("Should return not exact copy of config", function() {
         var copy;
         dm.setConfig(config, parameters);
         copy = dm.getConfig();
@@ -112,7 +102,7 @@
           return assert.strictEqual(value, dm.getParameter(key), "Parameters values must be strict equal");
         });
       });
-      return test("Should return value by key", function() {
+      return it("Should return value by key", function() {
         var key, result, value;
         key = chance.word();
         config[key] = value = randomPrimitivesHash();
@@ -124,15 +114,15 @@
         });
       });
     });
-    suite("#setParameter", function() {
+    describe("#setParameter", function() {
       var dm, parameters;
       dm = null;
       parameters = null;
-      setup(function() {
+      beforeEach(function() {
         dm = new DM;
         return parameters = randomPrimitivesHash();
       });
-      test("Should set parameter", function() {
+      it("Should set parameter", function() {
         _.each(parameters, function(value, key) {
           return dm.setParameter(key, value);
         });
@@ -140,7 +130,7 @@
           return assert.strictEqual(value, dm.getParameter(key), "Parameters values must be strict equal");
         });
       });
-      return test("Should throw Error when parameter is already set", function() {
+      return it("Should throw Error when parameter is already set", function() {
         var err, error, key, value;
         key = chance.word();
         value = chance.word();
@@ -154,15 +144,15 @@
         return assert.instanceOf(error, Error);
       });
     });
-    suite("#getParameter", function() {
+    describe("#getParameter", function() {
       var dm, parameters;
       dm = null;
       parameters = null;
-      setup(function() {
+      beforeEach(function() {
         dm = new DM;
         return parameters = randomPrimitivesHash();
       });
-      test("Should get parameter", function() {
+      it("Should get parameter", function() {
         _.each(parameters, function(value, key) {
           return dm.setParameter(key, value);
         });
@@ -170,21 +160,21 @@
           return assert.strictEqual(value, dm.getParameter(key), "Parameters values must be strict equal");
         });
       });
-      return test("Should return null, when parameter is not set", function() {
+      return it("Should return null, when parameter is not set", function() {
         var value;
         value = dm.getParameter(chance.word());
         return assert.isNull(value);
       });
     });
-    suite("#setAsync", function() {
+    describe("#setAsync", function() {
       var async, dm;
       dm = null;
       async = null;
-      setup(function() {
+      beforeEach(function() {
         dm = new DM;
         return async = new Async;
       });
-      test("Should accept adapter of expected interface", function() {
+      it("Should accept adapter of expected interface", function() {
         var err, error;
         try {
           dm.setAsync(async);
@@ -194,7 +184,7 @@
         }
         return assert.isUndefined(error);
       });
-      test("Should throw an error when given adapter is not of expected interface", function() {
+      it("Should throw an error when given adapter is not of expected interface", function() {
         var err, error;
         try {
           dm.setAsync(new Object);
@@ -204,7 +194,7 @@
         }
         return assert.instanceOf(error, Error);
       });
-      return test("Should throw an error when nothing is given", function() {
+      return it("Should throw an error when nothing is given", function() {
         var err, error;
         try {
           dm.setAsync();
@@ -215,15 +205,15 @@
         return assert.instanceOf(error, Error);
       });
     });
-    suite("#setLoader", function() {
+    describe("#setLoader", function() {
       var dm, loader;
       dm = null;
       loader = null;
-      setup(function() {
+      beforeEach(function() {
         dm = new DM;
         return loader = new Loader;
       });
-      test("Should accept adapter of expected interface", function() {
+      it("Should accept adapter of expected interface", function() {
         var err, error;
         try {
           dm.setLoader(loader);
@@ -233,7 +223,7 @@
         }
         return assert.isUndefined(error);
       });
-      test("Should throw an error when given adapter is not of expected interface", function() {
+      it("Should throw an error when given adapter is not of expected interface", function() {
         var err, error;
         try {
           dm.setLoader(new Object);
@@ -243,7 +233,7 @@
         }
         return assert.instanceOf(error, Error);
       });
-      return test("Should throw an error when nothing is given", function() {
+      return it("Should throw an error when nothing is given", function() {
         var err, error;
         try {
           dm.setLoader();
@@ -254,19 +244,19 @@
         return assert.instanceOf(error, Error);
       });
     });
-    suite("#parseString", function() {
+    describe("#parseString", function() {
       var async, dm, loader;
       dm = null;
       async = null;
       loader = null;
-      setup(function() {
+      beforeEach(function() {
         dm = new DM;
         async = new Async;
         loader = new Loader;
         dm.setAsync(async);
         return dm.setLoader(loader.setAsync(async));
       });
-      test("Should throw an error when nothing is given", function() {
+      it("Should throw an error when nothing is given", function() {
         var error;
         sinon.stub(async, "reject", function(err) {
           return err;
@@ -275,8 +265,11 @@
         sinon.assert.calledOnce(async.reject);
         return assert.instanceOf(error, Error);
       });
-      test("Should parse as self link", function(done) {
+      it("Should parse as self link", function(done) {
         sinon.stub(async, "resolve", RSVP.resolve);
+        sinon.stub(async, "promise", function(cb) {
+            return new RSVP.Promise(cb);
+        });
         return dm.parseString(DM.SELF).then(function(result) {
           var err, error;
           try {
@@ -288,7 +281,7 @@
           return done(error);
         });
       });
-      test("Should parse as parameter", function() {
+      it("Should parse as parameter", function() {
         var key, mock, result, string, value, wrap;
         key = chance.word();
         wrap = chance.word();
@@ -302,7 +295,7 @@
         mock.verify();
         return assert.strictEqual(result, value);
       });
-      test("Should parse as parameters", function() {
+      it("Should parse as parameters", function() {
         var expect, getParameterStub, keys, links, result, string, values, wrap;
         keys = Array.prototype.slice.apply(new Int8Array(5)).map(function() {
           return chance.word();
@@ -329,7 +322,7 @@
         });
         return assert.strictEqual(result, expect);
       });
-      test("Should parse as service without anything", function(done) {
+      it("Should parse as service without anything", function(done) {
         var mock, name, string, value;
         name = chance.word();
         string = "@" + name;
@@ -352,7 +345,7 @@
           return done(error);
         })["catch"](done);
       });
-      test("Should parse as service's method", function(done) {
+      it("Should parse as service's method", function(done) {
         var handler, mock, name, string, value;
         name = chance.word();
         handler = chance.word();
@@ -376,7 +369,7 @@
           return done(error);
         })["catch"](done);
       });
-      test("Should parse as call of service's method", function(done) {
+      it("Should parse as call of service's method", function(done) {
         var handler, mock, name, string, value;
         name = chance.word();
         handler = chance.word();
@@ -401,7 +394,7 @@
           return done(error);
         })["catch"](done);
       });
-      test("Should parse as call of service's method with arguments", function(done) {
+      it("Should parse as call of service's method with arguments", function(done) {
         var args, getStub, handler, int, name, object, parameter, parameterValue, parseStringSpy, service, serviceValue, string, value, word;
         name = chance.word();
         handler = chance.word();
@@ -449,7 +442,7 @@
           return done(error);
         })["catch"](done);
       });
-      test("Should parse as resource with handler", function(done) {
+      it("Should parse as resource with handler", function(done) {
         var getResourceStub, handled, handler, parseStringSpy, path, string;
         path = chance.word();
         handler = chance.word();
@@ -479,7 +472,7 @@
           return done(error);
         });
       });
-      return test("Should parse as resource without handler", function(done) {
+      return it("Should parse as resource without handler", function(done) {
         var getResourceStub, parseStringSpy, path, string, value;
         path = chance.word();
         string = "#" + path + "#";
@@ -508,12 +501,12 @@
         });
       });
     });
-    suite("#parseObject", function() {
+    describe("#parseObject", function() {
       var async, dm, loader;
       dm = null;
       async = null;
       loader = null;
-      setup(function() {
+      beforeEach(function() {
         dm = new DM;
         async = new Async;
         loader = new Loader;
@@ -522,7 +515,7 @@
         dm.setAsync(async);
         return dm.setLoader(loader.setAsync(async));
       });
-      test("Should fall in recursion with objects", function(done) {
+      it("Should fall in recursion with objects", function(done) {
         var config, key, nested, object, parseObjectSpy, string;
         key = chance.word();
         nested = chance.word();
@@ -551,7 +544,7 @@
           return done(error);
         });
       });
-      test("Should fall in recursion with arrays", function(done) {
+      it("Should fall in recursion with arrays", function(done) {
         var array, config, nested, parseObjectSpy, string;
         nested = chance.word();
         string = chance.word();
@@ -579,7 +572,7 @@
           return done(error);
         });
       });
-      return test("Should return escaped value", function(done) {
+      return it("Should return escaped value", function(done) {
         var config, key, nested, object, parseObjectSpy, string;
         key = chance.word();
         nested = chance.word();
@@ -604,12 +597,12 @@
         });
       });
     });
-    suite("#parse", function() {
+    describe("#parse", function() {
       var async, dm, loader;
       dm = null;
       async = null;
       loader = null;
-      setup(function() {
+      beforeEach(function() {
         dm = new DM;
         async = new Async;
         loader = new Loader;
@@ -618,7 +611,7 @@
         dm.setAsync(async);
         return dm.setLoader(loader.setAsync(async));
       });
-      test("Should parse string", function(done) {
+      it("Should parse string", function(done) {
         var parseStringSpy;
         parseStringSpy = sinon.stub(dm, "parseString", RSVP.resolve);
         return dm.parse(chance.word()).then(function() {
@@ -632,7 +625,7 @@
           return done(error);
         });
       });
-      test("Should parse object", function(done) {
+      it("Should parse object", function(done) {
         var object, parseObjectSpy;
         object = {};
         parseObjectSpy = sinon.stub(dm, "parseObject", RSVP.resolve);
@@ -647,7 +640,7 @@
           return done(error);
         });
       });
-      test("Should parse array", function(done) {
+      it("Should parse array", function(done) {
         var array, parseObjectSpy;
         array = [];
         parseObjectSpy = sinon.stub(dm, "parseObject", RSVP.resolve);
@@ -662,7 +655,7 @@
           return done(error);
         });
       });
-      test("Should not parse numbers", function(done) {
+      it("Should not parse numbers", function(done) {
         var number, parseObjectSpy, parseStringSpy;
         number = chance.integer();
         parseObjectSpy = sinon.stub(dm, "parseObject", RSVP.resolve);
@@ -680,7 +673,7 @@
           return done(error);
         });
       });
-      return test("Should not parse any other objects from Array, String, Object", function(done) {
+      return it("Should not parse any other objects from Array, String, Object", function(done) {
         var parseObjectSpy, parseStringSpy, value;
         value = new Date();
         parseObjectSpy = sinon.stub(dm, "parseObject", RSVP.resolve);
@@ -699,12 +692,12 @@
         });
       });
     });
-    suite("#getResource", function() {
+    describe("#getResource", function() {
       var async, dm, loader;
       dm = null;
       async = null;
       loader = null;
-      setup(function() {
+      beforeEach(function() {
         dm = new DM;
         async = new Async;
         loader = new Loader;
@@ -720,7 +713,7 @@
         dm.setAsync(async);
         return dm.setLoader(loader.setAsync(async));
       });
-      test("Should call #read without handler in options if it function", function(done) {
+      it("Should call #read without handler in options if it function", function(done) {
         var handler, path, readStub, resource;
         path = chance.word();
         resource = chance.word();
@@ -741,7 +734,7 @@
           return done(error);
         })["catch"](done);
       });
-      test("Should call #read with handler in options if it is not a function", function(done) {
+      it("Should call #read with handler in options if it is not a function", function(done) {
         var handler, path, readStub, resource;
         path = chance.word();
         resource = chance.word();
@@ -763,7 +756,7 @@
           return done(error);
         })["catch"](done);
       });
-      test("Should pass #read result directly in #handler", function(done) {
+      it("Should pass #read result directly in #handler", function(done) {
         var handler, path, resource;
         path = chance.word();
         resource = chance.word();
@@ -783,7 +776,7 @@
           return done(error);
         })["catch"](done);
       });
-      test("Should return #handler result", function(done) {
+      it("Should return #handler result", function(done) {
         var handled, handler, path;
         path = chance.word();
         handled = chance.word();
@@ -804,7 +797,7 @@
           return done(error);
         })["catch"](done);
       });
-      test("Should call #read for path", function(done) {
+      it("Should call #read for path", function(done) {
         var handler, path, readStub;
         path = chance.word();
         handler = function() {};
@@ -823,7 +816,7 @@
           return done(error);
         });
       });
-      test("Should call #read for path if handler is not given", function(done) {
+      it("Should call #read for path if handler is not given", function(done) {
         var path, readStub;
         path = chance.word();
         readStub = sinon.stub(loader, "read", function(path) {
@@ -841,7 +834,7 @@
           return done(error);
         });
       });
-      return test("Should throw an error if path is not string", function(done) {
+      return it("Should throw an error if path is not string", function(done) {
         var handler, path, readStub;
         path = null;
         handler = function() {};
@@ -863,7 +856,7 @@
         });
       });
     });
-    suite("#build", function() {
+    describe("#build", function() {
       var argA, argB, argC, args, calls, config, constructor, dm, key, path, propA, propB, propC, properties, spy, spyA, spyB, spyC;
       dm = null;
       key = null;
@@ -883,7 +876,7 @@
       propB = null;
       propC = null;
       config = null;
-      setup(function() {
+      beforeEach(function() {
         var async, loader;
         dm = new DM;
         async = new Async;
@@ -925,7 +918,7 @@
         dm.setAsync(async);
         return dm.setLoader(loader.setAsync(async));
       });
-      test("Should instantiate object of given constructor, with given args, calls and setting properties", function(done) {
+      it("Should instantiate object of given constructor, with given args, calls and setting properties", function(done) {
         return dm.build(config).then(function(service) {
           var err, error;
           try {
@@ -947,7 +940,7 @@
           return done(error);
         })["catch"](done);
       });
-      test("Should call custom factory function with constructor, args, calls and properties", function(done) {
+      it("Should call custom factory function with constructor, args, calls and properties", function(done) {
         var factory;
         config.factory = factory = sinon.spy();
         return dm.build(config).then(function() {
@@ -967,7 +960,7 @@
           return done(error);
         })["catch"](done);
       });
-      return test("Should call custom factory object#factory with constructor, args, calls and properties", function(done) {
+      return it("Should call custom factory object#factory with constructor, args, calls and properties", function(done) {
         var factory;
         config.factory = factory = {
           factory: sinon.spy()
@@ -990,13 +983,13 @@
         })["catch"](done);
       });
     });
-    suite("#set", function() {
+    describe("#set", function() {
       var async, config, dm, loader;
       dm = null;
       async = null;
       loader = null;
       config = null;
-      setup(function() {
+      beforeEach(function() {
         dm = new DM;
         async = new Async;
         loader = new Loader;
@@ -1023,7 +1016,7 @@
         dm.setAsync(async);
         return dm.setLoader(loader.setAsync(async));
       });
-      test("Should not inject service if it is not synthetic", function() {
+      it("Should not inject service if it is not synthetic", function() {
         var err, error;
         dm.setConfig(config);
         try {
@@ -1034,7 +1027,7 @@
         }
         return assert.instanceOf(error, Error);
       });
-      test("Should not inject service if it is not present in config", function() {
+      it("Should not inject service if it is not present in config", function() {
         var err, error;
         dm.setConfig(config);
         try {
@@ -1045,7 +1038,7 @@
         }
         return assert.instanceOf(error, Error);
       });
-      return test("Should inject service if it is synthetic", function() {
+      return it("Should inject service if it is synthetic", function() {
         var err, error, service;
         dm.setConfig(config);
         service = new Object;
@@ -1059,13 +1052,13 @@
         return assert.isTrue(dm.initialized("synth"));
       });
     });
-    suite("#initialized", function() {
+    describe("#initialized", function() {
       var async, config, dm, loader;
       dm = null;
       async = null;
       loader = null;
       config = null;
-      setup(function() {
+      beforeEach(function() {
         dm = new DM;
         async = new Async;
         loader = new Loader;
@@ -1089,11 +1082,11 @@
         dm.setAsync(async);
         return dm.setLoader(loader.setAsync(async));
       });
-      test("Should return false for not initialized service", function() {
+      it("Should return false for not initialized service", function() {
         dm.setConfig(config);
         return assert.isFalse(dm.initialized("service"));
       });
-      return test("Should return true for initialized service", function(done) {
+      return it("Should return true for initialized service", function(done) {
         dm.setConfig(config);
         return dm.get("service").then(function() {
           return dm.initialized("service");
@@ -1109,13 +1102,13 @@
         })["catch"](done);
       });
     });
-    suite("#has", function() {
+    describe("#has", function() {
       var async, config, dm, loader;
       dm = null;
       async = null;
       loader = null;
       config = null;
-      setup(function() {
+      beforeEach(function() {
         dm = new DM;
         async = new Async;
         loader = new Loader;
@@ -1125,17 +1118,17 @@
           }
         };
       });
-      test("Should return false for not configured service", function() {
+      it("Should return false for not configured service", function() {
         dm.setConfig(config);
         return assert.isFalse(dm.has(chance.word()));
       });
-      return test("Should return true for configured service", function() {
+      return it("Should return true for configured service", function() {
         dm.setConfig(config);
         return assert.isTrue(dm.has("service"));
       });
     });
-    suite("#get", function() {
-      var argA, argB, argC, args, calls, config, constructor, dm, key, path, propA, propB, propC, properties, spy, spyA, spyB, spyC;
+    describe("#get", function() {
+      var argA, argB, argC, args, calls, config, constructor, dm, key, loader, path, propA, propB, propC, properties, spy, spyA, spyB, spyC;
       dm = null;
       key = null;
       path = null;
@@ -1154,8 +1147,9 @@
       propB = null;
       propC = null;
       config = null;
-      setup(function() {
-        var async, loader;
+      loader = null;
+      beforeEach(function() {
+        var async;
         key = chance.word();
         path = chance.word();
         constructor = sinon.spy();
@@ -1196,7 +1190,39 @@
         dm.setAsync(async);
         return dm.setLoader(loader.setAsync(async));
       });
-      test("Should create just one instance of service if share is true", function(done) {
+      it("Should throw Error on circular dependent services", function(done) {
+        var A, B, cfg;
+        A = {
+          key: chance.word(),
+          path: chance.word(),
+          constructor: sinon.spy()
+        };
+        B = {
+          key: chance.word(),
+          path: chance.word(),
+          constructor: sinon.spy()
+        };
+        cfg = {};
+        cfg[A.key] = {
+          path: A.path,
+          "arguments": ["@" + B.key]
+        };
+        cfg[B.key] = {
+          path: B.path,
+          "arguments": ["@" + A.key]
+        };
+        sinon.stub(loader, "require", function(path) {
+          console.log('loader', path);
+          return RSVP.resolve(path === A.path ? A.constructor : B.constructor);
+        });
+        dm.setConfig(cfg);
+        return dm.get(A.key).then(function(service) {
+          return done(new Error("WTF?"));
+        })["catch"](function(err) {
+          return done();
+        });
+      });
+      it("Should create just one instance of service if share is true", function(done) {
         var buildStub, service;
         config[key].share = true;
         dm.setConfig(config);
@@ -1218,7 +1244,7 @@
           })["catch"](done);
         });
       });
-      test("Should create multiple instance of service if share is false", function(done) {
+      it("Should create multiple instance of service if share is false", function(done) {
         var buildStub, service;
         config[key].share = false;
         dm.setConfig(config);
@@ -1240,7 +1266,7 @@
           })["catch"](done);
         });
       });
-      test("Should return injected synthetic service", function(done) {
+      it("Should return injected synthetic service", function(done) {
         var service;
         dm.setConfig(config);
         service = new Object;
@@ -1256,7 +1282,7 @@
           return done(error);
         })["catch"](done);
       });
-      test("Should return aliased service", function(done) {
+      it("Should return aliased service", function(done) {
         var getStub, realGet;
         dm.setConfig({
           aliased: {
@@ -1284,7 +1310,7 @@
           return done(error);
         })["catch"](done);
       });
-      test("Should return property of service", function(done) {
+      it("Should return property of service", function(done) {
         var prop, service, val;
         dm.setConfig(config);
         service = new Object;
@@ -1307,7 +1333,7 @@
           return done(error);
         })["catch"](done);
       });
-      test("Should return method of service, contexted in service", function(done) {
+      it("Should return method of service, contexted in service", function(done) {
         var prop, service, val;
         dm.setConfig(config);
         service = new Object;
@@ -1332,7 +1358,7 @@
           return done(error);
         })["catch"](done);
       });
-      return test("Should return result of service's method call", function(done) {
+      return it("Should return result of service's method call", function(done) {
         var prop, result, service, val;
         dm.setConfig(config);
         service = new Object;
@@ -1362,31 +1388,31 @@
         })["catch"](done);
       });
     });
-    suite("#escape", function() {
-      return test("Should return escaped value", function() {
+    describe("#escape", function() {
+      return it("Should return escaped value", function() {
         var escaped, value;
         value = chance.word();
         escaped = DM.escape(value);
         return assert.isObject(escaped);
       });
     });
-    suite("#unEscape", function() {
-      test("Should return unescaped value", function() {
+    describe("#unEscape", function() {
+      it("Should return unescaped value", function() {
         var escaped, unescaped, value;
         value = chance.word();
         escaped = DM.escape(value);
         unescaped = DM.unEscape(escaped);
         return assert.strictEqual(unescaped, value);
       });
-      return test("Should return null if it not escaped", function() {
+      return it("Should return null if it not escaped", function() {
         var unescaped, value;
         value = chance.word();
         unescaped = DM.unEscape(value);
         return assert.isNull(unescaped);
       });
     });
-    return suite("#extend", function() {
-      return test("Should return proper prototyped object", function() {
+    return describe("#extend", function() {
+      return it("Should return proper prototyped object", function() {
         var Child, child, methodProtoName, methodProtoValue, methodStaticName, methodStaticValue, protos, statics;
         protos = {};
         methodProtoName = chance.word();

@@ -1,60 +1,25 @@
-/*
- import {
- objectType,
- isString,
- isNumber,
- isFunction,
- isBoolean,
- isDate,
- isObject,
- isRegExp,
- isArray,
- isUndefined,
- forEachOwn,
- forEachSimple,
- map,
- clone,
- sprintf
- } from "./dm/utils";
- import Async from "./dm/adapter/async";
- import Loader from "./dm/adapter/loader";
- */
-
-
-var utils    = require("./dm/utils"),
-    Async    = require("./dm/adapter/async"),
-    Loader   = require("./dm/adapter/loader"),
-    Factory  = require("./dm/factory"),
-    inherits = require("inherits-js"),
-
-    objectType    = utils.objectType,
-    isString      = utils.isString,
-    isNumber      = utils.isNumber,
-    isFunction    = utils.isFunction,
-    isBoolean     = utils.isBoolean,
-    isDate        = utils.isDate,
-    isObject      = utils.isObject,
-    isRegExp      = utils.isRegExp,
-    isArray       = utils.isArray,
-    isUndefined   = utils.isUndefined,
-    forEach       = utils.forEach,
-    forEachOwn    = utils.forEachOwn,
-    forEachSimple = utils.forEachSimple,
-    map           = utils.map,
-    bind          = utils.bind,
-    clone         = utils.clone,
-    extend        = utils.extend,
-    sprintf       = utils.sprintf,
-    async         = utils.async,
+var inherits = require("inherits-js"),
+    _        = require("./dm/utils"),
+    Async    = require("./dm/async"),
+    Loader   = require("./dm/loader"),
 
     DefaultFactory = require("./dm/factory/default"),
-    defaultFactory,
+
+    ServiceProvider   = require("./dm/provider/service"),
+    ParameterProvider = require("./dm/provider/parameter"),
+    ResourceProvider  = require("./dm/provider/resource"),
+
+    CompositeParser = require("./dm/parser/composite"),
+
+    ServiceStringParser   = require("./dm/parser/string/service"),
+    ParameterStringParser = require("./dm/parser/string/parameter"),
+    ResourceStringParser  = require("./dm/parser/string/resource"),
+
+    ServiceTemplateStringParser   = require("./dm/parser/string/template/service"),
+    ParameterTemplateStringParser = require("./dm/parser/string/template/parameter"),
+    ResourceTemplateStringParser  = require("./dm/parser/string/template/resource"),
 
     DependencyManager;
-
-
-// may be turn it inside as internal service? "@:::factory.default"
-defaultFactory = new DefaultFactory();
 
 /**
  * DM Constructor.
@@ -68,8 +33,7 @@ DependencyManager = function(options) {
      * @type {Object}
      */
     var _config = null;
-
-    var _configCopy = null;
+    var _configCopy;
 
     /**
      * Global properties.
@@ -83,7 +47,7 @@ DependencyManager = function(options) {
      * Options for DM.
      * @type {Object}
      */
-    this.options = extend({}, this.constructor.DEFAULTS, options || {});
+    this.options = _.extend({}, this.constructor.DEFAULTS, options || {});
 
     /**
      * Sets up the service map.
@@ -97,18 +61,18 @@ DependencyManager = function(options) {
             throw new Error("Dependency Manager is already configured");
         }
 
-        if (!isObject(config)) {
+        if (!_.isObject(config)) {
             throw new Error("Config is expected to be an Object");
         }
 
-        if (isObject(parameters)) {
-            forEachOwn(parameters, function(value, key) {
+        if (_.isObject(parameters)) {
+            _.forEach(parameters, function(value, key) {
                 this.setParameter(key, value);
             }, this);
         }
 
         _config = config;
-        _configCopy = clone(config);
+        _configCopy = _.clone(config);
     };
 
     /**
@@ -127,8 +91,8 @@ DependencyManager = function(options) {
      * Sets up the global parameter.
      */
     this.setParameter = function(key, value) {
-        if (!isUndefined(_parameters[key])) {
-            throw new Error("Dependency Manager property '" + key + "' is already set");
+        if (!_.isUndefined(_parameters[key])) {
+            throw new Error("Dependency Manager parameter '" + key + "' is already exists");
         }
 
         _parameters[key] = value;
@@ -142,7 +106,7 @@ DependencyManager = function(options) {
      * @returns {*}
      */
     this.getParameter = function(key) {
-        return !isUndefined(_parameters[key]) ? _parameters[key] : null;
+        return !_.isUndefined(_parameters[key]) ? _parameters[key] : null;
     };
 
     /**
@@ -150,64 +114,65 @@ DependencyManager = function(options) {
      * @type {{}}
      */
     this.services = {};
+
+    this.factory = new DefaultFactory();
 };
 
 DependencyManager.prototype = (function() {
 
-    /**
-     * Template for checking reference to service.
-     *
-     * Could be applied to string in format:
-     * @<service>[:<method>[\[<argument-1>,[<argument-n>]\]]]
-     *
-     * @type {RegExp}
-     * @private
-     * @static
-     */
-    var	SERVICE_REGEX = /^@([^:]+)(?::([^\[\]]+)(\[.*\])?)?$/i;
-
-    /**
-     * Template for checking reference to property.
-     *
-     * @type {RegExp}
-     * @private
-     * @static
-     */
-    var PROPERTY_REGEX = /^%(.*)%$/i;
-
-    /**
-     * Template for checking reference to property in string context.
-     *
-     * @type {RegExp}
-     * @private
-     * @static
-     */
-    var LIVE_PROPERTY_REGEX = /%\{([^%]+?)\}/gi;
-
-    /**
-     * Template for checking reference to resource.
-     *
-     * @type {RegExp}
-     * @private
-     * @static
-     */
-    var RESOURCE_REGEX = /^#(?:([^!]+)!)?(.*)#$/i;
-
-
     return {
         constructor: DependencyManager,
 
+        /**
+         * Temporary method, will die in 0.3.1
+         * @todo (content of this func will be moved in constructor) @ 0.3.1
+         * @deprecated
+         * @private
+         */
+        _initialize: function(async) {
+            var serviceProvider, parameterProvider, resourceProvider;
+            // assemble parser
+            serviceProvider   = new ServiceProvider(this, async);
+            parameterProvider = new ParameterProvider(this, async);
+            resourceProvider  = new ResourceProvider(this, async);
+
+            this.parser = (new CompositeParser(async))
+                .add((new ServiceStringParser(async))          .injectProvider(serviceProvider))
+                .add((new ParameterStringParser(async))        .injectProvider(parameterProvider))
+                .add((new ResourceStringParser(async))         .injectProvider(resourceProvider))
+                .add((new ServiceTemplateStringParser(async))  .injectProvider(serviceProvider))
+                .add((new ParameterTemplateStringParser(async)).injectProvider(parameterProvider))
+                .add((new ResourceTemplateStringParser(async)) .injectProvider(resourceProvider));
+        },
+
+        /**
+         *
+         * @deprecated will die in 0.3.1
+         * @param adapter
+         * @returns {DependencyManager}
+         */
         setAsync: function(adapter) {
+            console.warn("'setAsync' is deprecated. Use arguments injection in DM");
+
             if (!(adapter instanceof Async)) {
                 throw new Error("Async is expected");
             }
 
             this.async = adapter;
 
+            this._initialize(adapter);
+
             return this;
         },
 
+        /**
+         * @deprecated will die in 0.3.1
+         * @param adapter
+         * @returns {DependencyManager}
+         */
         setLoader: function(adapter) {
+            console.warn("'setLoader' is deprecated. Use arguments injection in DM");
+
             if (!(adapter instanceof Loader)) {
                 throw new Error("Loader is expected");
             }
@@ -217,130 +182,75 @@ DependencyManager.prototype = (function() {
             return this;
         },
 
-        // @service:getSome(@service:getVar(text, hello, @someService, %property%))
         parseString: function(string) {
             var self = this,
-                args, name,
-                property, handler, callArgs,
-                path,
-                promises;
+                parser;
 
-            if (!isString(string)) {
+            if (!_.isString(string)) {
                 return self.async.reject(new Error("String is expected"));
             }
 
-            // todo Refactor parsing in this way:
-            // todo Parsers in constructor, add ability to register custom parsers
-            //
-            // [PropertyTemplateParser, PropertyLinkParser, ContainerLinkParser, ServiceLinkParser, ResourceParser]
-            // chain.add(...);
-            // chain.add(...);
-            // chain.parse(string);
-            //
-            // Finally there could be:
-            // - final (returning) link parsers
-            // - continuous (not returning) template parses
-            //
-            // Links are @, #...#, %...%
-            // Templates are @{service[method|property|toString]}, #{resource}, %{parameter}
+            parser = this.parser;
 
+            return this.async.promise(function(resolve, reject) {
+                _.async.doWhilst(
+                    function(truth, value, initial) {
+                        var mustRepeat;
 
+                        console.log('truth test', value, initial);
 
+                        // if some parser has returned string
+                        // try to parse it again
+                        mustRepeat = _.isString(value) && value !== initial;
 
+                        truth(mustRepeat);
+                    },
+                    function(next, initial) {
+                        console.log('parse iteration with string', initial);
 
+                        parser
+                            .test(initial)
+                            .then(function(acceptable) {
+                                console.log('parser accepts', acceptable);
 
-            // Live replacement property
-            // We do not resolve promise with this
-            // Cause it can contain another useful matching
-            if (string.match(LIVE_PROPERTY_REGEX)) {
-                string = string.replace(LIVE_PROPERTY_REGEX, function(match, name) {
-                    return self.getParameter(name) || match;
-                });
-            }
+                                if (!acceptable) {
+                                    next(initial, initial);
+                                    return;
+                                }
 
-            // Property
-            if ((args = string.match(PROPERTY_REGEX))) {
-                name = args[1];
-                return self.async.resolve(self.getParameter(name));
-            }
-
-            // Self link
-            if (string === DependencyManager.SELF) {
-                return this.async.resolve(this);
-            }
-
-            // Service
-            if ((args = string.match(SERVICE_REGEX))) {
-                name     = args[1];
-                property = args[2];
-                callArgs = args[3];
-
-                promises = [this.parseString(name)];
-
-                if (property && isString(property)) {
-                    promises.push(this.parseString(property));
-
-                    if (callArgs) {
-                        try {
-                            callArgs = JSON.parse(args[3]);
-                        } catch (err) {
-                            return self.async.reject(new Error("Service method call parse error"));
+                                parser
+                                    .parse(string, self)
+                                    .then(function(parsed) {
+                                        console.log('parsed', parsed, 'from', initial);
+                                        next(parsed, initial);
+                                    });
+                            });
+                    },
+                    function(err, value) {
+                        if (err) {
+                            reject(err);
+                            return;
                         }
 
-                        callArgs = map(callArgs, this.parse, this);
-
-                        promises.push(this.async.all(callArgs));
-                    }
-                }
-
-                return this.async.all(promises)
-                    .then(function(results) {
-                        var key, options;
-
-                        key = results[0];
-                        options = {
-                            property:  results[1],
-                            arguments: results[2]
-                        };
-
-                        return self.get(key, options);
-                    });
-            }
-
-            // Resource
-            if ((args = string.match(RESOURCE_REGEX))) {
-                path    = args[2];
-                handler = args[1];
-
-                promises = [this.parseString(path)];
-
-                if (handler && isString(handler)) {
-                    promises.push(this.parseString(handler));
-                }
-
-                return this.async.all(promises).then(function(args) {
-                    return self.getResource.apply(self, args);
-                });
-            }
-
-
-            return this.async.resolve(string);
+                        resolve(value);
+                    },
+                    string
+                );
+            });
         },
 
         parseObject: function(object) {
             var self = this,
-                iterator, parsed, promises, escaped;
+                parsed, promises, escaped;
 
-            switch (objectType(object)) {
+            switch (_.objectType(object)) {
                 case "Object": {
                     parsed = {};
-                    iterator = forEachOwn;
                     break;
                 }
 
                 case "Array": {
                     parsed = [];
-                    iterator = forEachSimple;
                     break;
                 }
 
@@ -355,7 +265,7 @@ DependencyManager.prototype = (function() {
 
             promises = [];
 
-            iterator(object, function(value, key) {
+            _.forEach(object, function(value, key) {
                 promises.push(self.parse(value).then(function(value) {
                     parsed[key] = value;
                 }));
@@ -375,7 +285,7 @@ DependencyManager.prototype = (function() {
          * @param config {*}
          */
         parse: function(config) {
-            switch (objectType(config)) {
+            switch (_.objectType(config)) {
                 case 'String': {
                     return this.parseString(config);
                 }
@@ -411,11 +321,11 @@ DependencyManager.prototype = (function() {
             return this.loader.require(config.path, options)
                 .then(function(constructor) {
                     return self.async.all([
-                            self.parse(config.arguments  || []),
-                            self.parse(config.calls      || []),
-                            self.parse(config.properties || {}),
-                            self.parse(config.factory)
-                        ])
+                        self.parse(config.arguments  || []),
+                        self.parse(config.calls      || []),
+                        self.parse(config.properties || {}),
+                        self.parse(config.factory)
+                    ])
                         .then(function(inputs) {
                             var definition, factory;
 
@@ -426,15 +336,15 @@ DependencyManager.prototype = (function() {
                                 properties:  inputs[2]
                             };
 
-                            factory = inputs[3] || defaultFactory;
+                            factory = inputs[3] || self.factory;
 
-                            if (isObject(factory)) {
-                                if (!isFunction(factory.factory)) {
+                            if (_.isObject(factory)) {
+                                if (!_.isFunction(factory.factory)) {
                                     throw new TypeError("Given factory object does not have #factory method");
                                 }
 
-                                factory = bind(factory.factory, factory);
-                            } else if (!isFunction(factory)) {
+                                factory = _.bind(factory.factory, factory);
+                            } else if (!_.isFunction(factory)) {
                                 throw new TypeError("Given factory must be a function");
                             }
 
@@ -451,7 +361,7 @@ DependencyManager.prototype = (function() {
         getResource: function(path, handler) {
             var options;
 
-            if (!isString(path)) {
+            if (!_.isString(path)) {
                 return this.async.reject(new Error("Path must be a string"));
             }
 
@@ -459,7 +369,7 @@ DependencyManager.prototype = (function() {
                 base: this.options.base
             };
 
-            if (isFunction(handler)) {
+            if (_.isFunction(handler)) {
                 return this.loader.read(path, options).then(handler);
             }
 
@@ -497,11 +407,11 @@ DependencyManager.prototype = (function() {
             var config;
 
             if (!(config = this.getConfig(key))) {
-                throw new Error(sprintf("Service with key '%s' is not present in configuration", key));
+                throw new Error(_.sprintf("Service with key '%s' is not present in configuration", key));
             }
 
             if (!config.synthetic) {
-                throw new Error(sprintf("Could not inject service with key '%s', cause it is not synthetic", key));
+                throw new Error(_.sprintf("Could not inject service with key '%s', cause it is not synthetic", key));
             }
 
             this.services[key] = this.async.resolve(service);
@@ -510,39 +420,37 @@ DependencyManager.prototype = (function() {
         /**
          *
          */
-        get: function(key, options) {
+        get: function(key) {
             var config, promise,
                 alias,
                 isShared, isSynthetic, isAlias, isSingleProperty;
 
-            if (!isString(key)) {
-                return this.async.reject(new Error(sprintf("Key is expected to be string, %s given", typeof key)));
+            if (!_.isString(key)) {
+                return this.async.reject(new Error(_.sprintf("Key is expected to be string, %s given", typeof key)));
             }
 
             if (!(config = this.getConfig(key))) {
-                return this.async.reject(new Error(sprintf("Service with key '%s' is not present in configuration", key)));
+                return this.async.reject(new Error(_.sprintf("Service with key '%s' is not present in configuration", key)));
             }
 
-            options = options || {};
-
-            isShared    = isBoolean(config.share)     ? config.share     : true;
-            isSynthetic = isBoolean(config.synthetic) ? config.synthetic : false;
-            isAlias     = isString(config.alias)      ? true             : false;
+            isShared    = _.isBoolean(config.share)     ? config.share     : true;
+            isSynthetic = _.isBoolean(config.synthetic) ? config.synthetic : false;
+            isAlias     = _.isString(config.alias)      ? true             : false;
 
             // Sign of custom property (synthetic, aliased or smth)
             isSingleProperty = isSynthetic || isAlias;
 
-            if (!isSingleProperty && !isString(config.path)) {
-                return this.async.reject(new Error(sprintf("Path is expected in service configuration with key '%s'", key)));
+            if (!isSingleProperty && !_.isString(config.path)) {
+                return this.async.reject(new Error(_.sprintf("Path is expected in service configuration with key '%s'", key)));
             }
 
             if (isSynthetic && !this.initialized(key)) {
-                return this.async.reject(new Error(sprintf("Service with key '%s' is synthetic, and not injected yet", key)));
+                return this.async.reject(new Error(_.sprintf("Service with key '%s' is synthetic, and not injected yet", key)));
             }
 
             if (isAlias) {
                 if (!this.has(alias = config.alias)) {
-                    return this.async.reject(new Error(sprintf("Service with key '%s' could not be alias for not existing '%s' service", key, alias)));
+                    return this.async.reject(new Error(_.sprintf("Service with key '%s' could not be alias for not existing '%s' service", key, alias)));
                 }
 
                 return this.get(alias);
@@ -554,30 +462,7 @@ DependencyManager.prototype = (function() {
                 promise = this.services[key] = this.build(config);
             }
 
-            // todo move this logic in Service parser
-            return promise.then(function(service) {
-                var property, isFunc;
-
-                if (isString(options.property)) {
-                    property = service[options.property];
-                    isFunc = isFunction(property);
-
-                    if (isArray(options.arguments)) {
-                        if (!isFunc) {
-                            throw new TypeError(sprintf("Service '%s' does not have the method '%s'", key, options.property));
-                        }
-
-
-                        return property.apply(service, options.arguments);
-                    }
-
-
-                    return isFunc ? bind(property, service) : property;
-                }
-
-
-                return service;
-            });
+            return promise;
         }
     };
 })();

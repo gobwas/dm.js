@@ -1,6 +1,18 @@
 Change log
 ==========
 
+### 0.3.1 (?12-10-2014)
+______________________
+
++ Simplified configuration of DM (Async and Loader in arguments);
+
+### 0.3.0 (5-10-2014)
+______________________
+
++ Adapter is not necessary parent class (removed);
++ [Big Refactoring Issue](https://github.com/gobwas/dm.js/issues/10)
++ Removed `.coffee` tests ([issue](https://github.com/gobwas/dm.js/issues/5))
+
 ### 0.2.1 (10-08-2014)
 ______________________
 
