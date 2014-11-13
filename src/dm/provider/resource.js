@@ -13,7 +13,7 @@ ResourceProvider = Provider.extend(
      * @lends ResourceProvider.prototype
      */
     {
-        make: function(attributes) {
+        get: function(attributes) {
             var self = this,
                 path, handler,
                 promises;

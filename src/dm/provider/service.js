@@ -13,7 +13,7 @@ ServiceProvider = Provider.extend(
      * @lends ServiceProvider.prototype
      */
     {
-        make: function(attributes) {
+        get: function(attributes) {
             var self = this,
                 name, property, args,
                 promises;

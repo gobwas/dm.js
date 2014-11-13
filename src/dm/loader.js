@@ -1,46 +1,44 @@
 var inherits = require("inherits-js"),
+    _        = require("./utils"),
     Async    = require("./async"),
     Loader;
 
-Loader = function(adaptee) {
+/**
+ * Loader.
+ *
+ * @abstract
+ * @class Loader
+ * @constructor
+ */
+Loader = function(adaptee, options) {
     this.adaptee = adaptee;
+    this.options = _.extend({}, this.constructor.DEFAULTS, options || {});
 };
 
 Loader.prototype = {
     constructor: Loader,
 
     /**
-     * Injects async adapter.
-     *
-     * @param {Async} adapter
-     */
-    setAsync: function(adapter) {
-        if (!adapter instanceof Async) {
-            throw new Error("Async is expected");
-        }
-
-        this.async = adapter;
-
-        return this;
-    },
-
-    /**
      * Requires a module.
      *
+     * @abstract
      * @param {string} path
-     * @param {Object} options
+     * @param {Async}  async
+     * @param {Object} [options]
      */
-    require: function(path, options) {
+    require: function(path, async, options) {
         throw new Error("Method must be implemented");
     },
 
     /**
      * Loads resource.
      *
+     * @abstract
      * @param {string} path
-     * @param {Object} options
+     * @param {Async}  async
+     * @param {Object} [options]
      */
-    read: function(path, options) {
+    read: function(path, async, options) {
         throw new Error("Method must be implemented");
     }
 };
@@ -48,5 +46,7 @@ Loader.prototype = {
 Loader.extend = function(prots, statics) {
     return inherits(this, prots, statics);
 };
+
+Loader.DEFAULTS = {};
 
 module.exports = Loader;

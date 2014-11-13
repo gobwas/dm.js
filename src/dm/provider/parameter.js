@@ -13,7 +13,7 @@ ParameterProvider = Provider.extend(
      * @lends ParameterProvider.prototype
      */
     {
-        make: function(attributes) {
+        get: function(attributes) {
             var dm = this.dm;
 
             return this.async.promise(function(resolve, reject) {

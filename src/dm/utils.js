@@ -1,5 +1,11 @@
 var toString = Object.prototype.toString;
 
+function assert(statement, msg, Err) {
+    if (!statement) {
+        throw new (isFunction(Err) ? Err : Error)(msg || "Assertion error");
+    }
+}
+
 function objectType(obj) {
     if (obj === void 0) {
         return 'Undefined';
@@ -46,11 +52,19 @@ function isUndefined(obj) {
     return toString.call(obj) == '[object Undefined]' || obj === void 0;
 }
 
+function isNull(obj) {
+    return obj === null;
+}
+
 function noop() {
     //
 }
 
-
+function deprecate(method, instead) {
+    return function() {
+        throw new Error("Method '" + method + "' is deprecated now. Use '" + instead + "' method instead.");
+    }
+}
 
 var async = {
     _doParallel: function(fn) {
@@ -435,6 +449,7 @@ module.exports = {
     isObject:      isObject,
     isRegExp:      isRegExp,
     isArray:       isArray,
+    isNull:        isNull,
     isUndefined:   isUndefined,
     forEach:       forEach,
     forEachOwn:    forEachOwn,
@@ -445,5 +460,7 @@ module.exports = {
     extend:        extend,
     bind:          bind,
     async:         async,
-    keys:          keys
+    keys:          keys,
+    assert:        assert,
+    deprecate:     deprecate
 };

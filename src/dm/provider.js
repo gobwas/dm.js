@@ -9,25 +9,21 @@ var inherits = require("inherits-js"),
  * @constructor
  */
 Provider = function(dm, async, options) {
-//    Avoid circular dependency
-//    if (!(dm instanceof require("../dm"))) {
-//        throw new TypeError("DependencyManager is expected");
-//    }
+    _.assert(async instanceof Async, "Async is expected");
 
-    if (!(async instanceof Async)) {
-        throw new TypeError("Async is expected");
-    }
-
-    this.dm    = dm;
+    this.dm = dm;
     this.async = async;
-
     this.options = _.extend({}, this.constructor.DEFAULTS, options || {});
 };
 
 Provider.prototype = {
     constructor: Provider,
 
-    make: function(attributes) {
+    /**
+     * @abstract
+     * @param {Object} attributes
+     */
+    get: function(attributes) {
         throw new Error("Method 'make' must be implemented");
     }
 };

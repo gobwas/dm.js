@@ -19,29 +19,46 @@ var inherits = require("inherits-js"),
     ParameterTemplateStringParser = require("./dm/parser/string/template/parameter"),
     ResourceTemplateStringParser  = require("./dm/parser/string/template/resource"),
 
-    DependencyManager;
+    DM;
 
 /**
- * DM Constructor.
+ * DM.
+ *
+ * @class DM
  * @constructor
+ *
+ * @param {Async}  async
+ * @param {Loader} loader
+ * @param {Object} [options]
  */
-DependencyManager = function(options) {
-    /**
-     * Service map.
-     *
-     * @private
-     * @type {Object}
-     */
-    var _config = null;
-    var _configCopy;
+DM = function(async, loader, options) {
+    var _config, _parameters,
+        serviceProvider, parameterProvider, resourceProvider;
+
+    _.assert(this   instanceof DM,     "Use constructor with the `new` operator");
+    _.assert(async  instanceof Async,  "Async is expected",  TypeError);
+    _.assert(loader instanceof Loader, "Loader is expected", TypeError);
+
+    if (!_.isUndefined(options)) {
+        _.assert(_.isObject(options), "Options is expected to be an Object", TypeError);
+    }
 
     /**
-     * Global properties.
+     * Services map.
      *
      * @private
      * @type {Object}
      */
-    var _parameters = {};
+    _config = null;
+
+    /**
+     * Parameters.
+     *
+     * @private
+     * @type {Object}
+     */
+    _parameters = {};
+
 
     /**
      * Options for DM.
@@ -50,50 +67,55 @@ DependencyManager = function(options) {
     this.options = _.extend({}, this.constructor.DEFAULTS, options || {});
 
     /**
-     * Sets up the service map.
+     * Sets up service map.
      *
      * @param {Object} config
-     * @param {Object} [parameters]
      * @throws {Error}
      */
-    this.setConfig = function(config, parameters) {
-        if (_config !== null) {
-            throw new Error("Dependency Manager is already configured");
-        }
+    this.setConfig = function(config) {
+        _.assert(_.isNull(_config),  "Dependency Manager is already configured");
+        _.assert(_.isObject(config), "Config is expected to be an Object");
 
-        if (!_.isObject(config)) {
-            throw new Error("Config is expected to be an Object");
-        }
-
-        if (_.isObject(parameters)) {
-            _.forEach(parameters, function(value, key) {
-                this.setParameter(key, value);
-            }, this);
-        }
-
+        // set up private config
         _config = config;
-        _configCopy = _.clone(config);
     };
 
     /**
-     * Returns the deep copy of config.
+     * Returns cloned definition of a configuration for service.
      *
-     * @returns {Object}
+     * @param key
+     * @returns {*|null}
      */
     this.getConfig = function(key) {
-        if (_config === null) {
-            throw new Error("Dependency Manager is not configured yet");
-        }
-        return key ? _configCopy[key] : _configCopy;
+        _.assert(_.isString(key), "Key is expected to be a string");
+        return _.clone(_config[key]) || null;
     };
 
     /**
-     * Sets up the global parameter.
+     * Sets up parameters.
+     *
+     * @param {Object} parameters
+     * @throws {Error}
+     */
+    this.setParameters = function(parameters) {
+        _.assert(_.isObject(parameters), "Parameters is expected to be an Object");
+
+        _.forEach(parameters, function (value, key) {
+            this.setParameter(key, value);
+        }, this);
+    };
+
+    /**
+     * Sets up parameter.
+     *
+     * @param {string} key
+     * @param {*}      value
+     *
+     * @throws {Error}
      */
     this.setParameter = function(key, value) {
-        if (!_.isUndefined(_parameters[key])) {
-            throw new Error("Dependency Manager parameter '" + key + "' is already exists");
-        }
+        _.assert(_.isString(key),                 "Key is expected to be a string");
+        _.assert(_.isUndefined(_parameters[key]), _.sprintf("Parameter '%s' is already exists", key));
 
         _parameters[key] = value;
     };
@@ -110,85 +132,51 @@ DependencyManager = function(options) {
     };
 
     /**
-     * Services map
-     * @type {{}}
+     * Instances map.
+     *
+     * @private
+     * @type {Object}
      */
     this.services = {};
 
+    // assemble parser
+    serviceProvider   = new ServiceProvider(this, async);
+    parameterProvider = new ParameterProvider(this, async);
+    resourceProvider  = new ResourceProvider(this, async);
+
+    /**
+     * Composite parser.
+     *
+     * @private
+     * @type {CompositeParser}
+     */
+    this.parser = (new CompositeParser(async))
+        .add((new ServiceStringParser(async))          .injectProvider(serviceProvider))
+        .add((new ParameterStringParser(async))        .injectProvider(parameterProvider))
+        .add((new ResourceStringParser(async))         .injectProvider(resourceProvider))
+        .add((new ServiceTemplateStringParser(async))  .injectProvider(serviceProvider))
+        .add((new ParameterTemplateStringParser(async)).injectProvider(parameterProvider))
+        .add((new ResourceTemplateStringParser(async)) .injectProvider(resourceProvider));
+
+    /**
+     * Default factory.
+     *
+     * @private
+     * @type {DefaultFactory}
+     */
     this.factory = new DefaultFactory();
 };
 
-DependencyManager.prototype = (function() {
+DM.prototype = (function() {
 
     return {
-        constructor: DependencyManager,
-
-        /**
-         * Temporary method, will die in 0.3.1
-         * @todo (content of this func will be moved in constructor) @ 0.3.1
-         * @deprecated
-         * @private
-         */
-        _initialize: function(async) {
-            var serviceProvider, parameterProvider, resourceProvider;
-            // assemble parser
-            serviceProvider   = new ServiceProvider(this, async);
-            parameterProvider = new ParameterProvider(this, async);
-            resourceProvider  = new ResourceProvider(this, async);
-
-            this.parser = (new CompositeParser(async))
-                .add((new ServiceStringParser(async))          .injectProvider(serviceProvider))
-                .add((new ParameterStringParser(async))        .injectProvider(parameterProvider))
-                .add((new ResourceStringParser(async))         .injectProvider(resourceProvider))
-                .add((new ServiceTemplateStringParser(async))  .injectProvider(serviceProvider))
-                .add((new ParameterTemplateStringParser(async)).injectProvider(parameterProvider))
-                .add((new ResourceTemplateStringParser(async)) .injectProvider(resourceProvider));
-        },
-
-        /**
-         *
-         * @deprecated will die in 0.3.1
-         * @param adapter
-         * @returns {DependencyManager}
-         */
-        setAsync: function(adapter) {
-            console.warn("'setAsync' is deprecated. Use arguments injection in DM");
-
-            if (!(adapter instanceof Async)) {
-                throw new Error("Async is expected");
-            }
-
-            this.async = adapter;
-
-            this._initialize(adapter);
-
-            return this;
-        },
-
-        /**
-         * @deprecated will die in 0.3.1
-         * @param adapter
-         * @returns {DependencyManager}
-         */
-        setLoader: function(adapter) {
-            console.warn("'setLoader' is deprecated. Use arguments injection in DM");
-
-            if (!(adapter instanceof Loader)) {
-                throw new Error("Loader is expected");
-            }
-
-            this.loader = adapter;
-
-            return this;
-        },
+        constructor: DM,
 
         parseString: function(string) {
             var self = this,
                 parser;
 
-            if (!_.isString(string)) {
-                return self.async.reject(new Error("String is expected"));
-            }
+            _.assert(_.isString(string), "String is expected");
 
             parser = this.parser;
 
@@ -259,7 +247,7 @@ DependencyManager.prototype = (function() {
                 }
             }
 
-            if ((escaped = DependencyManager.unEscape(object))) {
+            if ((escaped = DM.unEscape(object))) {
                 return this.async.resolve(escaped);
             }
 
@@ -309,16 +297,11 @@ DependencyManager.prototype = (function() {
          * @returns {Promise}
          */
         build: function(config) {
-            var self = this,
-                options;
-
-            options = {
-                base: this.options.base
-            };
+            var self = this;
 
             // do not combine path loading and parsing arguments, cause it can produce side effects
             // on amd builds - when dependencies compiled in 'path' file, but loaded earlier from separate files
-            return this.loader.require(config.path, options)
+            return this.loader.require(config.path, this.async)
                 .then(function(constructor) {
                     return self.async.all([
                         self.parse(config.arguments  || []),
@@ -359,24 +342,13 @@ DependencyManager.prototype = (function() {
         // %tpl%!/var/template.html
         // %tpl%!%path%
         getResource: function(path, handler) {
-            var options;
-
-            if (!_.isString(path)) {
-                return this.async.reject(new Error("Path must be a string"));
-            }
-
-            options = {
-                base: this.options.base
-            };
+            _.assert(_.isString(path), "Path is expected to be a string");
 
             if (_.isFunction(handler)) {
-                return this.loader.read(path, options).then(handler);
+                return this.loader.read(path, this.async).then(handler);
             }
 
-            // path handler to loader for any cases
-            options.handler = handler;
-
-            return this.loader.read(path, options);
+            return this.loader.read(path, this.async, { handler: handler });
         },
 
         /**
@@ -401,18 +373,12 @@ DependencyManager.prototype = (function() {
          *
          * @param {string} key
          * @param {*} service
-         * @param {Object} [options]
          */
-        set: function(key, service, options) {
+        set: function(key, service) {
             var config;
 
-            if (!(config = this.getConfig(key))) {
-                throw new Error(_.sprintf("Service with key '%s' is not present in configuration", key));
-            }
-
-            if (!config.synthetic) {
-                throw new Error(_.sprintf("Could not inject service with key '%s', cause it is not synthetic", key));
-            }
+            _.assert((config = this.getConfig(key)), _.sprintf("Service '%s' is not present in configuration", key));
+            _.assert(config.synthetic,               _.sprintf("Could not inject non synthetic service '%s'", key));
 
             this.services[key] = this.async.resolve(service);
         },
@@ -468,37 +434,37 @@ DependencyManager.prototype = (function() {
 })();
 
 // Default options
-DependencyManager.DEFAULTS = {
+DM.DEFAULTS = {
     base: null
 };
 
-DependencyManager.ESCAPE_FLAG  = '__escape__';
-DependencyManager.ESCAPE_VALUE = '__value__';
-DependencyManager.SELF         = "@_@";
+DM.ESCAPE_FLAG  = '__escape__';
+DM.ESCAPE_VALUE = '__value__';
+DM.SELF         = "@_@";
 
-DependencyManager.escape = function(value) {
+DM.escape = function(value) {
     var wrapper = {};
 
-    wrapper[DependencyManager.ESCAPE_FLAG] = true;
-    wrapper[DependencyManager.ESCAPE_VALUE] = value;
+    wrapper[DM.ESCAPE_FLAG] = true;
+    wrapper[DM.ESCAPE_VALUE] = value;
 
     return wrapper;
 };
 
-DependencyManager.unEscape = function(obj) {
-    if (obj[DependencyManager.ESCAPE_FLAG] === true) {
-        return obj[DependencyManager.ESCAPE_VALUE];
+DM.unEscape = function(obj) {
+    if (obj[DM.ESCAPE_FLAG] === true) {
+        return obj[DM.ESCAPE_VALUE];
     }
 
     return null;
 };
 
-DependencyManager.extend = function(prototypeProps, staticProps) {
+DM.extend = function(prototypeProps, staticProps) {
     return inherits(this, prototypeProps, staticProps);
 };
 
 
-module.exports = DependencyManager;
+module.exports = DM;
 
 // Module registration
 // -------------------
@@ -507,9 +473,9 @@ module.exports = DependencyManager;
  isAMD = typeof define === 'function' && typeof define.amd === 'object' && define.amd;
 
  if (isNode) {
- module.exports = DependencyManager;
+ module.exports = DM;
  } else if (isAMD) {
- define([], function() {return DependencyManager;});
+ define([], function() {return DM;});
  } else if ( typeof window === "object" && typeof window.document === "object" ) {
- window.DependencyManager = DependencyManager;
+ window.DM = DM;
  }*/
