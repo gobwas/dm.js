@@ -34,7 +34,7 @@ module.exports = (grunt) ->
       all:
         options:
           reporter: "spec"
-          ui:       "tdd"
+          ui:       "bdd"
         src: ["test/**/*.js"]
 
 #    mochacli:

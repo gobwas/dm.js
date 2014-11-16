@@ -43,7 +43,7 @@ StringParser = Parser.extend(
             if (!(cached = this.cache.multiple[str])) {
                 cached = [];
 
-                while (match = this.constructor.REGEXP.exec(str)) {
+                while ((match = this.constructor.REGEXP.exec(str))) {
                     cached.push(match);
                 }
 

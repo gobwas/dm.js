@@ -1,8 +1,12 @@
 var toString = Object.prototype.toString;
 
 function assert(statement, msg, Err) {
+    var ctor;
+
+    ctor = isFunction(Err) ? Err : Error;
+
     if (!statement) {
-        throw new (isFunction(Err) ? Err : Error)(msg || "Assertion error");
+        throw new ctor(msg || "Assertion error");
     }
 }
 
@@ -14,6 +18,10 @@ function objectType(obj) {
     } else {
         return toString.call(obj).replace(/\[object ([a-zA-Z]+)\]/i, '$1');
     }
+}
+
+function has(obj, key) {
+    return obj ? hasOwnProperty.call(obj, key) : false;
 }
 
 function isString(obj) {
@@ -63,7 +71,7 @@ function noop() {
 function deprecate(method, instead) {
     return function() {
         throw new Error("Method '" + method + "' is deprecated now. Use '" + instead + "' method instead.");
-    }
+    };
 }
 
 var async = {
@@ -303,7 +311,7 @@ function forEachOwn(obj, iterator, context) {
     var result;
 
     for (var x in obj) {
-        if (obj.hasOwnProperty(x)) {
+        if (has(obj, x)) {
             result = iterator.call(context, obj[x], x, obj);
 
             if (result !== undefined) {
@@ -441,6 +449,7 @@ function extend(obj) {
 
 module.exports = {
     objectType:    objectType,
+    has:           has,
     isString:      isString,
     isNumber:      isNumber,
     isFunction:    isFunction,

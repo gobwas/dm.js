@@ -73,7 +73,7 @@ ServiceProvider = Provider.extend(
 
                             return service;
                         });
-                })
+                });
 
         }
     }

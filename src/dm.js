@@ -30,6 +30,9 @@ var inherits = require("inherits-js"),
  * @param {Async}  async
  * @param {Loader} loader
  * @param {Object} [options]
+ *
+ * @throws {Error}
+ * @throws {TypeError}
  */
 DM = function(async, loader, options) {
     var _config, _parameters,
@@ -70,11 +73,13 @@ DM = function(async, loader, options) {
      * Sets up service map.
      *
      * @param {Object} config
+     *
      * @throws {Error}
+     * @throws {TypeError}
      */
     this.setConfig = function(config) {
         _.assert(_.isNull(_config),  "Dependency Manager is already configured");
-        _.assert(_.isObject(config), "Config is expected to be an Object");
+        _.assert(_.isObject(config), "Config is expected to be an Object", TypeError);
 
         // set up private config
         _config = config;
@@ -84,10 +89,13 @@ DM = function(async, loader, options) {
      * Returns cloned definition of a configuration for service.
      *
      * @param key
-     * @returns {*|null}
+     *
+     * @throws {Error}
+     *
+     * @returns {*}
      */
     this.getConfig = function(key) {
-        _.assert(_.isString(key), "Key is expected to be a string");
+        _.assert(_.isString(key), "Key is expected to be a string", TypeError);
         return _.clone(_config[key]) || null;
     };
 
@@ -95,12 +103,13 @@ DM = function(async, loader, options) {
      * Sets up parameters.
      *
      * @param {Object} parameters
-     * @throws {Error}
+     *
+     * @throws {TypeError}
      */
     this.setParameters = function(parameters) {
-        _.assert(_.isObject(parameters), "Parameters is expected to be an Object");
+        _.assert(_.isObject(parameters), "Parameters is expected to be an Object", TypeError);
 
-        _.forEach(parameters, function (value, key) {
+        _.forEach(parameters, function(value, key) {
             this.setParameter(key, value);
         }, this);
     };
@@ -112,10 +121,11 @@ DM = function(async, loader, options) {
      * @param {*}      value
      *
      * @throws {Error}
+     * @throws {TypeError}
      */
     this.setParameter = function(key, value) {
-        _.assert(_.isString(key),                 "Key is expected to be a string");
-        _.assert(_.isUndefined(_parameters[key]), _.sprintf("Parameter '%s' is already exists", key));
+        _.assert(_.isString(key),          "Key is expected to be a string", TypeError);
+        _.assert(!_.has(_parameters, key), _.sprintf("Parameter '%s' is already exists", key));
 
         _parameters[key] = value;
     };
@@ -128,6 +138,7 @@ DM = function(async, loader, options) {
      * @returns {*}
      */
     this.getParameter = function(key) {
+        _.assert(_.isString(key), "Key is expected to be a string", TypeError);
         return !_.isUndefined(_parameters[key]) ? _parameters[key] : null;
     };
 
@@ -172,11 +183,22 @@ DM.prototype = (function() {
     return {
         constructor: DM,
 
+        /**
+         * @private
+         * @param {string} string
+         *
+         * @throws {TypeError}
+         *
+         * @returns {Promise}
+         */
         parseString: function(string) {
             var self = this,
                 parser;
 
-            _.assert(_.isString(string), "String is expected");
+            // we throw here and not rejecting,
+            // cause it is not an expected situation for this method
+            // @see http://stackoverflow.com/a/21891544/1473140
+            _.assert(_.isString(string), "String is expected", TypeError);
 
             parser = this.parser;
 
@@ -227,6 +249,14 @@ DM.prototype = (function() {
             });
         },
 
+        /**
+         * @private
+         *
+         * @param {Object} object
+         *
+         * @throws TypeError
+         * @returns {Promise}
+         */
         parseObject: function(object) {
             var self = this,
                 parsed, promises, escaped;
@@ -243,7 +273,10 @@ DM.prototype = (function() {
                 }
 
                 default: {
-                    return self.async.reject(new Error("Object or Array is expected"));
+                    // we throw here and not rejecting,
+                    // cause it is not an expected situation for this method
+                    // @see http://stackoverflow.com/a/21891544/1473140
+                    throw new TypeError("Object or Array is expected");
                 }
             }
 
@@ -270,7 +303,11 @@ DM.prototype = (function() {
          * Returns promise of getting them, which is resolved then with object having
          * parsed values.
          *
-         * @param config {*}
+         * @public
+         *
+         * @param {*} config
+         *
+         * @returns {Promise}
          */
         parse: function(config) {
             switch (_.objectType(config)) {
@@ -290,14 +327,27 @@ DM.prototype = (function() {
         },
 
         /**
-         * Собирает сервис.
+         * Builds service.
          *
-         * @param config {Object}
+         * @private
+         *
+         * @param {Object} config
+         *
+         * @rejects {TypeError}
          *
          * @returns {Promise}
          */
         build: function(config) {
             var self = this;
+
+            try {
+                _.assert(_.isObject(config),      "Config is expected to be an Object",     TypeError);
+                _.assert(_.isString(config.path), "Config.path is expected to be a string", TypeError);
+            } catch (err) {
+                // here we rejecting, not throwing, cause it is an
+                // expected situations, when service is not properly configured
+                return this.async.reject(err);
+            }
 
             // do not combine path loading and parsing arguments, cause it can produce side effects
             // on amd builds - when dependencies compiled in 'path' file, but loaded earlier from separate files
@@ -341,42 +391,72 @@ DM.prototype = (function() {
         // @handler:handle!/var/resource
         // %tpl%!/var/template.html
         // %tpl%!%path%
+        /**
+         * Retrieves resource.
+         *
+         * @private
+         *
+         * @param {string} path
+         * @param {*}      [handler]
+         *
+         * @throws TypeError
+         * @returns {Promise}
+         */
         getResource: function(path, handler) {
-            _.assert(_.isString(path), "Path is expected to be a string");
+            var isHandling, resource, options;
 
-            if (_.isFunction(handler)) {
-                return this.loader.read(path, this.async).then(handler);
+            _.assert(_.isString(path), "Path is expected to be a string", TypeError);
+
+            isHandling = _.isFunction(handler);
+
+            options = {};
+
+            if (isHandling) {
+                options.handler = handler;
             }
 
-            return this.loader.read(path, this.async, { handler: handler });
+            resource = this.loader.read(path, this.async);
+
+            return isHandling ? resource.then(handler) : resource;
         },
 
         /**
+         * Checks for service being configured.
          *
          * @param {string} key
-         * @param {Object} [options]
+         *
+         * @throws {TypeError}
+         * @returns {boolean}
          */
-        has: function(key, options) {
+        has: function(key) {
+            _.assert(_.isString(key), "Key is expected to be a string", TypeError);
             return !!this.getConfig(key);
         },
 
         /**
+         * Checks for service being built.
          *
          * @param {string} key
-         * @param {Object} [options]
+         *
+         * @returns {boolean}
          */
-        initialized: function(key, options) {
+        initialized: function(key) {
+            _.assert(_.isString(key), "Key is expected to be a string", TypeError);
             return !!this.services[key];
         },
 
         /**
+         * Builds in built service.
          *
          * @param {string} key
-         * @param {*} service
+         * @param {Object} service
+         *
+         * @throws Error
          */
         set: function(key, service) {
             var config;
 
+            _.assert(_.isString(key),                "Key is expected to be a string", TypeError);
             _.assert((config = this.getConfig(key)), _.sprintf("Service '%s' is not present in configuration", key));
             _.assert(config.synthetic,               _.sprintf("Could not inject non synthetic service '%s'", key));
 
@@ -384,17 +464,25 @@ DM.prototype = (function() {
         },
 
         /**
+         * Retrieves service.
          *
+         * @param {string} key
+         *
+         * @returns {Promise}
          */
         get: function(key) {
             var config, promise,
                 alias,
                 isShared, isSynthetic, isAlias, isSingleProperty;
 
-            if (!_.isString(key)) {
-                return this.async.reject(new Error(_.sprintf("Key is expected to be string, %s given", typeof key)));
-            }
+            // we throw here and not rejecting,
+            // cause it is not an expected situation for this method
+            // @see http://stackoverflow.com/a/21891544/1473140
+            _.assert(_.isString(key), "Key is expected to be a string", TypeError);
 
+
+            // here we rejecting,
+            // cause it is expected situation, when service is not configured
             if (!(config = this.getConfig(key))) {
                 return this.async.reject(new Error(_.sprintf("Service with key '%s' is not present in configuration", key)));
             }

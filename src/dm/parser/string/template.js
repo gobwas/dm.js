@@ -50,7 +50,7 @@ TemplateStringParser = StringParser.extend(
 
                         resolve(result);
                     }
-                )
+                );
             });
         },
 
