@@ -1,16 +1,15 @@
 var inherits = require("inherits-js"),
     utils    = require("./utils"),
     Async    = require("./async"),
-    Provider = require("./provider"),
     extend   = utils.extend,
     Parser;
 
 Parser = function(async, options) {
     if (!(async instanceof Async)) {
-        throw new Error("Async is expected");
+        throw new TypeError("Async is expected");
     }
 
-    this.async    = async;
+    this.async = async;
 
     this.options = extend({}, this.constructor.DEFAULTS, options || {});
 };
@@ -18,24 +17,25 @@ Parser = function(async, options) {
 Parser.prototype = {
     constructor: Parser,
 
-    injectProvider: function(provider) {
-        if (!(provider instanceof Provider)) {
-            throw new TypeError("Provider is expected");
-        }
-
-        if (this.provider) {
-            throw new Error("Provider is already set");
-        }
-
-        this.provider = provider;
-
-        return this;
-    },
-
+    /**
+     * Tests given string to be parsed.
+     *
+     * @abstract
+     * @param {string} str
+     *
+     * @returns {Promise|boolean}
+     */
     test: function(str) {
         throw new Error("Method 'test' must be implemented");
     },
 
+    /**
+     * Parses string.
+     * @abstract
+     * @param {string} str
+     *
+     * @returns {Promise|*}
+     */
     parse: function(str) {
         throw new Error("Method 'parse' must be implemented");
     }

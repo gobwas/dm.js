@@ -121,6 +121,10 @@ module.exports = function(Adaptee, AdapteePromise, ConcreteAdapter, options) {
                     .then(successSpy, errorSpy)
                     .then(test, test);
             });
+
+            //it.skip("Should wrap given promise", function(done) {
+            //    todo
+            //});
         });
 
 

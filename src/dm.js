@@ -10,6 +10,7 @@ var inherits = require("inherits-js"),
     ResourceProvider  = require("./dm/provider/resource"),
 
     CompositeParser = require("./dm/parser/composite"),
+    EventualParser  = require("./dm/parser/eventual"),
 
     ServiceStringParser   = require("./dm/parser/string/service"),
     ParameterStringParser = require("./dm/parser/string/parameter"),
@@ -36,7 +37,8 @@ var inherits = require("inherits-js"),
  */
 DM = function(async, loader, options) {
     var _config, _parameters,
-        serviceProvider, parameterProvider, resourceProvider;
+        serviceProvider, parameterProvider, resourceProvider,
+        parsersChain;
 
     _.assert(this   instanceof DM,     "Use constructor with the `new` operator");
     _.assert(async  instanceof Async,  "Async is expected",  TypeError);
@@ -155,19 +157,22 @@ DM = function(async, loader, options) {
     parameterProvider = new ParameterProvider(this, async);
     resourceProvider  = new ResourceProvider(this, async);
 
+    // assemble parsers chain
+    parsersChain = (new CompositeParser(async))
+        .add(new ServiceStringParser(async, serviceProvider))
+        .add(new ParameterStringParser(async, parameterProvider))
+        .add(new ResourceStringParser(async, resourceProvider))
+        .add(new ServiceTemplateStringParser(async, serviceProvider))
+        .add(new ParameterTemplateStringParser(async, parameterProvider))
+        .add(new ResourceTemplateStringParser(async, resourceProvider));
+
     /**
-     * Composite parser.
+     * Parser.
      *
      * @private
-     * @type {CompositeParser}
+     * @type {EventualParser}
      */
-    this.parser = (new CompositeParser(async))
-        .add((new ServiceStringParser(async))          .injectProvider(serviceProvider))
-        .add((new ParameterStringParser(async))        .injectProvider(parameterProvider))
-        .add((new ResourceStringParser(async))         .injectProvider(resourceProvider))
-        .add((new ServiceTemplateStringParser(async))  .injectProvider(serviceProvider))
-        .add((new ParameterTemplateStringParser(async)).injectProvider(parameterProvider))
-        .add((new ResourceTemplateStringParser(async)) .injectProvider(resourceProvider));
+    this.parser = new EventualParser(async, parsersChain);
 
     /**
      * Default factory.
@@ -192,61 +197,12 @@ DM.prototype = (function() {
          * @returns {Promise}
          */
         parseString: function(string) {
-            var self = this,
-                parser;
-
             // we throw here and not rejecting,
             // cause it is not an expected situation for this method
             // @see http://stackoverflow.com/a/21891544/1473140
             _.assert(_.isString(string), "String is expected", TypeError);
 
-            parser = this.parser;
-
-            return this.async.promise(function(resolve, reject) {
-                _.async.doWhilst(
-                    function(truth, value, initial) {
-                        var mustRepeat;
-
-                        console.log('truth test', value, initial);
-
-                        // if some parser has returned string
-                        // try to parse it again
-                        mustRepeat = _.isString(value) && value !== initial;
-
-                        truth(mustRepeat);
-                    },
-                    function(next, initial) {
-                        console.log('parse iteration with string', initial);
-
-                        parser
-                            .test(initial)
-                            .then(function(acceptable) {
-                                console.log('parser accepts', acceptable);
-
-                                if (!acceptable) {
-                                    next(initial, initial);
-                                    return;
-                                }
-
-                                parser
-                                    .parse(string, self)
-                                    .then(function(parsed) {
-                                        console.log('parsed', parsed, 'from', initial);
-                                        next(parsed, initial);
-                                    });
-                            });
-                    },
-                    function(err, value) {
-                        if (err) {
-                            reject(err);
-                            return;
-                        }
-
-                        resolve(value);
-                    },
-                    string
-                );
-            });
+            return this.parser.parse(string);
         },
 
         /**

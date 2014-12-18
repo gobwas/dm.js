@@ -74,23 +74,9 @@ function deprecate(method, instead) {
     };
 }
 
+var breaker = {};
+
 var async = {
-    _doParallel: function(fn) {
-        var args;
-
-        args = Array.prototype.slice.call(arguments, 1);
-
-        return fn.apply(this, [ this.each ].concat(args));
-    },
-
-    _doSeries: function(fn) {
-        var args;
-
-        args = Array.prototype.slice.call(arguments, 1);
-
-        return fn.apply(this, [ this.eachSeries ].concat(args));
-    },
-
     each: function(obj, iterator, callback) {
         var remain, next;
 
@@ -155,6 +141,22 @@ var async = {
         };
 
         iteration();
+    },
+
+    _doParallel: function(fn) {
+        var args;
+
+        args = Array.prototype.slice.call(arguments, 1);
+
+        return fn.apply(this, [ this.each ].concat(args));
+    },
+
+    _doSeries: function(fn) {
+        var args;
+
+        args = Array.prototype.slice.call(arguments, 1);
+
+        return fn.apply(this, [ this.eachSeries ].concat(args));
     },
 
     _find: function(eacher, obj, iterator, callback) {
@@ -238,7 +240,7 @@ var async = {
             test.apply(null, [ function(truth) {
 
                 if (truth) {
-                    self.whilst.apply(self, [ test, iterator, callback ].concat(args));
+                    self.doWhilst.apply(self, [ test, iterator, callback ].concat(args));
                 } else {
                     callback.apply(null, [ null ].concat(args));
                 }

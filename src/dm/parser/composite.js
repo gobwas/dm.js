@@ -13,15 +13,13 @@ CompositeParser = Parser.extend(
      * @lends CompositeParser.prototype
      */
     {
-        constructor: function() {
-            Parser.prototype.constructor.apply(this, arguments);
+        constructor: function(async, options) {
+            Parser.prototype.constructor.call(this, async, options);
             this.parsers = [];
         },
 
         add: function(parser, prepend) {
-            if (!(parser instanceof Parser)) {
-                throw new TypeError("Parser is expected");
-            }
+            _.assert(parser instanceof Parser, "Parser is expected", TypeError);
 
             if (prepend) {
                 this.parsers.unshift(parser);
@@ -36,13 +34,16 @@ CompositeParser = Parser.extend(
             var self = this;
 
             return this.async.promise(function(resolve, reject) {
+                // here we find in parallel
+                // cause we not interested in index of the parser
+                // we want just know that someone can parse it
                 _.async.find(
                     self.parsers,
                     function(parser, index, next) {
-                        parser
-                            .test(str)
-                            .then(function(acceptable) {
-                                next(null, acceptable);
+                        self.async
+                            .resolve(parser.test(str))
+                            .then(function(isAcceptable) {
+                                next(null, isAcceptable);
                             })
                             .catch(next);
                     },
@@ -61,33 +62,33 @@ CompositeParser = Parser.extend(
         parse: function(str) {
             var self = this;
 
-            return this.async.promise(function(resolve, reject) {
-                _.async.findSeries(
-                    self.parsers,
-                    function(parser, index, next) {
-                        parser
-                            .test(str)
-                            .then(function(isAcceptable) {
-                                if (isAcceptable) {
-                                    parser.parse(str)
-                                        .then(function(parsed) {
-                                            next(parsed);
-                                        });
-                                } else {
-                                    next();
-                                }
-                            });
-                    },
-                    function(err, parsed) {
-                        if (err) {
-                            reject(err);
-                            return;
-                        }
+            return this.async
+                .promise(function(resolve, reject) {
+                    // parse in series, cause it can be logically important
+                    _.async.findSeries(
+                        self.parsers,
+                        function(parser, index, next) {
+                            self.async
+                                .resolve(parser.test(str))
+                                .then(function(isAcceptable) {
+                                    next(null, isAcceptable);
+                                });
+                        },
+                        function(err, accepter) {
+                            if (err) {
+                                reject(err);
+                                return;
+                            }
 
-                        resolve(parsed || str);
+                            resolve(accepter);
+                        }
+                    );
+                })
+                .then(function(parser) {
+                    if (parser) {
+                        return self.async.resolve(parser.parse(str))
                     }
-                );
-            });
+                });
         }
     }
 );

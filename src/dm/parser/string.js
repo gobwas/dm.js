@@ -1,5 +1,6 @@
-var Parser = require("../parser"),
-    _      = require("../utils"),
+var Parser   = require("../parser"),
+    _        = require("../utils"),
+    Provider = require("../provider"),
     StringParser;
 
 /**
@@ -13,8 +14,12 @@ StringParser = Parser.extend(
      * @lends StringParser.prototype
      */
     {
-        constructor: function() {
-            Parser.prototype.constructor.apply(this, arguments);
+        constructor: function(async, provider, options) {
+            Parser.prototype.constructor.call(this, async, options);
+
+            _.assert(provider instanceof Provider, "Provider is expected", TypeError);
+
+            this.provider = provider;
 
             this.cache = {
                 once:     {},

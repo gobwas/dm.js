@@ -2,9 +2,9 @@ var _      = require('lodash'),
     chance = require('chance'),
     sinon  = require('sinon'),
     chai   = require('chai'),
-    DM     = require('../../src/dm.js'),
-    Loader = require('../../src/dm/loader'),
-    Async  = require('../../src/dm/async'),
+    DM     = require('../src/dm.js'),
+    Loader = require('../src/dm/loader'),
+    Async  = require('../src/dm/async'),
     RSVP   = require('rsvp'),
     assert, expect;
 
