@@ -86,7 +86,7 @@ CompositeParser = Parser.extend(
                 })
                 .then(function(parser) {
                     if (parser) {
-                        return self.async.resolve(parser.parse(str))
+                        return self.async.resolve(parser.parse(str));
                     }
                 });
         }

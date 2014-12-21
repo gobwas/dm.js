@@ -204,55 +204,6 @@ describe("DM", function() {
             });
         });
 
-        describe("#parseString", function() {
-
-
-            it("should throw an error when given is not a string", function() {
-
-            });
-
-            it("should return a promise", function() {
-
-            });
-
-            it("should call parser#test method with given is a string", function() {
-
-            });
-
-            it("should call parser#parse if string is acceptable to parse", function() {
-
-            });
-
-            it("should return given string if it is not acceptable to parse", function() {
-
-            });
-
-            it("should call parser#test again, if parser#parse has returned different string", function() {
-
-            });
-
-        });
-
-        describe("#parseObject", function() {
-
-            it("should throw error when given not an object or an array", function() {
-
-            });
-
-            it("should return a promise", function() {
-
-            });
-
-            it("should resolve with unescaped object if it was escaped by DM#escape", function() {
-
-            });
-
-            it("should call parse for every value of an object", function() {
-
-            });
-
-        });
-
         describe("#parse", function() {
 
             it("should return call of #parseObject for object", function() {
@@ -268,6 +219,67 @@ describe("DM", function() {
             });
 
             it("should return promise, resolved with given value if it is not a string, array or an object", function() {
+
+            });
+
+            it("should return result of async.promise", function() {
+                var dm, async;
+
+                // make async resolution empty
+                async = new Async();
+                sinon.stub(async, "promise", function() {
+                    return new RSVP.Promise(_.noop);
+                });
+
+                dm = new DM(async, loader);
+
+                // TODO this is a private method and must not be tested
+                // test parse instead;
+
+                expect(dm.parseString(chance.word())).to.be.instanceof(RSVP.Promise);
+
+                assert.ok(async.promise.callCount == 1);
+            });
+
+
+            // string
+
+            var dm, async, loader;
+
+            beforeEach(function() {
+                // async
+                async = new Async;
+                sinon.stub(async, "promise", function(resolver) {
+                    return new RSVP.Promise(resolver);
+                });
+
+                // loader
+                loader = new Loader;
+
+                // dm
+                dm = new DM(async, loader);
+            });
+
+
+            it("should call parser#test method with given is a string", function() {
+
+            });
+
+            it("should call parser#parse if string is acceptable to parse", function() {
+
+            });
+
+            it("should return given string if it is not acceptable to parse", function() {
+
+            });
+
+            // object
+
+            it("should resolve with unescaped object if it was escaped by DM#escape", function() {
+
+            });
+
+            it("should recursively call parse for every value of an object", function() {
 
             });
 

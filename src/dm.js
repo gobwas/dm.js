@@ -49,6 +49,22 @@ DM = function(async, loader, options) {
     }
 
     /**
+     * Async adapter.
+     *
+     * @private
+     * @type {Async}
+     */
+    this.async = async;
+
+    /**
+     * Loader adapter.
+     *
+     * @private
+     * @type {Loader}
+     */
+    this.loader = loader;
+
+    /**
      * Services map.
      *
      * @private
@@ -200,6 +216,7 @@ DM.prototype = (function() {
             // we throw here and not rejecting,
             // cause it is not an expected situation for this method
             // @see http://stackoverflow.com/a/21891544/1473140
+            // also the good example is behaviour of `fs` module
             _.assert(_.isString(string), "String is expected", TypeError);
 
             return this.parser.parse(string);
@@ -435,7 +452,6 @@ DM.prototype = (function() {
             // cause it is not an expected situation for this method
             // @see http://stackoverflow.com/a/21891544/1473140
             _.assert(_.isString(key), "Key is expected to be a string", TypeError);
-
 
             // here we rejecting,
             // cause it is expected situation, when service is not configured
