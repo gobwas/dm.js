@@ -14,7 +14,7 @@ ResourceTemplateStringParser = TemplateStringParser.extend(
      */
     {
         _make: function(match) {
-            return this.provider.make({
+            return this.provider.get({
                 path:    match[2],
                 handler: match[1]
             });

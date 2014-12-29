@@ -13,17 +13,12 @@ ParameterProvider = Provider.extend(
      * @lends ParameterProvider.prototype
      */
     {
-        get: function(attributes) {
-            var dm = this.dm;
-
-            return this.async.promise(function(resolve, reject) {
-                dm
-                    .parse(attributes.name)
-                    .then(function(name) {
-                        resolve(dm.getParameter(name));
-                    })
-                    .catch(reject);
-            });
+        /**
+         * @abstract
+         * @param {string} name
+         */
+        get: function(name) {
+            throw new Error("Method 'get' must be implemented");
         }
     }
 );

@@ -1,6 +1,7 @@
 var Parser   = require("../parser"),
     _        = require("../utils"),
-    Provider = require("../provider"),
+    Template = require("./str/template"),
+    Builder  = require("./str/builder"),
     StringParser;
 
 /**
@@ -14,50 +15,18 @@ StringParser = Parser.extend(
      * @lends StringParser.prototype
      */
     {
-        constructor: function(async, provider, options) {
+        constructor: function(async, template, builder, options) {
             Parser.prototype.constructor.call(this, async, options);
 
-            _.assert(provider instanceof Provider, "Provider is expected", TypeError);
+            _.assert(template instanceof Template, "Template is expected", TypeError);
+            _.assert(builder instanceof Builder, "Builder is expected", TypeError);
 
-            this.provider = provider;
-
-            this.cache = {
-                once:     {},
-                multiple: {}
-            };
+            this.provider = template;
+            this.builder = builder;
         },
 
         test: function(str) {
-            return !!this._execOnce(str);
-        },
-
-        _execOnce: function(str) {
-            var cached;
-
-            if (!(cached = this.cache.once[str])) {
-                cached = this.cache.once[str] = this.constructor.REGEXP.exec(str);
-                this.constructor.REGEXP.lastIndex = 0;
-            }
-
-            return cached;
-        },
-
-        _execMultiple: function(str) {
-            var cached, match;
-
-            if (!(cached = this.cache.multiple[str])) {
-                cached = [];
-
-                while ((match = this.constructor.REGEXP.exec(str))) {
-                    cached.push(match);
-                }
-
-                this.constructor.REGEXP.lastIndex = 0;
-
-                this.cache.multiple[str] = cached;
-            }
-
-            return cached;
+            return !!this.template.test(str);
         }
     }
 );

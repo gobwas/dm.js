@@ -13,25 +13,13 @@ ResourceProvider = Provider.extend(
      * @lends ResourceProvider.prototype
      */
     {
-        get: function(attributes) {
-            var self = this,
-                path, handler,
-                promises;
-
-            path    = attributes.path;
-            handler = attributes.handler;
-
-            promises = [this.dm.parse(path)];
-
-            if (handler && _.isString(handler)) {
-                promises.push(this.dm.parse(handler));
-            }
-
-            return this.async
-                .all(promises)
-                .then(function(args) {
-                    return self.dm.getResource.apply(self.dm, args);
-                });
+        /**
+         * @abstract
+         * @param {string} path
+         * @param {string} handler
+         */
+        get: function(path, handler) {
+            throw new Error("Method 'get' must be implemented");
         }
     }
 );

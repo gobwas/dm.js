@@ -14,22 +14,16 @@ ServiceStringParser = StringParser.extend(
      */
     {
         parse: function(str) {
-            var args, attributes;
+            var match;
 
-            args = this._execOnce(str);
+            match = this._execOnce(str);
 
-            attributes = {
-                name:     args[1],
-                property: args[2],
-                args:     args[3]
-            };
-
-            return this.provider.make(attributes);
+            return this.provider.get(match[1], match[2], match[3]);
         }
     },
     {
         /**
-         * Template for checking reference to service.
+         * Template for checking reference to the service.
          *
          * Could be applied to string in format:
          * @<service>[:<method>[\[<argument-1>,[<argument-n>]\]]]

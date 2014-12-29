@@ -1,16 +1,17 @@
 var StringParser = require("../string"),
-    _            = require("../../utils"),
-    TemplateStringParser;
+    _            = require("lodash"),
+    MultipleStringParser;
 
 /**
- * TemplateStringParser
+ * MultipleStringParser
  *
- * @class
+ * @class MultipleStringParser
  * @extends StringParser
+ * @author Sergey Kamardin <s.kamardin@tcsbank.ru>
  */
-TemplateStringParser = StringParser.extend(
+MultipleStringParser = StringParser.extend(
     /**
-     * @lends TemplateStringParser.prototype
+     * @lends MultipleStringParser.prototype
      */
     {
         parse: function(str) {
@@ -18,11 +19,11 @@ TemplateStringParser = StringParser.extend(
 
             return this.async.promise(function(resolve, reject) {
                 _.async.map(
-                    self._execMultiple(str),
-                    function(match, index, next) {
-                        self._make(match)
+                    self.template.all(str),
+                    function(obj, index, next) {
+                        self.builder.make(obj.definition)
                             .then(function(result) {
-                                next(null, { match: match[0], result: result });
+                                next(null, { match: obj.match, result: result });
                             })
                             .catch(function(err) {
                                 next(err);
@@ -49,12 +50,14 @@ TemplateStringParser = StringParser.extend(
                     }
                 );
             });
-        },
 
-        _make: function(match) {
-            throw new Error("Method '_make' must be implemented");
+
+
+            this.template.exec(str).map(function(definition) {
+                return this.builder.get(definition);
+            });
         }
     }
 );
 
-module.exports = TemplateStringParser;
+module.exports = MultipleStringParser;

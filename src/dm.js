@@ -16,9 +16,9 @@ var inherits = require("inherits-js"),
     ParameterStringParser = require("./dm/parser/string/parameter"),
     ResourceStringParser  = require("./dm/parser/string/resource"),
 
-    ServiceTemplateStringParser   = require("./dm/parser/string/template/service"),
-    ParameterTemplateStringParser = require("./dm/parser/string/template/parameter"),
-    ResourceTemplateStringParser  = require("./dm/parser/string/template/resource"),
+    ServiceTemplateStringParser   = require("./dm/parser/string/multiple/service"),
+    ParameterTemplateStringParser = require("./dm/parser/string/multiple/parameter"),
+    ResourceTemplateStringParser  = require("./dm/parser/string/multiple/resource"),
 
     DM;
 
@@ -172,6 +172,10 @@ DM = function(async, loader, options) {
     serviceProvider   = new ServiceProvider(this, async);
     parameterProvider = new ParameterProvider(this, async);
     resourceProvider  = new ResourceProvider(this, async);
+
+
+
+
 
     // assemble parsers chain
     parsersChain = (new CompositeParser(async))

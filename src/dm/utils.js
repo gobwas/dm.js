@@ -359,6 +359,22 @@ function map(array, iterator, context) {
     return results;
 }
 
+function reduce(obj, iterator, memo, context) {
+    if (!obj) {
+        return memo;
+    }
+
+    if (isFunction(obj.reduce)) {
+        return obj.reduce(iterator, memo, context);
+    }
+
+    forEach(obj, function(value, index, list) {
+        memo = iterator.call(context, memo, value, index, list);
+    });
+
+    return memo;
+}
+
 function bind(func, context) {
     var args, slice;
 
@@ -466,6 +482,7 @@ module.exports = {
     forEachOwn:    forEachOwn,
     forEachSimple: forEachSimple,
     map:           map,
+    reduce:        reduce,
     sprintf:       sprintf,
     clone:         clone,
     extend:        extend,

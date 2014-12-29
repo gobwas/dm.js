@@ -14,16 +14,11 @@ PropertyStringParser = StringParser.extend(
      */
     {
         parse: function(str) {
-            var args, attributes;
+            var match;
 
-            args = this._execOnce(str);
+            match = this._execOnce(str);
 
-            attributes = {
-                path:    args[2],
-                handler: args[1]
-            };
-
-            return this.provider.make(attributes);
+            return this.provider.get(match[2], match[1]);
         }
     },
     {

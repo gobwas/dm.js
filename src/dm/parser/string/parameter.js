@@ -13,15 +13,11 @@ ParameterStringParser = StringParser.extend(
      */
     {
         parse: function(str) {
-            var args, attributes;
+            var match;
 
-            args = this._execOnce(str);
+            match = this._execOnce(str);
 
-            attributes = {
-                name: args[1]
-            };
-
-            return this.provider.make(attributes);
+            return this.provider.get(match[1]);
         }
     },
     {

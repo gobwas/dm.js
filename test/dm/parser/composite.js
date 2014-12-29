@@ -77,6 +77,7 @@ describe("CompositeParser", function() {
                 .forEach(function(value, index) {
                     var child;
 
+                    // create the instanceof Parser
                     child = Object.create(Parser.prototype);
 
                     sinon.stub(child, "test", function(word) {

@@ -14,7 +14,7 @@ ParameterTemplateStringParser = TemplateStringParser.extend(
      */
     {
         _make: function(match) {
-            return this.provider.make({
+            return this.provider.get({
                 name: match[1]
             });
         }
