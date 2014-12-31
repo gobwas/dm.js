@@ -14,9 +14,12 @@ DefaultResourceProvider = ResourceProvider.extend(
      * @lends DefaultResourceProvider.prototype
      */
     {
-        get: function(path, handler) {
+        get: function(definition) {
             var self = this,
-                promises;
+                path, handler, promises;
+
+            _.assert(_.isString(path = definition.path),       "Expected definition.path to be a string");
+            _.assert(_.isString(handler = definition.handler), "Expected definition.handler to be a string");
 
             promises = [this.dm.parse(path)];
 

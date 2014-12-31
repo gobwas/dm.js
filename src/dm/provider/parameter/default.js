@@ -14,8 +14,12 @@ DefaultParameterProvider = ParameterProvider.extend(
      * @lends DefaultParameterProvider.prototype
      */
     {
-        get: function(name) {
-            var dm = this.dm;
+        get: function(definition) {
+            var name, dm;
+
+            _.assert(_.isString(name = definition.name), "Expected definition.name to be a string");
+
+            dm = this.dm;
 
             return this.async.promise(function(resolve, reject) {
                 dm

@@ -1,7 +1,7 @@
 var Parser   = require("../parser"),
     _        = require("../utils"),
-    Template = require("./str/template"),
-    Builder  = require("./str/builder"),
+    Template = require("./string/template"),
+    Provider = require("../provider"),
     StringParser;
 
 /**
@@ -15,14 +15,14 @@ StringParser = Parser.extend(
      * @lends StringParser.prototype
      */
     {
-        constructor: function(async, template, builder, options) {
+        constructor: function(async, template, provider, options) {
             Parser.prototype.constructor.call(this, async, options);
 
             _.assert(template instanceof Template, "Template is expected", TypeError);
-            _.assert(builder instanceof Builder, "Builder is expected", TypeError);
+            _.assert(provider instanceof Provider, "Provider is expected", TypeError);
 
-            this.provider = template;
-            this.builder = builder;
+            this.provider = provider;
+            this.template = template;
         },
 
         test: function(str) {

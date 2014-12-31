@@ -1,5 +1,5 @@
 var StringParser = require("../string"),
-    _            = require("lodash"),
+    _            = require("../../utils"),
     MultipleStringParser;
 
 /**
@@ -21,7 +21,7 @@ MultipleStringParser = StringParser.extend(
                 _.async.map(
                     self.template.all(str),
                     function(obj, index, next) {
-                        self.builder.make(obj.definition)
+                        self.provider.get(obj.definition)
                             .then(function(result) {
                                 next(null, { match: obj.match, result: result });
                             })
@@ -49,12 +49,6 @@ MultipleStringParser = StringParser.extend(
                         resolve(result);
                     }
                 );
-            });
-
-
-
-            this.template.exec(str).map(function(definition) {
-                return this.builder.get(definition);
             });
         }
     }

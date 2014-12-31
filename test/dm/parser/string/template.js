@@ -1,9 +1,8 @@
 var _              = require('lodash'),
     sinon          = require('sinon'),
     chai           = require('chai'),
-    TemplateParser = require('../../../../src/dm/parser/string/template'),
+    Template       = require('../../../../src/dm/parser/string/template'),
     Async          = require('../../../../src/dm/async'),
-    Provider       = require('../../../../src/dm/provider'),
     Chance         = require("chance"),
     RSVP           = require("rsvp"),
     assert, expect;
@@ -12,125 +11,111 @@ assert = chai.assert;
 expect = chai.expect;
 chance = new Chance;
 
-describe("TemplateParser", function() {
-    var parser, async, provider;
+
+describe("Template", function() {
+    var template;
 
     beforeEach(function() {
-        // create instanceof Async
-        async = Object.create(Async.prototype);
-        sinon.stub(async, "promise", function(cb) {
-            return new RSVP.Promise(cb);
-        });
-        sinon.stub(async, "resolve", function(val) {
-            return RSVP.Promise.resolve(val);
-        });
+        Template.REGEXP = {
+            exec: function(){}
+        };
+        Template.REGEXP.lastIndex = 0;
 
-        // create instanceof Provider
-        provider = Object.create(Provider.prototype);
-
-        parser = new TemplateParser(async, provider);
+        template = new Template;
     });
 
-    describe("#parse", function() {
+    describe("#all", function() {
 
-        it("should call #_execMultiple with given string", function(done) {
-            var mock, str;
+        it("should exec all matches and return defined results", function() {
+            var execCount, execStub, defineStub, matches, definitions, result;
 
-            str = chance.word();
-
-            mock = sinon.mock(parser);
-            mock.expects("_execMultiple")
-                .once()
-                .withExactArgs(str)
-                .on(parser)
-                .returns([]);
-
-            parser.parse(str)
-                .then(function() {
-                    mock.verify();
-                })
-                .then(done, done);
-        });
-
-        it("should call #_make with every match", function(done) {
-            var matches, matchesCount, makeStub;
-
-            matchesCount = 5;
-            matches = _.map(new Array(matchesCount), function() {
-                return [chance.word()]
-            });
-
-            sinon.stub(parser, "_execMultiple", function() {
-                return matches;
-            });
-
-            makeStub = sinon.stub(parser, "_make", function() {
-                return RSVP.Promise.resolve(null);
-            });
-
-            parser.parse(chance.word())
-                .then(function() {
-                    expect(makeStub.callCount).equal(matchesCount);
-
-                    _.forEach(matches, function(match, index) {
-                        var call;
-
-                        call = makeStub.getCall(index);
-
-                        expect(call.calledWithExactly(match)).to.be.true();
-                        expect(call.calledOn(parser)).to.be.true();
-                    });
-                })
-                .then(done, done);
-        });
-
-        it("should parse string", function(done) {
-            var matches, results, matchesCount, makeStub, glue;
-
-            makeStub = sinon.stub(parser, "_make");
-
-            matchesCount = 5;
-            matches = _.map(new Array(matchesCount), chance.word.bind(chance));
-            results = _.map(new Array(matchesCount), function(v, index) {
+            definitions = [];
+            defineStub = sinon.stub(template, "define", function() {
                 var result;
 
-                result = chance.word();
-
-                switch (index) {
-                    case 0: {
-                        makeStub.onCall(index).returns(RSVP.Promise.resolve({
-                            toString: function() {
-                                return result;
-                            }
-                        }));
-
-                        break;
-                    }
-
-                    default: {
-                        makeStub.onCall(index).returns(RSVP.Promise.resolve(result));
-
-                        break;
-                    }
-                }
+                definitions.push((result = {}));
 
                 return result;
             });
 
-            sinon.stub(parser, "_execMultiple", function() {
-                return matches.map(function(string) {
-                    return [string];
-                });
+            execCount = 5;
+            matches = [];
+            execStub = sinon.stub(Template.REGEXP, "exec", function() {
+                var match;
+
+                if ((this.lastIndex + 1) > execCount) {
+                    return null;
+                }
+
+                this.lastIndex++;
+
+                match = [];
+                match.push(chance.word());
+
+                matches.push(match);
+
+                return match;
             });
 
-            parser.parse(matches.join(glue = chance.word()))
-                .then(function(str) {
-                    expect(str).equal(results.join(glue));
-                })
-                .then(done, done);
+            result = template.all(chance.word());
+
+            expect(execStub.callCount).equal(execCount + 1);
+            expect(defineStub.callCount).equal(execCount);
+            expect(Template.REGEXP.lastIndex).equal(0);
+
+            _.forEach(matches, function(match, i) {
+                expect(defineStub.getCall(i).calledWithExactly(match)).to.be.true();
+            });
+
+            _.forEach(result, function(result, i) {
+                expect(result.definition).equal(definitions[i]);
+                expect(result.match).equal(matches[i][0]);
+            });
         });
 
     });
 
-});
+    describe("#match", function() {
 
+        it("should call define exec result", function() {
+            var execStub, defineStub, match, definition, result;
+
+            defineStub = sinon.stub(template, "define", function() {
+                return (definition = {});
+            });
+
+            execStub = sinon.stub(Template.REGEXP, "exec", function() {
+                this.lastIndex++;
+                return (match = [chance.word()]);
+            });
+
+            result = template.match(chance.word());
+
+            expect(execStub.callCount).equal(1);
+            expect(defineStub.callCount).equal(1);
+            expect(Template.REGEXP.lastIndex).equal(0);
+
+            expect(defineStub.getCall(0).calledWithExactly(match)).to.be.true();
+
+            expect(result.definition).equal(definition);
+            expect(result.match).equal(match[0]);
+        });
+
+    });
+
+    describe("#test", function() {
+        it("should match and return boolean", function() {
+            var result;
+
+            sinon.stub(template, "match", function() {
+                return [];
+            });
+
+            result = template.test(chance.word());
+
+            expect(result).to.be.a("boolean");
+            expect(result).to.be.true();
+        });
+    });
+
+});

@@ -18,7 +18,7 @@ ServiceTemplate = Template.extend(
             return {
                 name:     match[1],
                 property: match[2],
-                args:     match[3]
+                args:     JSON.parse(match[3])
             }
         }
     },

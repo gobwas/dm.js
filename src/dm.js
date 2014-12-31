@@ -5,20 +5,22 @@ var inherits = require("inherits-js"),
 
     DefaultFactory = require("./dm/factory/default"),
 
-    ServiceProvider   = require("./dm/provider/service"),
-    ParameterProvider = require("./dm/provider/parameter"),
-    ResourceProvider  = require("./dm/provider/resource"),
+    ServiceProvider   = require("./dm/provider/service/default"),
+    ParameterProvider = require("./dm/provider/parameter/default"),
+    ResourceProvider  = require("./dm/provider/resource/default"),
+
+    ServiceTemplate       = require("./dm/parser/string/template/service"),
+    ServiceLiveTemplate   = require("./dm/parser/string/template/service-live"),
+    ParameterTemplate     = require("./dm/parser/string/template/parameter"),
+    ParameterLiveTemplate = require("./dm/parser/string/template/parameter-live"),
+    ResourceTemplate      = require("./dm/parser/string/template/resource"),
+    ResourceLiveTemplate  = require("./dm/parser/string/template/resource-live"),
+
+    SingleStringParser   = require("./dm/parser/string/multiple"),
+    MultipleStringParser = require("./dm/parser/string/single"),
 
     CompositeParser = require("./dm/parser/composite"),
     EventualParser  = require("./dm/parser/eventual"),
-
-    ServiceStringParser   = require("./dm/parser/string/service"),
-    ParameterStringParser = require("./dm/parser/string/parameter"),
-    ResourceStringParser  = require("./dm/parser/string/resource"),
-
-    ServiceTemplateStringParser   = require("./dm/parser/string/multiple/service"),
-    ParameterTemplateStringParser = require("./dm/parser/string/multiple/parameter"),
-    ResourceTemplateStringParser  = require("./dm/parser/string/multiple/resource"),
 
     DM;
 
@@ -173,18 +175,14 @@ DM = function(async, loader, options) {
     parameterProvider = new ParameterProvider(this, async);
     resourceProvider  = new ResourceProvider(this, async);
 
-
-
-
-
     // assemble parsers chain
     parsersChain = (new CompositeParser(async))
-        .add(new ServiceStringParser(async, serviceProvider))
-        .add(new ParameterStringParser(async, parameterProvider))
-        .add(new ResourceStringParser(async, resourceProvider))
-        .add(new ServiceTemplateStringParser(async, serviceProvider))
-        .add(new ParameterTemplateStringParser(async, parameterProvider))
-        .add(new ResourceTemplateStringParser(async, resourceProvider));
+        .add(new SingleStringParser(async, new ServiceTemplate(), serviceProvider))
+        .add(new SingleStringParser(async, new ParameterTemplate(), parameterProvider))
+        .add(new SingleStringParser(async, new ResourceTemplate(), resourceProvider))
+        .add(new MultipleStringParser(async, new ServiceLiveTemplate(), serviceProvider))
+        .add(new MultipleStringParser(async, new ParameterLiveTemplate(), parameterProvider))
+        .add(new MultipleStringParser(async, new ResourceLiveTemplate(), resourceProvider));
 
     /**
      * Parser.

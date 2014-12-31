@@ -1,60 +1,82 @@
-var StringParser = require("../string"),
-    _            = require("../../utils"),
-    TemplateStringParser;
+var _        = require("lodash"),
+    inherits = require("inherits-js"),
+    Template;
 
 /**
- * TemplateStringParser
+ * Template
  *
- * @class
- * @extends StringParser
+ * @class Template
+ * @constructor
+ * @abstract
+ *
+ * @param {Object} [options]
+ *
+ * @author Sergey Kamardin <s.kamardin@tcsbank.ru>
  */
-TemplateStringParser = StringParser.extend(
-    /**
-     * @lends TemplateStringParser.prototype
-     */
-    {
-        parse: function(str) {
-            var self = this;
+Template = function(options) {
+    this.options = _.extend({}, this.constructor.DEFAULTS, options);
+    this.cache = {
+        all:   {},
+        match: {}
+    };
+};
 
-            return this.async.promise(function(resolve, reject) {
-                _.async.map(
-                    self._execMultiple(str),
-                    function(match, index, next) {
-                        self._make(match)
-                            .then(function(result) {
-                                next(null, { match: match[0], result: result });
-                            })
-                            .catch(function(err) {
-                                next(err);
-                            });
-                    },
-                    function(err, result) {
-                        if (err) {
-                            reject(err);
-                            return;
-                        }
+Template.DEFAULTS = {};
 
-                        result = _.reduce(result, function(memo, def) {
-                            var from, to;
+Template.prototype = {
+    constructor: Template,
 
-                            from = memo.indexOf(def.match);
-                            to   = from + def.match.length;
+    all: function(str) {
+        var cached, match;
 
-                            memo = memo.substr(0, from) + def.result + memo.substr(to);
+        if (!(cached = this.cache.all[str])) {
+            cached = [];
 
-                            return memo;
-                        }, str);
+            while ((match = this.constructor.REGEXP.exec(str))) {
+                cached.push(this.result(match));
+            }
 
-                        resolve(result);
-                    }
-                );
-            });
-        },
+            this.constructor.REGEXP.lastIndex = 0;
 
-        _make: function(match) {
-            throw new Error("Method '_make' must be implemented");
+            this.cache.all[str] = cached;
         }
-    }
-);
 
-module.exports = TemplateStringParser;
+        return cached;
+    },
+
+    match: function(str) {
+        var cached;
+
+        if (!(cached = this.cache.match[str])) {
+            cached = this.cache.match[str] = this.result(this.constructor.REGEXP.exec(str));
+            this.constructor.REGEXP.lastIndex = 0;
+        }
+
+        return cached;
+    },
+
+    test: function(str) {
+        return !!this.match(str);
+    },
+
+    /**
+     * @private
+     * @param match
+     */
+    result: function(match) {
+        return _.extend({ match: match[0], definition: this.define(match) });
+    },
+
+    /**
+     * @abstract
+     */
+    define: function(match) {
+        throw new Error("Method 'define' must be implemented");
+    }
+};
+
+Template.extend = function(prots, statics) {
+    return inherits(this, prots, statics);
+};
+
+module.exports = Template;

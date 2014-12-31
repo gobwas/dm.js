@@ -15,10 +15,11 @@ ResourceProvider = Provider.extend(
     {
         /**
          * @abstract
-         * @param {string} path
-         * @param {string} handler
+         * @param {object} definition
+         * @param {string} definition.path
+         * @param {string} definition.handler
          */
-        get: function(path, handler) {
+        get: function(definition) {
             throw new Error("Method 'get' must be implemented");
         }
     }

@@ -1,17 +1,14 @@
 var inherits = require("inherits-js"),
-    utils    = require("./utils"),
+    _        = require("./utils"),
     Async    = require("./async"),
-    extend   = utils.extend,
     Parser;
 
 Parser = function(async, options) {
-    if (!(async instanceof Async)) {
-        throw new TypeError("Async is expected");
-    }
+    _.assert(async instanceof Async, "Async is expected", TypeError);
 
     this.async = async;
 
-    this.options = extend({}, this.constructor.DEFAULTS, options || {});
+    this.options = _.extend({}, this.constructor.DEFAULTS, options || {});
 };
 
 Parser.prototype = {

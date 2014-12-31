@@ -15,9 +15,10 @@ ParameterProvider = Provider.extend(
     {
         /**
          * @abstract
-         * @param {string} name
+         * @param {object} definition
+         * @param {string} definition.name
          */
-        get: function(name) {
+        get: function(definition) {
             throw new Error("Method 'get' must be implemented");
         }
     }

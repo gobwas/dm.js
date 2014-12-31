@@ -24,7 +24,7 @@ Provider.prototype = {
      * @param {Object} attributes
      */
     get: function(attributes) {
-        throw new Error("Method 'make' must be implemented");
+        throw new Error("Method 'get' must be implemented");
     }
 };
 

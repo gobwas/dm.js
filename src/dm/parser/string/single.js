@@ -19,7 +19,7 @@ SingleStringParser = StringParser.extend(
 
             obj = this.template.match(str);
 
-            return this.builder.make(obj.definition);
+            return this.provider.get(obj.definition);
         }
     }
 );

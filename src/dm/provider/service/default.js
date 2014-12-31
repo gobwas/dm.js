@@ -14,9 +14,13 @@ DefaultServiceProvider = ServiceProvider.extend(
      * @lends DefaultServiceProvider.prototype
      */
     {
-        get: function(name, property, args) {
+        get: function(definition) {
             var self = this,
-                promises;
+                name, property, args, promises;
+
+            _.assert(_.isString(name = definition.name),         "Expected definition.name to be a string");
+            _.assert(_.isString(property = definition.property), "Expected definition.property to be a string");
+            _.assert(_.isArray(args = definition.args),          "Expected definition.path to be a Array");
 
             promises = [this.dm.parse(name)];
 
@@ -24,15 +28,7 @@ DefaultServiceProvider = ServiceProvider.extend(
                 promises.push(this.dm.parse(property));
 
                 if (args) {
-                    try {
-                        args = JSON.parse(args[3]);
-                    } catch (err) {
-                        return this.async.reject(new Error("Service method call parse error"));
-                    }
-
-                    args = _.map(args, this.dm.parse, this.dm);
-
-                    promises.push(this.async.all(args));
+                    promises.push(this.async.all(_.map(args, this.dm.parse, this.dm)));
                 }
             }
 

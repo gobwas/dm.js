@@ -15,11 +15,12 @@ ServiceProvider = Provider.extend(
     {
         /**
          * @abstract
-         * @param {string} name
-         * @param {string} property
-         * @param {Array}  args
+         * @param {object} definition
+         * @param {string} definition.name
+         * @param {string} definition.property
+         * @param {Array}  definition.args
          */
-        get: function(name, property, args) {
+        get: function(definition) {
             throw new Error("Method 'get' must be implemented");
         }
     }
