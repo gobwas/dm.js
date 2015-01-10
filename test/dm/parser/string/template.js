@@ -19,6 +19,7 @@ describe("Template", function() {
         Template.REGEXP = {
             exec: function(){}
         };
+        Template.REGEXP.global = true;
         Template.REGEXP.lastIndex = 0;
 
         template = new Template;
@@ -61,6 +62,8 @@ describe("Template", function() {
 
             expect(execStub.callCount).equal(execCount + 1);
             expect(defineStub.callCount).equal(execCount);
+
+            // on every exec we should reset lastIndex
             expect(Template.REGEXP.lastIndex).equal(0);
 
             _.forEach(matches, function(match, i) {
@@ -69,7 +72,7 @@ describe("Template", function() {
 
             _.forEach(result, function(result, i) {
                 expect(result.definition).equal(definitions[i]);
-                expect(result.match).equal(matches[i][0]);
+                expect(result.match.string).equal(matches[i][0]);
             });
         });
 
@@ -93,12 +96,14 @@ describe("Template", function() {
 
             expect(execStub.callCount).equal(1);
             expect(defineStub.callCount).equal(1);
+
+            // on every match we should reset lastIndex
             expect(Template.REGEXP.lastIndex).equal(0);
 
             expect(defineStub.getCall(0).calledWithExactly(match)).to.be.true();
 
             expect(result.definition).equal(definition);
-            expect(result.match).equal(match[0]);
+            expect(result.match.string).equal(match[0]);
         });
 
     });

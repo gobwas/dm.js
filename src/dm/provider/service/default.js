@@ -14,6 +14,16 @@ DefaultServiceProvider = ServiceProvider.extend(
      * @lends DefaultServiceProvider.prototype
      */
     {
+        /**
+         * Returns service promise.
+         *
+         * @param {Object} definition
+         * @param {string} definition.name
+         * @param {string} definition.property
+         * @param {Array}  definition.path
+         *
+         * @returns {Promise}
+         */
         get: function(definition) {
             var self = this,
                 name, property, args, promises;

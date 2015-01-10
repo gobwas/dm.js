@@ -18,7 +18,7 @@ ResourceTemplate = Template.extend(
             return {
                 handler: match[1],
                 path:    match[2]
-            }
+            };
         }
     },
     {

@@ -19,8 +19,10 @@ var inherits = require("inherits-js"),
     SingleStringParser   = require("./dm/parser/string/multiple"),
     MultipleStringParser = require("./dm/parser/string/single"),
 
+    StringifyProcessingParser = require("./dm/parser/wrapping/processing/stringify"),
+
     CompositeParser = require("./dm/parser/composite"),
-    EventualParser  = require("./dm/parser/eventual"),
+    EventualParser  = require("./dm/parser/wrapping/eventual"),
 
     DM;
 
@@ -180,9 +182,9 @@ DM = function(async, loader, options) {
         .add(new SingleStringParser(async, new ServiceTemplate(), serviceProvider))
         .add(new SingleStringParser(async, new ParameterTemplate(), parameterProvider))
         .add(new SingleStringParser(async, new ResourceTemplate(), resourceProvider))
-        .add(new MultipleStringParser(async, new ServiceLiveTemplate(), serviceProvider))
-        .add(new MultipleStringParser(async, new ParameterLiveTemplate(), parameterProvider))
-        .add(new MultipleStringParser(async, new ResourceLiveTemplate(), resourceProvider));
+        .add(new StringifyProcessingParser(async, new MultipleStringParser(async, new ServiceLiveTemplate(), serviceProvider)))
+        .add(new StringifyProcessingParser(async, new MultipleStringParser(async, new ParameterLiveTemplate(), parameterProvider)))
+        .add(new StringifyProcessingParser(async, new MultipleStringParser(async, new ResourceLiveTemplate(), resourceProvider)));
 
     /**
      * Parser.

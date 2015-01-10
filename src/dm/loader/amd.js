@@ -14,18 +14,13 @@ RequireJSLoader = Loader.extend(
      * @lends RequireJSLoader.prototype
      */
     {
-        constructor: function() {
-            Loader.prototype.constructor.apply(this, arguments);
-            this.requirejs = this.adaptee;
-        },
-
         require: function(path, async) {
             var self = this;
 
             _.assert(async instanceof Async, "Async is expected");
 
             return async.promise(function(resolve, reject) {
-                self.requirejs([path], resolve, reject);
+                self.adaptee([path], resolve, reject);
             });
         },
 
@@ -37,7 +32,7 @@ RequireJSLoader = Loader.extend(
             options = options || {};
 
             return async.promise(function(resolve, reject) {
-                self.requirejs([[options.handler || "text", path].join('!')], resolve, reject);
+                self.adaptee([[options.handler || "text", path].join('!')], resolve, reject);
             });
         }
     }

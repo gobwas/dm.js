@@ -29,11 +29,11 @@ Parser.prototype = {
     /**
      * Parses string.
      * @abstract
-     * @param {string} str
+     * @param {*} something
      *
      * @returns {Promise|*}
      */
-    parse: function(str) {
+    parse: function(something) {
         throw new Error("Method 'parse' must be implemented");
     }
 };

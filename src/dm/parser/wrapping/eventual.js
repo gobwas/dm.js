@@ -1,5 +1,5 @@
-var Parser = require("../parser"),
-    _      = require("../utils"),
+var Parser = require("../wrapping"),
+    _      = require("../../utils"),
     EventualParser;
 
 /**
@@ -14,19 +14,7 @@ EventualParser = Parser.extend(
      * @lends EventualParser.prototype
      */
     {
-        constructor: function(async, parser, options) {
-            Parser.prototype.constructor.call(this, async, options);
-
-            _.assert(parser instanceof Parser, "Parser is expected", TypeError);
-
-            this.parser = parser;
-        },
-
-        test: function(str) {
-            return this.parser.test(str);
-        },
-
-        parse: function(str) {
+        parse: function(some) {
             var self = this,
                 parser;
 
@@ -67,7 +55,7 @@ EventualParser = Parser.extend(
 
                         resolve(value);
                     },
-                    str
+                    some
                 );
             });
         }

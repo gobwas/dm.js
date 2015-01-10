@@ -88,38 +88,13 @@ describe("MultipleParser", function() {
                 .then(done, done);
         });
 
-        it("should parse string", function(done) {
-            var matches, results, matchesCount, providerGetStub, glue;
+        it("should return list of results", function(done) {
+            var matches, expectations, matchesCount, providerGetStub, glue;
 
             providerGetStub = sinon.stub(provider, "get");
 
             matchesCount = 5;
             matches = _.map(new Array(matchesCount), chance.word.bind(chance));
-            results = _.map(new Array(matchesCount), function(v, index) {
-                var result;
-
-                result = chance.word();
-
-                switch (index) {
-                    case 0: {
-                        providerGetStub.onCall(index).returns(RSVP.Promise.resolve({
-                            toString: function() {
-                                return result;
-                            }
-                        }));
-
-                        break;
-                    }
-
-                    default: {
-                        providerGetStub.onCall(index).returns(RSVP.Promise.resolve(result));
-
-                        break;
-                    }
-                }
-
-                return result;
-            });
 
             sinon.stub(template, "all", function() {
                 return matches.map(function(string) {
@@ -127,9 +102,22 @@ describe("MultipleParser", function() {
                 });
             });
 
-            parser.parse(matches.join(glue = "<" + chance.word() + ">"))
-                .then(function(str) {
-                    expect(str).equal(results.join(glue));
+            expectations = matches.map(function(str, index) {
+                var result;
+
+                result = chance.word();
+
+                providerGetStub.onCall(index).returns(RSVP.Promise.resolve(result));
+
+                return {
+                    match:  str,
+                    result: result
+                };
+            });
+
+            parser.parse(chance.word())
+                .then(function(response) {
+                    expect(response).deep.equal(expectations);
                 })
                 .then(done, done);
         });

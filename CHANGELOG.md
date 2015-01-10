@@ -12,6 +12,7 @@ ______________________
 + Adapter is not necessary parent class (removed);
 + [Big Refactoring Issue](https://github.com/gobwas/dm.js/issues/10)
 + Removed `.coffee` tests ([issue](https://github.com/gobwas/dm.js/issues/5))
++ Now calls from configuration throws Errors when method does not exists
 
 ### 0.2.1 (10-08-2014)
 ______________________

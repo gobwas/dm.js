@@ -1,6 +1,6 @@
-var EventualParser = require("../../../src/dm/parser/eventual"),
-    Parser         = require("../../../src/dm/parser"),
-    Async          = require("../../../src/dm/async"),
+var EventualParser = require("../../../../src/dm/parser/wrapping/eventual"),
+    Parser         = require("../../../../src/dm/parser"),
+    Async          = require("../../../../src/dm/async"),
     Chance         = require("chance"),
     _              = require("lodash"),
     sinon          = require("sinon"),
@@ -27,40 +27,6 @@ describe("EventualParser", function() {
         targetParser = Object.create(Parser.prototype);
 
         parser = new EventualParser(async, targetParser);
-    });
-
-    describe("#constructor", function() {
-
-        it("should throw error when constructing without parser", function() {
-            function builder() {
-                new EventualParser(async);
-            }
-
-            expect(builder).to.throw(TypeError, "Parser is expected");
-        });
-
-    });
-
-    describe("#test", function() {
-
-        it("should call target parser's #test method", function() {
-            var word, testStub, testResult;
-
-            testResult = chance.bool();
-
-            word = chance.word();
-
-            testStub = sinon.stub(targetParser, "test", function(word) {
-                return testResult;
-            });
-
-            expect(parser.test(word)).equal(testResult);
-
-            expect(testStub.callCount).equal(1);
-            expect(testStub.calledOn(targetParser)).to.be.true();
-            expect(testStub.calledWithExactly(word)).to.be.true();
-        });
-
     });
 
     describe("#parse", function() {

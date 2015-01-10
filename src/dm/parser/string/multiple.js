@@ -35,17 +35,6 @@ MultipleStringParser = StringParser.extend(
                             return;
                         }
 
-                        result = _.reduce(result, function(memo, def) {
-                            var from, to;
-
-                            from = memo.indexOf(def.match);
-                            to   = from + def.match.length;
-
-                            memo = memo.substr(0, from) + def.result + memo.substr(to);
-
-                            return memo;
-                        }, str);
-
                         resolve(result);
                     }
                 );

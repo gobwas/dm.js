@@ -17,7 +17,7 @@ ParameterLiveTemplate = Template.extend(
         define: function(match) {
             return {
                 name: match[1]
-            }
+            };
         }
     },
     {

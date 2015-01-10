@@ -27,17 +27,23 @@ Template.prototype = {
     constructor: Template,
 
     all: function(str) {
-        var cached, match;
+        var cached, match, REGEXP;
 
         if (!(cached = this.cache.all[str])) {
             cached = [];
 
-            while ((match = this.constructor.REGEXP.exec(str))) {
-                cached.push(this.result(match));
-            }
+            REGEXP = this.constructor.REGEXP;
 
+            do {
+                if ((match = REGEXP.exec(str))) {
+                    cached.push(this.result(match));
+                }
+            } while (REGEXP.global && match);
+
+            // reset regexp
             this.constructor.REGEXP.lastIndex = 0;
 
+            // cache results
             this.cache.all[str] = cached;
         }
 
@@ -45,11 +51,19 @@ Template.prototype = {
     },
 
     match: function(str) {
-        var cached;
+        var cached, match;
 
         if (!(cached = this.cache.match[str])) {
-            cached = this.cache.match[str] = this.result(this.constructor.REGEXP.exec(str));
+            if ((cached = match = this.constructor.REGEXP.exec(str))) {
+                // if found some, wrap it in spec
+                cached = this.result(match);
+            }
+
+            // reset regexp
             this.constructor.REGEXP.lastIndex = 0;
+
+            // cache anyway
+            this.cache.match[str] = cached;
         }
 
         return cached;
@@ -64,11 +78,23 @@ Template.prototype = {
      * @param match
      */
     result: function(match) {
-        return _.extend({ match: match[0], definition: this.define(match) });
+        var matchedString, lastIndex;
+
+        matchedString = match[0];
+        lastIndex = this.constructor.REGEXP.lastIndex - 1;
+
+        return {
+            match: {
+                string:   matchedString,
+                position: [lastIndex - matchedString.length + 1, lastIndex]
+            },
+            definition: this.define(match)
+        };
     },
 
     /**
      * @abstract
+     * @protected
      */
     define: function(match) {
         throw new Error("Method 'define' must be implemented");

@@ -15,11 +15,24 @@ ServiceTemplate = Template.extend(
      */
     {
         define: function(match) {
-            return {
-                name:     match[1],
-                property: match[2],
-                args:     JSON.parse(match[3])
+            var name, property, args;
+
+            name = match[1];
+            property = match[2];
+
+            if ((args = match[3])) {
+                try {
+                    args = JSON.parse(args);
+                } catch (err) {
+                    throw new Error("Could not parse arguments for service '" + name + "'");
+                }
             }
+
+            return {
+                name:     name,
+                property: property,
+                args:     args
+            };
         }
     },
     {

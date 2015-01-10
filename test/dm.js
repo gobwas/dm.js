@@ -206,18 +206,6 @@ describe("DM", function() {
 
         describe("#parse", function() {
 
-            it("should return call of #parseObject for object", function() {
-
-            });
-
-            it("should return call of #parseObject for an array", function() {
-
-            });
-
-            it("should return call of #parseString for a string", function() {
-
-            });
-
             it("should return promise, resolved with given value if it is not a string, array or an object", function() {
 
             });
@@ -233,10 +221,7 @@ describe("DM", function() {
 
                 dm = new DM(async, loader);
 
-                // TODO this is a private method and must not be tested
-                // test parse instead;
-
-                expect(dm.parseString(chance.word())).to.be.instanceof(RSVP.Promise);
+                expect(dm.parse(chance.word())).to.be.instanceof(RSVP.Promise);
 
                 assert.ok(async.promise.callCount == 1);
             });
@@ -280,50 +265,6 @@ describe("DM", function() {
             });
 
             it("should recursively call parse for every value of an object", function() {
-
-            });
-
-        });
-
-        describe("#build", function() {
-
-            it("should return a promise", function() {
-
-            });
-
-            it("should reject when config is not an Object", function() {
-
-            });
-
-            it("should reject when config.path is not a string", function() {
-
-            });
-
-            it("should call require of a loader instance", function() {
-
-            });
-
-            it("should call #parse for [arguments, calls, properties, factory] definition property", function() {
-
-            });
-
-            it("should reject when factory is Object and does not have #factory method", function() {
-
-            });
-
-            it("should reject when factory is not an Object nor a Function", function() {
-
-            });
-
-            it("should resolve with call of default factory if factory is not given", function() {
-
-            });
-
-            it("should resolve with call result of a given factory when it is a Function", function() {
-
-            });
-
-            it("should resolve with call result of #factory method of a given factory, when its an Object", function() {
 
             });
 

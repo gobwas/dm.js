@@ -1,59 +1,119 @@
 var Factory = require("../factory"),
-    utils   = require("../../dm/utils"),
+    _       = require("../utils"),
+    DefaultFactory;
 
-    isFunction    = utils.isFunction,
-    forEachOwn    = utils.forEachOwn,
-    forEachSimple = utils.forEachSimple;
+/**
+ * DefaultFactory
+ *
+ * @class
+ * @extends Factory
+ */
+DefaultFactory = Factory.extend(
+    /**
+     * @lends DefaultFactory.prototype
+     */
+    {
+        /**
+         * Creates object.
+         *
+         * @see http://jsperf.com/dynamic-arguments-to-the-constructor/4
+         *
+         * @private
+         * @param {Object} prototype
+         *
+         * @return {Object}
+         */
+        createObject: (function() {
+            if (_.isFunction(Object.create)) {
+                return function(prototype) {
+                    return Object.create(prototype);
+                };
+            }
 
+            // we wrap here in immediate invoked function expression
+            // to avoid hoisting of the fake constructor function `Service`
+            return (function() {
+                // fake constructor
+                function Service(){}
 
-module.exports = Factory.extend({
-    newInstanceWithArgs: function(constructor, args) {
-        var service;
+                return function(prototype) {
+                    Service.prototype = prototype;
+                    return new Service();
+                };
+            })();
+        })(),
 
-        // @see http://jsperf.com/dynamic-arguments-to-the-constructor
-        function Service() {}
-        Service.prototype = constructor.prototype;
+        /**
+         * @private
+         * @param constructor
+         * @param args
+         */
+        newInstanceWithArgs: function(constructor, args) {
+            var that, service;
 
-        service = new Service();
+            that = this.createObject(constructor.prototype);
 
-        try {
-            constructor.apply(service, args);
-        } catch (error) {
-            console.error("Cannot instantiate service", error);
-            throw error;
-        }
+            try {
+                service = constructor.apply(that, args);
+            } catch (error) {
+                //console.error("Cannot instantiate service", error);
+                throw error;
+            }
 
-        return service;
-    },
+            return service && (typeof service == 'object' || typeof service == 'function') ? service : that;
+        },
 
-    makeCall: function(service, method, args) {
-        if (isFunction(service[method])) {
+        /**
+         * @private
+         * @param service
+         * @param method
+         * @param args
+         */
+        makeCall: function(service, method, args) {
+            _.assert(_.isFunction(service[method]), "Try to call method does not exists: '" + method + "'", Error);
             service[method].apply(service, args);
+        },
+
+        /**
+         * @private
+         * @param service
+         * @param property
+         * @param value
+         */
+        setProperty: function(service, property, value) {
+            service[property] = value;
+        },
+
+        factory: function(definition) {
+            var self = this,
+                ctor, args, calls, properties, service;
+
+            _.assert(_.isFunction(ctor = definition.constructor), "Constructor is expected to be a Function", TypeError);
+
+            if (!_.isUndefined(args = definition.arguments)) {
+                _.assert(_.isArray(args), "Arguments is expected to be an Array", TypeError);
+            }
+
+            // Arguments
+            service = this.newInstanceWithArgs(ctor, args);
+
+            // Calls
+            if (_.isArray(calls = definition.calls)) {
+                _.forEach(calls, function(call) {
+                    self.makeCall(service, call[0], call[1]);
+                });
+            }
+
+            // Properties
+            if (_.isObject(properties = definition.properties)) {
+                _.forEach(properties, function(value, property) {
+                    self.setProperty(service, property, value);
+                });
+            }
+
+            return service;
         }
-    },
-
-    setProperty: function(service, property, value) {
-        service[property] = value;
-    },
-
-    factory: function(definition) {
-        var self = this,
-            service;
-
-        // Arguments
-        service = this.newInstanceWithArgs(definition.constructor, definition.arguments);
-
-        // Calls
-        forEachSimple(definition.calls, function(call) {
-            self.makeCall(service, call[0], call[1]);
-        });
-
-        // Properties
-        forEachOwn(definition.properties, function(value, property) {
-            self.setProperty(service, property, value);
-        });
-
-
-        return service;
     }
-});
+);
+
+module.exports = DefaultFactory;

@@ -30,7 +30,7 @@ CompositeParser = Parser.extend(
             return this;
         },
 
-        test: function(str) {
+        test: function(some) {
             var self = this;
 
             return this.async.promise(function(resolve, reject) {
@@ -41,7 +41,7 @@ CompositeParser = Parser.extend(
                     self.parsers,
                     function(parser, index, next) {
                         self.async
-                            .resolve(parser.test(str))
+                            .resolve(parser.test(some))
                             .then(function(isAcceptable) {
                                 next(null, isAcceptable);
                             })
@@ -59,7 +59,7 @@ CompositeParser = Parser.extend(
             });
         },
 
-        parse: function(str) {
+        parse: function(some) {
             var self = this;
 
             return this.async
@@ -69,7 +69,7 @@ CompositeParser = Parser.extend(
                         self.parsers,
                         function(parser, index, next) {
                             self.async
-                                .resolve(parser.test(str))
+                                .resolve(parser.test(some))
                                 .then(function(isAcceptable) {
                                     next(null, isAcceptable);
                                 });
@@ -86,7 +86,7 @@ CompositeParser = Parser.extend(
                 })
                 .then(function(parser) {
                     if (parser) {
-                        return self.async.resolve(parser.parse(str));
+                        return self.async.resolve(parser.parse(some));
                     }
                 });
         }

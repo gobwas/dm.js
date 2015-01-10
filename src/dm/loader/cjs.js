@@ -18,7 +18,7 @@ CJSLoader = Loader.extend(
         require: function(path, async) {
             var self = this;
 
-            _.assert(async instanceof Async, "Async is expected");
+            _.assert(async instanceof Async, "Async is expected", TypeError);
 
             return async.promise(function(resolve, reject) {
                 try {
@@ -33,6 +33,8 @@ CJSLoader = Loader.extend(
             var self = this,
                 fs;
 
+            _.assert(async instanceof Async, "Async is expected", TypeError);
+
             if (!this.options.browser && (fs = require("fs")) && fs.readFile) {
                 return async.promise(function(resolve, reject) {
                     fs.readFile(self._normalizePath(path), function(err, src) {
@@ -43,11 +45,17 @@ CJSLoader = Loader.extend(
                         }
                     });
                 });
-            } else {
-                return this.require(path, async);
             }
+
+            return this.require(path, async);
         },
 
+        /**
+         * @private
+         * @param path
+         * @returns {*}
+         * @private
+         */
         _normalizePath: function(path) {
             var base;
 
