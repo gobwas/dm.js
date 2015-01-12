@@ -18,7 +18,7 @@ jsdom.env(
         }
 
         test(jQuery, jQuery.Deferred().promise().constructor, jQueryAdapter, {
-            title: "jquery.js"
+            title: "JQueryAsync"
         });
     }
 );

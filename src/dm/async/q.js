@@ -1,27 +1,40 @@
 var Async = require("../async"),
-    Q;
+    _      = require("lodash"),
+    QAsync;
 
-Q = Async.extend({
-    constructor: function() {
-        Async.prototype.constructor.apply(this, arguments);
-        this.Q = this.adaptee;
-    },
+/**
+ * QAsync
+ *
+ * @class QAsync
+ * @extends Async
+ * @author Sergey Kamardin <s.kamardin@tcsbank.ru>
+ */
+QAsync = Async.extend(
+    /**
+     * @lends QAsync.prototype
+     */
+    {
+        constructor: function() {
+            Async.prototype.constructor.apply(this, arguments);
+            this.Q = this.adaptee;
+        },
 
-    promise: function(resolver) {
-        return new this.Q.Promise(resolver);
-    },
+        promise: function(resolver) {
+            return new this.Q.Promise(resolver);
+        },
 
-    all: function(promises) {
-        return this.Q.all(promises);
-    },
+        all: function(promises) {
+            return this.Q.all(promises);
+        },
 
-    resolve: function(value) {
-        return this.Q.Promise.resolve(value);
-    },
+        resolve: function(value) {
+            return this.Q.Promise.resolve(value);
+        },
 
-    reject: function(error) {
-        return this.Q.Promise.reject(error);
+        reject: function(error) {
+            return this.Q.Promise.reject(error);
+        }
     }
-});
+);
 
-module.exports = Q;
+module.exports = QAsync;

@@ -3,5 +3,5 @@ var test     = require("./../test"),
     QAdapter = require('../../../../src/dm/async/q');
 
 test(Q, Q.Promise, QAdapter, {
-    title: "q.js"
+    title: "QAsync"
 });

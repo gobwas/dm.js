@@ -2,6 +2,7 @@ var _      = require('lodash'),
     chance = require('chance'),
     sinon  = require('sinon'),
     chai   = require('chai'),
+    util   = require("util"),
     DM     = require('../src/dm.js'),
     Loader = require('../src/dm/loader'),
     Async  = require('../src/dm/async'),
@@ -13,6 +14,14 @@ assert = chai.assert;
 expect = chai.expect;
 
 describe("DM", function() {
+    var async, loader, dm;
+
+    beforeEach(function() {
+        async  = Object.create(Async.prototype);
+        loader = Object.create(Loader.prototype);
+
+        dm = new DM(async, loader);
+    });
 
     describe("constructor", function() {
 
@@ -25,189 +34,139 @@ describe("DM", function() {
         });
 
         it("should throw error when loader is not given", function() {
-            expect(function() { new DM(sinon.createStubInstance(Async)) }).to.throw(TypeError, "Loader is expected");
+            expect(function() { new DM(async) }).to.throw(TypeError, "Loader is expected");
         });
 
-        it("should throw error when options is not an Object", function() {
-            expect(function() { new DM(sinon.createStubInstance(Async), sinon.createStubInstance(Loader), "bad") }).to.throw(TypeError, "Options is expected to be an Object");
+        it("should throw error when config is not an Object", function() {
+            expect(function() { new DM(async, loader, "bad") }).to.throw(TypeError, "Config is expected to be an Object");
         });
 
-        it("should set default options for DM instance", function() {
-            var dm;
+        it("should throw error when config is not an Object", function() {
+            expect(function() { new DM(async, loader, "bad") }).to.throw(TypeError, "Config is expected to be an Object");
+        });
 
-            dm = new DM(sinon.createStubInstance(Async), sinon.createStubInstance(Loader));
+        it("should parse config if given", function() {
+            var service, definition, services,
+                parameter, value, parameters,
+                dm;
 
-            expect(dm.options).to.be.an.instanceOf(Object);
+            (services = {})[(service = chance.word())] = (definition = {});
+            (parameters = {})[(parameter = chance.word())] = (value = {});
 
-            _.forEach(DM.DEFAULTS, function(value, key) {
-                expect(dm.options).to.have.property(key).that.equals(value);
+            dm = new DM(async, loader, {
+                parameters: parameters,
+                services: services
             });
-        });
 
+            expect(dm.getDefinition(service)).equal(definition);
+            expect(dm.getParameter(parameter)).equal(value);
+        });
     });
 
     describe("instance", function() {
-        function makeSimpleDM() {
-            return new DM(sinon.createStubInstance(Async), sinon.createStubInstance(Loader));
-        }
-
-        describe("#setConfig", function() {
-            var dm;
-
-            beforeEach(function() {
-                dm = makeSimpleDM();
+        describe("#setDefinition", function() {
+            it("should throw error when key is not a string", function() {
+                expect(dm.setDefinition).to.throw(TypeError, "Key is expected to be a string");
             });
 
-            it("should work", function() {
-                expect(dm.setConfig.bind(dm, {})).to.not.throw(Error);
+            it("should throw error when definition is not object", function() {
+                expect(dm.setDefinition.bind(dm, chance.word())).to.throw(TypeError, "Definition is expected to be an Object");
             });
 
-            it("should throw error when config is not object", function() {
-                expect(dm.setConfig).to.throw(Error, "Config is expected to be an Object");
-            });
+            it("should throw error when definition is already set", function() {
+                var key;
 
-            return it("should throw error when configuring twice", function() {
-                dm.setConfig({});
-                expect(dm.setConfig.bind(dm, {})).to.throw(Error, "Dependency Manager is already configured");
+                key = chance.word();
+
+                function setDefinition() {
+                    dm.setDefinition(key, {});
+                }
+
+                setDefinition();
+
+                expect(setDefinition).to.throw(Error, util.format("Definition for the service '%s' has been already set", key));
             });
         });
 
-        describe("#getConfig", function() {
-            var dm, config, strProp, strValue, objProp, objValue;
-
-            before(function() {
-                dm = makeSimpleDM();
-
-                config = {};
-
-                strProp  = chance.word();
-                strValue = chance.word();
-                objProp  = chance.word();
-                objValue = { a: { b: "c" } };
-
-                config[strProp] = strValue;
-                config[objProp] = objValue;
-
-                dm.setConfig(config);
-            });
-
-            it("should work", function() {
-                expect(dm.getConfig.bind(dm, strProp)).to.not.throw(Error);
-            });
-
+        describe("#getDefinition", function() {
             it("should throw error when key is not a string", function() {
-                expect(dm.getConfig.bind(dm)).to.throw(TypeError, "Key is expected to be a string");
+                expect(dm.getDefinition.bind(dm)).to.throw(TypeError, "Key is expected to be a string");
             });
 
             it("should return cloned copy of object value", function() {
-                var result;
+                var key, definition;
 
-                result = dm.getConfig(objProp);
+                dm.setDefinition((key = chance.word()), (definition = {}));
 
-                expect(result).to.not.equal(objValue);
-                expect(result).to.deep.equal(objValue);
-            });
-        });
-
-        describe("#setParameters", function() {
-            var dm;
-
-            beforeEach(function() {
-                dm = makeSimpleDM();
-            });
-
-            it("should work", function() {
-                expect(dm.setParameters.bind(dm, {a : "b", c : { d: 1 }})).to.not.throw(Error);
-            });
-
-            it("should throw error when parameters is not object", function() {
-                expect(dm.setParameters.bind(dm)).to.throw(TypeError, "Parameters is expected to be an Object");
-            });
-
-            return it("should call #setParameter method for each key", function() {
-                var setParameterStub, len, keys, values, params;
-
-                len = 5;
-
-                keys =   _.map(new Array(len), chance.word.bind(chance));
-                values = _.map(new Array(len), chance.word.bind(chance));
-
-                params = _.zipObject(keys, values);
-
-                setParameterStub = sinon.stub(dm, "setParameter");
-
-                dm.setParameters(params);
-
-                _.times(len, function(i) {
-                    assert.ok(setParameterStub.getCall(i).calledWithExactly(keys[i], values[i]));
-                });
+                expect(dm.getDefinition(key)).equal(definition);
             });
         });
 
         describe("#setParameter", function() {
-            var dm;
-
-            beforeEach(function() {
-                dm = makeSimpleDM();
-            });
-
-            it("should work", function() {
-                expect(dm.setParameter.bind(dm, chance.word(), chance.word())).to.not.throw(Error);
-            });
-
             it("should throw error when key is not a string", function() {
                 expect(dm.setParameter.bind(dm)).to.throw(TypeError, "Key is expected to be a string");
             });
 
             it("should throw error when parameter is already set", function() {
-                var str;
+                var key;
 
-                dm.setParameter((str = chance.word()));
+                key = chance.word();
 
-                expect(dm.setParameter.bind(dm, str)).to.throw(Error, "Parameter '" + str + "' is already exists");
+                function setParameter() {
+                    dm.setParameter(key, chance.word());
+                }
+
+                setParameter();
+
+                expect(setParameter).to.throw(Error, util.format("Parameter '%s' is already exists", key));
             });
         });
 
         describe("#getParameter", function() {
-            var dm, params, strProp, strValue, objProp, objValue;
-
-            before(function() {
-                dm = makeSimpleDM();
-
-                params = {};
-
-                strProp  = chance.word();
-                strValue = chance.word();
-                objProp  = chance.word();
-                objValue = { a: { b: "c" } };
-
-                params[strProp] = strValue;
-                params[objProp] = objValue;
-
-                dm.setParameters(params);
-            });
-
-            it("should work", function() {
-                expect(dm.getParameter.bind(dm, strProp)).to.not.throw(Error);
-            });
-
             it("should throw error when key is not a string", function() {
                 expect(dm.getParameter.bind(dm)).to.throw(TypeError, "Key is expected to be a string");
             });
 
-            it("should return link to the value", function() {
-                var result;
+            it("should return the value", function() {
+                var key, value;
 
-                result = dm.getParameter(objProp);
+                dm.setParameter((key = chance.word()), (value = chance.word()));
 
-                expect(result).to.equal(objValue);
+                expect(dm.getParameter(key)).equal(value);
             });
         });
 
         describe("#parse", function() {
 
-            it("should return promise, resolved with given value if it is not a string, array or an object", function() {
+            it("should return promise, resolved with given value if it is not a string, array or an object", function(done) {
 
+                sinon.stub(async, "all", function(list) {
+                    return RSVP.Promise.all(list);
+                });
+
+                sinon.stub(async, "promise", function(cb) {
+                    return new RSVP.Promise(cb);
+                });
+
+                RSVP
+                    .all(_.map([null, 1, undefined, new Error, {}], function(value) {
+                        var asyncMock;
+
+                        (asyncMock = sinon.mock(async))
+                            .expects("resolve")
+                            .returns(RSVP.Promise.resolve(value))
+                            .once()
+                            .on(async)
+                            .calledWithExactly(value);
+
+                        return dm
+                            .parse(value)
+                            .then(function() {
+                                asyncMock.verify();
+                                asyncMock.restore();
+                            });
+                    }))
+                    .then(done, done);
             });
 
             it("should return result of async.promise", function() {

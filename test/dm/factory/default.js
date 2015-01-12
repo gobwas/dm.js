@@ -25,6 +25,10 @@ describe("DefaultFactory", function() {
 
     describe("#factory", function() {
 
+        it("should create instanceof", function() {
+            expect(factory.factory({ constructor: Ctor })).to.be.instanceof(Ctor);
+        });
+
         it("should call Object.create if exists", function() {
             var createSpy;
 
@@ -41,7 +45,7 @@ describe("DefaultFactory", function() {
             expect(createSpy.firstCall.calledWithExactly(Ctor.prototype)).to.be.true();
         });
 
-        it("should pass proper args", function() {
+        it("should pass arguments", function() {
             var createStub, Ctor, that, args;
 
             createStub = sinon.stub(Object, "create", function(proto) {
@@ -65,7 +69,7 @@ describe("DefaultFactory", function() {
             expect(Ctor.firstCall.calledWithExactly.apply(Ctor.firstCall, args)).to.be.true();
         });
 
-        it("should make proper calls", function() {
+        it("should make calls", function() {
             var that, methodSpy, createStub, args;
 
             createStub = sinon.stub(Object, "create", function(proto) {

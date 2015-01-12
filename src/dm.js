@@ -34,23 +34,20 @@ var inherits = require("inherits-js"),
  *
  * @param {Async}  async
  * @param {Loader} loader
- * @param {Object} [options]
+ * @param {Object} [config]
  *
  * @throws {Error}
  * @throws {TypeError}
  */
-DM = function(async, loader, options) {
-    var _config, _parameters,
+DM = function(async, loader, config) {
+    var self = this,
+        options, parameters, services,
         serviceProvider, parameterProvider, resourceProvider,
         parsersChain;
 
     _.assert(this   instanceof DM,     "Use constructor with the `new` operator");
     _.assert(async  instanceof Async,  "Async is expected",  TypeError);
     _.assert(loader instanceof Loader, "Loader is expected", TypeError);
-
-    if (!_.isUndefined(options)) {
-        _.assert(_.isObject(options), "Options is expected to be an Object", TypeError);
-    }
 
     /**
      * Async adapter.
@@ -69,12 +66,20 @@ DM = function(async, loader, options) {
     this.loader = loader;
 
     /**
-     * Services map.
+     * Instances map.
      *
      * @private
      * @type {Object}
      */
-    _config = null;
+    this.services = {};
+
+    /**
+     * Definitions map.
+     *
+     * @private
+     * @type {Object}
+     */
+    this.definitions = {};
 
     /**
      * Parameters.
@@ -82,95 +87,15 @@ DM = function(async, loader, options) {
      * @private
      * @type {Object}
      */
-    _parameters = {};
-
-
-    /**
-     * Options for DM.
-     * @type {Object}
-     */
-    this.options = _.extend({}, this.constructor.DEFAULTS, options || {});
+    this.parameters = {};
 
     /**
-     * Sets up service map.
-     *
-     * @param {Object} config
-     *
-     * @throws {Error}
-     * @throws {TypeError}
-     */
-    this.setConfig = function(config) {
-        _.assert(_.isNull(_config),  "Dependency Manager is already configured");
-        _.assert(_.isObject(config), "Config is expected to be an Object", TypeError);
-
-        // set up private config
-        _config = config;
-    };
-
-    /**
-     * Returns cloned definition of a configuration for service.
-     *
-     * @param key
-     *
-     * @throws {Error}
-     *
-     * @returns {*}
-     */
-    this.getConfig = function(key) {
-        _.assert(_.isString(key), "Key is expected to be a string", TypeError);
-        return _.clone(_config[key]) || null;
-    };
-
-    /**
-     * Sets up parameters.
-     *
-     * @param {Object} parameters
-     *
-     * @throws {TypeError}
-     */
-    this.setParameters = function(parameters) {
-        _.assert(_.isObject(parameters), "Parameters is expected to be an Object", TypeError);
-
-        _.forEach(parameters, function(value, key) {
-            this.setParameter(key, value);
-        }, this);
-    };
-
-    /**
-     * Sets up parameter.
-     *
-     * @param {string} key
-     * @param {*}      value
-     *
-     * @throws {Error}
-     * @throws {TypeError}
-     */
-    this.setParameter = function(key, value) {
-        _.assert(_.isString(key),          "Key is expected to be a string", TypeError);
-        _.assert(!_.has(_parameters, key), _.sprintf("Parameter '%s' is already exists", key));
-
-        _parameters[key] = value;
-    };
-
-    /**
-     * Returns value of property.
-     *
-     * @param {String} key
-     *
-     * @returns {*}
-     */
-    this.getParameter = function(key) {
-        _.assert(_.isString(key), "Key is expected to be a string", TypeError);
-        return !_.isUndefined(_parameters[key]) ? _parameters[key] : null;
-    };
-
-    /**
-     * Instances map.
+     * Options.
      *
      * @private
      * @type {Object}
      */
-    this.services = {};
+    this.options = _.extend({}, this.constructor.DEFAULTS);
 
     // assemble parser
     serviceProvider   = new ServiceProvider(this, async);
@@ -201,12 +126,136 @@ DM = function(async, loader, options) {
      * @type {DefaultFactory}
      */
     this.factory = new DefaultFactory();
+
+    if (!_.isUndefined(config)) {
+        _.assert(_.isObject(config), "Config is expected to be an Object", TypeError);
+
+        if (_.isObject((parameters = config.parameters))) {
+            _.forEach(parameters, function(value, key) {
+                self.setParameter(key, value);
+            });
+        }
+
+        if (_.isObject((services = config.services))) {
+            _.forEach(services, function(definition, key) {
+                self.setDefinition(key, definition);
+            });
+        }
+
+        if (_.isObject(options = config.options)) {
+            _.extend(this.options, options);
+        }
+    }
 };
 
 DM.prototype = (function() {
 
     return {
         constructor: DM,
+
+        /**
+         * Sets up service definition.
+         *
+         * @param {string} key
+         * @param {Object} definition
+         */
+        setDefinition: function(key, definition) {
+            _.assert(_.isString(key),        "Key is expected to be a string",         TypeError);
+            _.assert(_.isObject(definition), "Definition is expected to be an Object", TypeError);
+
+            _.assert(!_.has(this.definitions, key), _.sprintf("Definition for the service '%s' has been already set", key));
+
+            this.definitions[key] = definition;
+        },
+
+        /**
+         * Returns service definition.
+         *
+         * @param {string} key
+         *
+         * @returns {Object}
+         */
+        getDefinition: function(key) {
+            _.assert(_.isString(key), "Key is expected to be a string", TypeError);
+
+            return this.definitions[key];
+        },
+
+        /**
+         * Returns map of definitions.
+         *
+         * @returns {Object}
+         */
+        getDefinitions: function() {
+            return this.definitions;
+        },
+
+        /**
+         * Sets up parameter.
+         *
+         * @param key
+         * @param value
+         *
+         * @throws {Error}
+         * @throws {TypeError}
+         */
+        setParameter: function(key, value) {
+            _.assert(_.isString(key),              "Key is expected to be a string", TypeError);
+            _.assert(!_.has(this.parameters, key), _.sprintf("Parameter '%s' is already exists", key));
+
+            this.parameters[key] = value;
+        },
+
+        /**
+         * Returns parameter.
+         *
+         * @param key
+         *
+         * @throws {TypeError}
+         *
+         * @returns {*}
+         */
+        getParameter: function(key) {
+            _.assert(_.isString(key), "Key is expected to be a string", TypeError);
+
+            return this.parameters[key];
+        },
+
+        /**
+         * Returns all parameters.
+         *
+         * @returns {Object}
+         */
+        getParameters: function() {
+            return this.parameters;
+        },
+
+        /**
+         * Finds out references to services, parameters and resources in given object.
+         * Returns promise of getting them, which is resolved then with object having parsed values.
+         *
+         * @public
+         *
+         * @param {*} config
+         *
+         * @returns {Promise}
+         */
+        parse: function(config) {
+            switch (_.objectType(config)) {
+                case 'String': {
+                    return this.parseString(config);
+                }
+
+                case 'Object':
+                case 'Array': {
+                    return this.parseObject(config);
+                }
+
+                default: {
+                    return this.async.resolve(config);
+                }
+            }
+        },
 
         /**
          * @private
@@ -273,34 +322,6 @@ DM.prototype = (function() {
                 .then(function() {
                     return parsed;
                 });
-        },
-
-        /**
-         * Finds out references to services, parameters and resources in given object.
-         * Returns promise of getting them, which is resolved then with object having
-         * parsed values.
-         *
-         * @public
-         *
-         * @param {*} config
-         *
-         * @returns {Promise}
-         */
-        parse: function(config) {
-            switch (_.objectType(config)) {
-                case 'String': {
-                    return this.parseString(config);
-                }
-
-                case 'Object':
-                case 'Array': {
-                    return this.parseObject(config);
-                }
-
-                default: {
-                    return this.async.resolve(config);
-                }
-            }
         },
 
         /**
@@ -407,6 +428,7 @@ DM.prototype = (function() {
          */
         has: function(key) {
             _.assert(_.isString(key), "Key is expected to be a string", TypeError);
+
             return !!this.getConfig(key);
         },
 
@@ -419,6 +441,7 @@ DM.prototype = (function() {
          */
         initialized: function(key) {
             _.assert(_.isString(key), "Key is expected to be a string", TypeError);
+
             return !!this.services[key];
         },
 
@@ -431,11 +454,12 @@ DM.prototype = (function() {
          * @throws Error
          */
         set: function(key, service) {
-            var config;
+            var definition;
 
-            _.assert(_.isString(key),                "Key is expected to be a string", TypeError);
-            _.assert((config = this.getConfig(key)), _.sprintf("Service '%s' is not present in configuration", key));
-            _.assert(config.synthetic,               _.sprintf("Could not inject non synthetic service '%s'", key));
+            _.assert(_.isString(key), "Key is expected to be a string", TypeError);
+
+            _.assert((definition = this.getDefinition(key)), _.sprintf("Definition is not found for the '%s' service", key));
+            _.assert(definition.synthetic,                   _.sprintf("Could not inject non synthetic service '%s'", key));
 
             this.services[key] = this.async.resolve(service);
         },
@@ -448,7 +472,7 @@ DM.prototype = (function() {
          * @returns {Promise}
          */
         get: function(key) {
-            var config, promise,
+            var definition, promise,
                 alias,
                 isShared, isSynthetic, isAlias, isSingleProperty;
 
@@ -458,38 +482,38 @@ DM.prototype = (function() {
             _.assert(_.isString(key), "Key is expected to be a string", TypeError);
 
             // here we rejecting,
-            // cause it is expected situation, when service is not configured
-            if (!(config = this.getConfig(key))) {
-                return this.async.reject(new Error(_.sprintf("Service with key '%s' is not present in configuration", key)));
+            // cause it is expected situation, when service is not defined
+            if (!(definition = this.getDefinition(key))) {
+                return this.async.reject(new Error(_.sprintf("Definition is not found for the '%s' service", key)));
             }
 
-            isShared    = _.isBoolean(config.share)     ? config.share     : true;
-            isSynthetic = _.isBoolean(config.synthetic) ? config.synthetic : false;
-            isAlias     = _.isString(config.alias)      ? true             : false;
+            isShared    = _.isBoolean(definition.share)     ? definition.share     : true;
+            isSynthetic = _.isBoolean(definition.synthetic) ? definition.synthetic : false;
+            isAlias     = _.isString(definition.alias)      ? true             : false;
 
             // Sign of custom property (synthetic, aliased or smth)
             isSingleProperty = isSynthetic || isAlias;
 
-            if (!isSingleProperty && !_.isString(config.path)) {
-                return this.async.reject(new Error(_.sprintf("Path is expected in service configuration with key '%s'", key)));
+            if (!isSingleProperty && !_.isString(definition.path)) {
+                return this.async.reject(new Error(_.sprintf("Path is expected in definition of service '%s'", key)));
             }
 
             if (isSynthetic && !this.initialized(key)) {
-                return this.async.reject(new Error(_.sprintf("Service with key '%s' is synthetic, and not injected yet", key)));
+                return this.async.reject(new Error(_.sprintf("Service '%s' is synthetic, and not injected yet", key)));
             }
 
             if (isAlias) {
-                if (!this.has(alias = config.alias)) {
-                    return this.async.reject(new Error(_.sprintf("Service with key '%s' could not be alias for not existing '%s' service", key, alias)));
+                if (!this.has(alias = definition.alias)) {
+                    return this.async.reject(new Error(_.sprintf("Service '%s' could not be alias for not existing '%s' service", key, alias)));
                 }
 
                 return this.get(alias);
             }
 
             if (!isShared) {
-                promise = this.build(config);
+                promise = this.build(definition);
             } else if (!(promise = this.services[key])) {
-                promise = this.services[key] = this.build(config);
+                promise = this.services[key] = this.build(definition);
             }
 
             return promise;
@@ -499,7 +523,7 @@ DM.prototype = (function() {
 
 // Default options
 DM.DEFAULTS = {
-    base: null
+
 };
 
 DM.ESCAPE_FLAG  = '__escape__';

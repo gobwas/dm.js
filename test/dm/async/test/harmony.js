@@ -3,5 +3,5 @@ var test           = require("./../test"),
     RSVP           = require("rsvp");
 
 test(RSVP.Promise, RSVP.Promise, HarmonyAdapter, {
-    title: "harmony.js"
+    title: "HarmonyAsync"
 });

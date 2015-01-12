@@ -3,5 +3,5 @@ var test          = require("./../test"),
     BroodyAdapter = require("../../../../src/dm/async/broody");
 
 test(BroodyPromise, BroodyPromise, BroodyAdapter, {
-    title: "broody.js"
+    title: "BroodyPromisesAsync"
 });

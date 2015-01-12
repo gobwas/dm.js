@@ -3,5 +3,5 @@ var test        = require("./../test"),
     RSVPAdapter = require('../../../../src/dm/async/rsvp');
 
 test(RSVP, RSVP.Promise, RSVPAdapter, {
-    title: "rsvp.js"
+    title: "RSVPAsync"
 });
