@@ -64,7 +64,9 @@ describe("DM", function() {
     });
 
     describe("instance", function() {
+
         describe("#setDefinition", function() {
+
             it("should throw error when key is not a string", function() {
                 expect(dm.setDefinition).to.throw(TypeError, "Key is expected to be a string");
             });
@@ -139,6 +141,7 @@ describe("DM", function() {
         describe("#parse", function() {
 
             it("should return promise, resolved with given value if it is not a string, array or an object", function(done) {
+                var resolveStub;
 
                 sinon.stub(async, "all", function(list) {
                     return RSVP.Promise.all(list);
@@ -148,37 +151,32 @@ describe("DM", function() {
                     return new RSVP.Promise(cb);
                 });
 
+                sinon.stub(async, "resolve", function(value) {
+                    return RSVP.Promise.resolve(value);
+                });
+
                 RSVP
-                    .all(_.map([null, 1, undefined, new Error, {}], function(value) {
-                        var asyncMock;
-
-                        (asyncMock = sinon.mock(async))
-                            .expects("resolve")
-                            .returns(RSVP.Promise.resolve(value))
-                            .once()
-                            .on(async)
-                            .calledWithExactly(value);
-
+                    .all(_.map([null, 1, undefined, new Error], function(value, index) {
                         return dm
                             .parse(value)
-                            .then(function() {
-                                asyncMock.verify();
-                                asyncMock.restore();
+                            .then(function(response) {
+                                var call;
+
+                                expect(call = async.resolve.getCall(index)).to.exist();
+                                expect(call.calledWithExactly(value)).to.be.true();
+                                expect(response).equal(value);
                             });
                     }))
-                    .then(done, done);
+                    .then(function() {
+                        done();
+                    })
+                    .catch(done);
             });
 
             it("should return result of async.promise", function() {
-                var dm, async;
-
-                // make async resolution empty
-                async = new Async();
                 sinon.stub(async, "promise", function() {
                     return new RSVP.Promise(_.noop);
                 });
-
-                dm = new DM(async, loader);
 
                 expect(dm.parse(chance.word())).to.be.instanceof(RSVP.Promise);
 
@@ -187,23 +185,6 @@ describe("DM", function() {
 
 
             // string
-
-            var dm, async, loader;
-
-            beforeEach(function() {
-                // async
-                async = new Async;
-                sinon.stub(async, "promise", function(resolver) {
-                    return new RSVP.Promise(resolver);
-                });
-
-                // loader
-                loader = new Loader;
-
-                // dm
-                dm = new DM(async, loader);
-            });
-
 
             it("should call parser#test method with given is a string", function() {
 
