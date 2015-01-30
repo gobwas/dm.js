@@ -116,6 +116,10 @@ var async = {
         indexes = keys(obj);
         remain = indexes.length;
         index = 0;
+        
+        if (!remain) {
+            return callback();
+        }
 
         next = function(err) {
             if (err) {
