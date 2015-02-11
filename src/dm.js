@@ -313,7 +313,7 @@ DM.prototype = (function() {
             this.services[key] = this.async.resolve(service);
 
             // resolve pending requests came before
-            if (forthcoming = this.forthcoming[key]) {
+            if ((forthcoming = this.forthcoming[key])) {
                 forthcoming.resolve(service);
             }
         },
