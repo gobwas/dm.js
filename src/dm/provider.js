@@ -9,7 +9,8 @@ var inherits = require("inherits-js"),
  * @constructor
  */
 Provider = function(dm, async, options) {
-    _.assert(async instanceof Async, "Async is expected");
+    _.assert(_.isObject(dm),         "Object is expected", TypeError);
+    _.assert(async instanceof Async, "Async is expected",  TypeError);
 
     this.dm = dm;
     this.async = async;

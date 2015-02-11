@@ -40,8 +40,17 @@ CompositeParser = Parser.extend(
                 _.async.find(
                     self.parsers,
                     function(parser, index, next) {
+                        var test;
+
+                        try {
+                            test = parser.test(some);
+                        } catch (err) {
+                            next(err);
+                            return;
+                        }
+
                         self.async
-                            .resolve(parser.test(some))
+                            .resolve(test)
                             .then(function(isAcceptable) {
                                 next(null, isAcceptable);
                             })
@@ -68,11 +77,21 @@ CompositeParser = Parser.extend(
                     _.async.findSeries(
                         self.parsers,
                         function(parser, index, next) {
+                            var test;
+
+                            try {
+                                test = parser.test(some);
+                            } catch (err) {
+                                next(err);
+                                return;
+                            }
+
                             self.async
-                                .resolve(parser.test(some))
+                                .resolve(test)
                                 .then(function(isAcceptable) {
                                     next(null, isAcceptable);
-                                });
+                                })
+                                .catch(next);
                         },
                         function(err, accepter) {
                             if (err) {

@@ -32,19 +32,38 @@ EventualParser = Parser.extend(
                         truth(mustRepeat);
                     },
                     function(next, initial) {
+                        var test;
+
+                        try {
+                            test = parser.test(initial);
+                        } catch (err) {
+                            next(err);
+                            return;
+                        }
+
                         self.async
-                            .resolve(parser.test(initial))
+                            .resolve(test)
                             .then(function(acceptable) {
+                                var parsed;
+
                                 if (!acceptable) {
                                     next(null, initial, initial);
                                     return;
                                 }
 
+                                try {
+                                    parsed = parser.parse(initial);
+                                } catch (err) {
+                                    next(err);
+                                    return;
+                                }
+
                                 self.async
-                                    .resolve(parser.parse(initial))
+                                    .resolve(parsed)
                                     .then(function(parsed) {
                                         next(null, parsed, initial);
-                                    });
+                                    })
+                                    .catch(next);
                             });
                     },
                     function(err, value) {

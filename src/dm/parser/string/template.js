@@ -1,4 +1,4 @@
-var _        = require("lodash"),
+var _        = require("../../utils"),
     inherits = require("inherits-js"),
     Template;
 

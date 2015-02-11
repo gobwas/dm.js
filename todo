@@ -1,0 +1,6 @@
+TODO
+====
+
++ Remove "utils.js" from code with "lodash"
++ Remove "utils.async" from code with "async"
++ On browser builds add them as "bundler.expose"

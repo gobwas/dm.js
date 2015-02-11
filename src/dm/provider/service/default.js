@@ -19,8 +19,8 @@ DefaultServiceProvider = ServiceProvider.extend(
          *
          * @param {Object} definition
          * @param {string} definition.name
-         * @param {string} definition.property
-         * @param {Array}  definition.path
+         * @param {string} [definition.property]
+         * @param {Array}  [definition.args]
          *
          * @returns {Promise}
          */
@@ -28,9 +28,21 @@ DefaultServiceProvider = ServiceProvider.extend(
             var self = this,
                 name, property, args, promises;
 
-            _.assert(_.isString(name = definition.name),         "Expected definition.name to be a string");
-            _.assert(_.isString(property = definition.property), "Expected definition.property to be a string");
-            _.assert(_.isArray(args = definition.args),          "Expected definition.path to be a Array");
+            _.assert(_.isObject(definition), "Object is expected", TypeError);
+
+            name     = definition.name;
+            property = definition.property;
+            args     = definition.args;
+
+            _.assert(_.isString(name), "Definition.name is expected to be a string", TypeError);
+
+            if (!_.isUndefined(property)) {
+                _.assert(_.isString(property = definition.property), "Definition.property is expected to be a string", TypeError);
+            }
+
+            if (!_.isUndefined(args)) {
+                _.assert(_.isArray(args = definition.args), "Definition.args is expected to be an Array", TypeError);
+            }
 
             promises = [this.dm.parse(name)];
 
@@ -38,7 +50,9 @@ DefaultServiceProvider = ServiceProvider.extend(
                 promises.push(this.dm.parse(property));
 
                 if (args) {
-                    promises.push(this.async.all(_.map(args, this.dm.parse, this.dm)));
+                    promises.push(this.async.all(_.map(args, function(argument) {
+                        return self.dm.parse(argument);
+                    })));
                 }
             }
 
@@ -55,7 +69,7 @@ DefaultServiceProvider = ServiceProvider.extend(
                         .then(function(service) {
                             var property, isFunc;
 
-                            if (isString(prop)) {
+                            if (_.isString(prop)) {
                                 property = service[prop];
                                 isFunc = _.isFunction(property);
 
@@ -64,14 +78,11 @@ DefaultServiceProvider = ServiceProvider.extend(
                                         throw new TypeError(_.sprintf("Service '%s' does not have the method '%s'", key, prop));
                                     }
 
-
-                                    return property.apply(service, options.arguments);
+                                    return property.apply(service, args);
                                 }
-
 
                                 return isFunc ? _.bind(property, service) : property;
                             }
-
 
                             return service;
                         });

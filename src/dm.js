@@ -10,14 +10,14 @@ var inherits = require("inherits-js"),
     ResourceProvider  = require("./dm/provider/resource/default"),
 
     ServiceTemplate       = require("./dm/parser/string/template/service"),
-    ServiceLiveTemplate   = require("./dm/parser/string/template/service-live"),
+    ServiceLiveTemplate   = require("./dm/parser/string/template/service/live"),
     ParameterTemplate     = require("./dm/parser/string/template/parameter"),
-    ParameterLiveTemplate = require("./dm/parser/string/template/parameter-live"),
+    ParameterLiveTemplate = require("./dm/parser/string/template/parameter/live"),
     ResourceTemplate      = require("./dm/parser/string/template/resource"),
-    ResourceLiveTemplate  = require("./dm/parser/string/template/resource-live"),
+    ResourceLiveTemplate  = require("./dm/parser/string/template/resource/live"),
 
-    SingleStringParser   = require("./dm/parser/string/multiple"),
-    MultipleStringParser = require("./dm/parser/string/single"),
+    SingleStringParser   = require("./dm/parser/string/single"),
+    MultipleStringParser = require("./dm/parser/string/multiple"),
 
     StringifyProcessingParser = require("./dm/parser/wrapping/processing/stringify"),
 
@@ -72,6 +72,14 @@ DM = function(async, loader, config) {
      * @type {Object}
      */
     this.services = {};
+
+    /**
+     * Forthcoming synthetic services map.
+     *
+     * @private
+     * @type {Object}
+     */
+    this.forthcoming = {};
 
     /**
      * Definitions map.
@@ -236,25 +244,138 @@ DM.prototype = (function() {
          *
          * @public
          *
-         * @param {*} config
+         * @param {*} value
          *
          * @returns {Promise}
          */
-        parse: function(config) {
-            switch (_.objectType(config)) {
+        parse: function(value) {
+            switch (_.objectType(value)) {
                 case 'String': {
-                    return this.parseString(config);
+                    return this.parseString(value);
                 }
 
                 case 'Object':
                 case 'Array': {
-                    return this.parseObject(config);
+                    return this.parseIterable(value);
                 }
 
                 default: {
-                    return this.async.resolve(config);
+                    return this.async.resolve(value);
                 }
             }
+        },
+
+        /**
+         * Checks for service being configured.
+         *
+         * @param {string} key
+         *
+         * @throws {TypeError}
+         * @returns {boolean}
+         */
+        has: function(key) {
+            _.assert(_.isString(key), "Key is expected to be a string", TypeError);
+
+            return !!this.getDefinition(key);
+        },
+
+        /**
+         * Checks for service being built.
+         *
+         * @param {string} key
+         *
+         * @returns {boolean}
+         */
+        initialized: function(key) {
+            _.assert(_.isString(key), "Key is expected to be a string", TypeError);
+
+            return !!this.services[key];
+        },
+
+        /**
+         * Builds in built service.
+         *
+         * @param {string} key
+         * @param {Object} service
+         *
+         * @throws Error
+         */
+        set: function(key, service) {
+            var definition, forthcoming;
+
+            _.assert(_.isString(key), "Key is expected to be a string", TypeError);
+
+            // if set will return Promise, these errors must be in rejection state, async.
+            _.assert(!this.initialized(key),                 _.sprintf("Service '%s' is already set", key));
+            _.assert((definition = this.getDefinition(key)), _.sprintf("Definition is not found for the '%s' service", key));
+            _.assert(definition.synthetic,                   _.sprintf("Could not inject non synthetic service '%s'", key));
+
+            this.services[key] = this.async.resolve(service);
+
+            // resolve pending requests came before
+            if (forthcoming = this.forthcoming[key]) {
+                forthcoming.resolve(service);
+            }
+        },
+
+        /**
+         * Retrieves service.
+         *
+         * @param {string} key
+         *
+         * @returns {Promise}
+         */
+        get: function(key) {
+            var definition, promise,
+                alias,
+                isShared, isSynthetic, isAlias, isSingleProperty,
+                forthcoming;
+
+            // we throw here and not rejecting,
+            // cause it is not an expected situation for this method
+            // @see http://stackoverflow.com/a/21891544/1473140
+            _.assert(_.isString(key), "Key is expected to be a string", TypeError);
+
+            // here we rejecting,
+            // cause it is expected situation, when service is not defined
+            if (!(definition = this.getDefinition(key))) {
+                return this.async.reject(new Error(_.sprintf("Definition is not found for the '%s' service", key)));
+            }
+
+            isShared    = _.isBoolean(definition.share)     ? definition.share     : true;
+            isSynthetic = _.isBoolean(definition.synthetic) ? definition.synthetic : false;
+            isAlias     = _.isString(definition.alias)      ? true                 : false;
+
+            // Sign of custom property (synthetic, aliased or smth)
+            isSingleProperty = isSynthetic || isAlias;
+
+            if (!isSingleProperty && !_.isString(definition.path)) {
+                return this.async.reject(new Error(_.sprintf("Path is expected in definition of service '%s'", key)));
+            }
+
+            if (isSynthetic && !this.initialized(key)) {
+                if (!(forthcoming = this.forthcoming[key])) {
+                    forthcoming = this.forthcoming[key] = this.async.defer();
+                }
+
+                return forthcoming.promise;
+            }
+
+            if (isAlias) {
+                if (!this.has(alias = definition.alias)) {
+                    return this.async.reject(new Error(_.sprintf("Service '%s' could not be alias for not existing '%s' service", key, alias)));
+                }
+
+                return this.get(alias);
+            }
+
+            if (!isShared) {
+                promise = this.build(definition);
+            } else if (!(promise = this.services[key])) {
+                promise = this.services[key] = this.build(definition);
+            }
+
+            return promise;
         },
 
         /**
@@ -278,12 +399,12 @@ DM.prototype = (function() {
         /**
          * @private
          *
-         * @param {Object} object
+         * @param {Object|Array} object
          *
          * @throws TypeError
          * @returns {Promise}
          */
-        parseObject: function(object) {
+        parseIterable: function(object) {
             var self = this,
                 parsed, promises, escaped;
 
@@ -329,18 +450,18 @@ DM.prototype = (function() {
          *
          * @private
          *
-         * @param {Object} config
+         * @param {Object} definition
          *
          * @rejects {TypeError}
          *
          * @returns {Promise}
          */
-        build: function(config) {
+        build: function(definition) {
             var self = this;
 
             try {
-                _.assert(_.isObject(config),      "Config is expected to be an Object",     TypeError);
-                _.assert(_.isString(config.path), "Config.path is expected to be a string", TypeError);
+                _.assert(_.isObject(definition),      "definition is expected to be an Object",     TypeError);
+                _.assert(_.isString(definition.path), "definition.path is expected to be a string", TypeError);
             } catch (err) {
                 // here we rejecting, not throwing, cause it is an
                 // expected situations, when service is not properly configured
@@ -349,13 +470,13 @@ DM.prototype = (function() {
 
             // do not combine path loading and parsing arguments, cause it can produce side effects
             // on amd builds - when dependencies compiled in 'path' file, but loaded earlier from separate files
-            return this.loader.require(config.path, this.async)
+            return this.loader.require(definition.path, this.async)
                 .then(function(constructor) {
                     return self.async.all([
-                        self.parse(config.arguments  || []),
-                        self.parse(config.calls      || []),
-                        self.parse(config.properties || {}),
-                        self.parse(config.factory)
+                        self.parse(definition.arguments  || []),
+                        self.parse(definition.calls      || []),
+                        self.parse(definition.properties || {}),
+                        self.parse(definition.factory)
                     ])
                         .then(function(inputs) {
                             var definition, factory;
@@ -416,107 +537,6 @@ DM.prototype = (function() {
             resource = this.loader.read(path, this.async);
 
             return isHandling ? resource.then(handler) : resource;
-        },
-
-        /**
-         * Checks for service being configured.
-         *
-         * @param {string} key
-         *
-         * @throws {TypeError}
-         * @returns {boolean}
-         */
-        has: function(key) {
-            _.assert(_.isString(key), "Key is expected to be a string", TypeError);
-
-            return !!this.getConfig(key);
-        },
-
-        /**
-         * Checks for service being built.
-         *
-         * @param {string} key
-         *
-         * @returns {boolean}
-         */
-        initialized: function(key) {
-            _.assert(_.isString(key), "Key is expected to be a string", TypeError);
-
-            return !!this.services[key];
-        },
-
-        /**
-         * Builds in built service.
-         *
-         * @param {string} key
-         * @param {Object} service
-         *
-         * @throws Error
-         */
-        set: function(key, service) {
-            var definition;
-
-            _.assert(_.isString(key), "Key is expected to be a string", TypeError);
-
-            _.assert((definition = this.getDefinition(key)), _.sprintf("Definition is not found for the '%s' service", key));
-            _.assert(definition.synthetic,                   _.sprintf("Could not inject non synthetic service '%s'", key));
-
-            this.services[key] = this.async.resolve(service);
-        },
-
-        /**
-         * Retrieves service.
-         *
-         * @param {string} key
-         *
-         * @returns {Promise}
-         */
-        get: function(key) {
-            var definition, promise,
-                alias,
-                isShared, isSynthetic, isAlias, isSingleProperty;
-
-            // we throw here and not rejecting,
-            // cause it is not an expected situation for this method
-            // @see http://stackoverflow.com/a/21891544/1473140
-            _.assert(_.isString(key), "Key is expected to be a string", TypeError);
-
-            // here we rejecting,
-            // cause it is expected situation, when service is not defined
-            if (!(definition = this.getDefinition(key))) {
-                return this.async.reject(new Error(_.sprintf("Definition is not found for the '%s' service", key)));
-            }
-
-            isShared    = _.isBoolean(definition.share)     ? definition.share     : true;
-            isSynthetic = _.isBoolean(definition.synthetic) ? definition.synthetic : false;
-            isAlias     = _.isString(definition.alias)      ? true             : false;
-
-            // Sign of custom property (synthetic, aliased or smth)
-            isSingleProperty = isSynthetic || isAlias;
-
-            if (!isSingleProperty && !_.isString(definition.path)) {
-                return this.async.reject(new Error(_.sprintf("Path is expected in definition of service '%s'", key)));
-            }
-
-            if (isSynthetic && !this.initialized(key)) {
-                return this.async.reject(new Error(_.sprintf("Service '%s' is synthetic, and not injected yet", key)));
-            }
-
-            if (isAlias) {
-                if (!this.has(alias = definition.alias)) {
-                    return this.async.reject(new Error(_.sprintf("Service '%s' could not be alias for not existing '%s' service", key, alias)));
-                }
-
-                return this.get(alias);
-            }
-
-            if (!isShared) {
-                promise = this.build(definition);
-            } else if (!(promise = this.services[key])) {
-                promise = this.services[key] = this.build(definition);
-            }
-
-            return promise;
         }
     };
 })();

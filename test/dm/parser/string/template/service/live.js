@@ -1,5 +1,5 @@
-var Test     = require("./test"),
-    Template = require('../../../../../src/dm/parser/string/template/service-live'),
+var Test     = require("./../test"),
+    Template = require('../../../../../../src/dm/parser/string/template/service/live'),
     test;
 
 test = Test(function() { return new Template() }, { title: "ServiceLiveTemplate" });

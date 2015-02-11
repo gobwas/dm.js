@@ -17,18 +17,16 @@ DefaultParameterProvider = ParameterProvider.extend(
         get: function(definition) {
             var name, dm;
 
-            _.assert(_.isString(name = definition.name), "Expected definition.name to be a string");
+            _.assert(_.isObject(definition),             "Object is expected", TypeError);
+            _.assert(_.isString(name = definition.name), "Definition.name is expected to be a string", TypeError);
 
             dm = this.dm;
 
-            return this.async.promise(function(resolve, reject) {
-                dm
-                    .parse(name)
-                    .then(function(name) {
-                        resolve(dm.getParameter(name));
-                    })
-                    .catch(reject);
-            });
+            return dm
+                .parse(name)
+                .then(function(name) {
+                    return dm.getParameter(name);
+                });
         }
     }
 );

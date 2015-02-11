@@ -17,7 +17,7 @@ RequireJSLoader = Loader.extend(
         require: function(path, async) {
             var self = this;
 
-            _.assert(async instanceof Async, "Async is expected");
+            _.assert(async instanceof Async, "Async is expected", TypeError);
 
             return async.promise(function(resolve, reject) {
                 self.adaptee([path], resolve, reject);

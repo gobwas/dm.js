@@ -1,5 +1,5 @@
 var Template = require("../template"),
-    _      = require("lodash"),
+    _      = require("../../../utils"),
     ResourceTemplate;
 
 /**

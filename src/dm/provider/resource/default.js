@@ -18,8 +18,13 @@ DefaultResourceProvider = ResourceProvider.extend(
             var self = this,
                 path, handler, promises;
 
-            _.assert(_.isString(path = definition.path),       "Expected definition.path to be a string");
-            _.assert(_.isString(handler = definition.handler), "Expected definition.handler to be a string");
+            _.assert(_.isObject(definition), "Object is expected", TypeError);
+
+            _.assert(_.isString(path = definition.path), "Definition.path is expected to be a string", TypeError);
+
+            if (!_.isUndefined(handler = definition.handler)) {
+                _.assert(_.isString(handler), "Definition.handler is expected to be a string", TypeError);
+            }
 
             promises = [this.dm.parse(path)];
 

@@ -18,6 +18,19 @@ describe("DM", function() {
 
     beforeEach(function() {
         async  = Object.create(Async.prototype);
+        sinon.stub(async, "all", function(list) {
+            return RSVP.Promise.all(list);
+        });
+        sinon.stub(async, "promise", function(cb) {
+            return new RSVP.Promise(cb);
+        });
+        sinon.stub(async, "resolve", function(value) {
+            return RSVP.Promise.resolve(value);
+        });
+        sinon.stub(async, "reject", function(err) {
+            return RSVP.Promise.reject(err);
+        });
+
         loader = Object.create(Loader.prototype);
 
         dm = new DM(async, loader);
@@ -139,97 +152,123 @@ describe("DM", function() {
         });
 
         describe("#parse", function() {
+            var list;
 
             it("should return promise, resolved with given value if it is not a string, array or an object", function(done) {
-                var resolveStub;
-
-                sinon.stub(async, "all", function(list) {
-                    return RSVP.Promise.all(list);
-                });
-
-                sinon.stub(async, "promise", function(cb) {
-                    return new RSVP.Promise(cb);
-                });
-
-                sinon.stub(async, "resolve", function(value) {
-                    return RSVP.Promise.resolve(value);
-                });
-
                 RSVP
-                    .all(_.map([null, 1, undefined, new Error], function(value, index) {
-                        return dm
-                            .parse(value)
-                            .then(function(response) {
-                                var call;
-
-                                expect(call = async.resolve.getCall(index)).to.exist();
-                                expect(call.calledWithExactly(value)).to.be.true();
-                                expect(response).equal(value);
-                            });
+                    .all((list = [null, chance.natural(), chance.floating(), undefined, new Error]).map(function(value, index) {
+                        return dm.parse(value);
                     }))
-                    .then(function() {
-                        done();
+                    .then(function(results) {
+                        results.forEach(function(result, index) {
+                            var call;
+
+                            expect(call = async.resolve.getCall(index)).to.exist();
+                            expect(call.calledWithExactly(list[index])).to.be.true();
+                            expect(result).equal(list[index]);
+                        });
                     })
+                    .then(done)
                     .catch(done);
             });
 
             it("should return result of async.promise", function() {
-                sinon.stub(async, "promise", function() {
-                    return new RSVP.Promise(_.noop);
+                expect(dm.parse(chance.word())).to.be.instanceof(RSVP.Promise);
+            });
+
+            it("should return synthetic service", function(done) {
+                var key, service;
+
+                key = chance.word();
+                service = {};
+
+                dm.setDefinition(key, {
+                    synthetic: true
                 });
 
-                expect(dm.parse(chance.word())).to.be.instanceof(RSVP.Promise);
+                dm
+                    .parse("@" + key)
+                    .then(function(result) {
+                        expect(result).equal(service);
+                    })
+                    .then(done, done);
 
-                assert.ok(async.promise.callCount == 1);
-            });
-
-
-            // string
-
-            it("should call parser#test method with given is a string", function() {
-
-            });
-
-            it("should call parser#parse if string is acceptable to parse", function() {
-
-            });
-
-            it("should return given string if it is not acceptable to parse", function() {
-
+                dm.set(key, service);
             });
 
             // object
 
-            it("should resolve with unescaped object if it was escaped by DM#escape", function() {
+            it("should resolve with unescaped object if it was escaped by DM#escape", function(done) {
+                var escaped, target;
 
+                escaped = DM.escape((target = { a: "@" + chance.word() }));
+
+                dm
+                    .parse(escaped)
+                    .then(function(result) {
+                        expect(result).equal(target);
+                    })
+                    .then(done, done);
             });
 
-            it("should recursively call parse for every value of an object", function() {
+            it("should recursively call parse for every value of an object", function(done) {
+                var iterable, keys, spy,
+                    calls;
 
-            });
+                calls = [];
 
-        });
+                function extractCalls(obj) {
+                    calls.push(obj);
 
-        describe("#getResource", function() {
+                    if (_.isObject(obj) || _.isArray(obj)) {
+                        _.forEach(obj, function(value) {
+                            extractCalls(value);
+                        });
+                    }
+                }
 
-            it("should throw error when path is not a string", function() {
+                function makeRandomObj(recursive, obj) {
+                    return _.reduce(new Array(chance.natural({min: 3, max: 7})), function(result, value, index) {
+                        var val;
 
-            });
+                        if (obj) {
+                            result[chance.word()] = chance.word();
+                        } else {
+                            switch (index) {
+                                case 1: {
+                                    val = recursive ? makeRandomObj(false, false) : makeRandomObj(false, true);
+                                    break;
+                                }
 
-            it("should return a promise", function() {
+                                default: {
+                                    val = chance.word();
+                                    break;
+                                }
+                            }
 
-            });
+                            result.push(val);
+                        }
 
-            it("should call loader#read with path", function() {
+                        return result;
+                    }, obj ? {} : []);
+                }
 
-            });
+                iterable = makeRandomObj(true);
+                extractCalls(iterable);
 
-            it("should pass options.handler to loader, and resolve with loader#read call result, when handler is not a Function", function() {
+                sinon.spy(dm, "parse");
 
-            });
+                dm
+                    .parse(iterable)
+                    .then(function() {
+                        _.forEach(calls, function(target, index) {
+                            var call;
 
-            it("should pass loader#read result to a handler and resolve with handler call result if it is a Function", function() {
-
+                            expect(call = dm.parse.getCall(index)).to.exist();
+                            expect(call.calledWithExactly(target)).to.be.true();
+                        });
+                    })
+                    .then(done, done);
             });
 
         });
@@ -237,15 +276,31 @@ describe("DM", function() {
         describe("#has", function() {
 
             it("should throw error when key is not a string", function() {
-
+                expect(dm.has.bind(dm)).to.throw(TypeError, "Key is expected to be a string");
             });
 
-            it("should call #getConfig method with given key", function() {
+            it("should call #getDefinition method with given key", function() {
+                var key;
 
+                key = chance.word();
+
+                sinon.spy(dm, "getDefinition");
+
+                dm.has(key);
+
+                expect(dm.getDefinition.getCall(0).calledWithExactly(key)).to.be.true();
             });
 
             it("should return boolean", function() {
+                var key;
 
+                key = chance.word();
+                dm.setDefinition(key, {
+                    synthetic: true
+                });
+
+                expect(dm.has(chance.word())).to.be.false();
+                expect(dm.has(key)).to.be.true();
             });
 
         });
@@ -253,15 +308,20 @@ describe("DM", function() {
         describe("#initialized", function() {
 
             it("should throw error when key is not a string", function() {
-
+                expect(dm.initialized.bind(dm)).to.throw(TypeError, "Key is expected to be a string");
             });
 
             it("should check dm.services with given key", function() {
+                var key;
 
-            });
+                key = chance.word();
+                dm.setDefinition(key, {
+                    synthetic: true
+                });
+                dm.set(key, {});
 
-            it("should return boolean", function() {
-
+                expect(dm.initialized(key)).to.be.true();
+                expect(dm.initialized(chance.word())).to.be.false();
             });
 
         });
@@ -269,29 +329,205 @@ describe("DM", function() {
         describe("#set", function() {
 
             it("should throw error when key is not a string", function() {
-
+                expect(dm.set.bind(dm)).to.throw(TypeError, "Key is expected to be a string");
             });
 
             it("should throw error when service is not configured", function() {
+                var key;
 
-            });
+                key = chance.word();
 
-            it("should retrieve config with #getConfig with given key", function() {
-
+                expect(dm.set.bind(dm, key)).to.throw(Error, "Definition is not found for the '" + key + "' service");
             });
 
             it("should throw error when service is not synthetic", function() {
+                var key;
 
+                key = chance.word();
+                dm.setDefinition(key, {});
+
+                expect(dm.set.bind(dm, key, {})).to.throw(Error, "Could not inject non synthetic service '" + key + "'");
             });
 
-            it("should set promise, resolved with service in dm.services by given key", function() {
+            it("should throw error when service is already initialized", function() {
+                var key;
 
+                key = chance.word();
+                dm.setDefinition(key, {
+                    synthetic: true
+                });
+                dm.set(key, {});
+
+                expect(dm.set.bind(dm, key, {})).to.throw(Error, "Service '" + key + "' is already set");
+            });
+
+            it("should fulfill deferred requests", function(done) {
+                var key, service;
+
+                key = chance.word();
+                service = {};
+                dm.setDefinition(key, {
+                    synthetic: true
+                });
+
+                RSVP
+                    .all(_.map(new Array(chance.natural({min: 3, max: 10})), function() {
+                        return dm.get(key);
+                    }))
+                    .then(function(results) {
+                        _.forEach(results, function(result) {
+                            expect(result).to.be.equal(service);
+                        })
+                    })
+                    .then(done, done);
+
+                dm.set(key, service);
             });
 
         });
 
         describe("#get", function() {
-            // todo
+
+            it("should throw error when key is not a string", function() {
+                expect(dm.get.bind(dm)).to.throw(TypeError, "Key is expected to be a string");
+            });
+
+            it("should throw error when service has no definition", function(done) {
+                var key;
+
+                key = chance.word();
+
+                dm.get(key)
+                    .catch(function(err) {
+                        expect(err).to.be.instanceOf(Error);
+                        expect(err.message).equal("Definition is not found for the '" + key + "' service")
+                    })
+                    .then(done, done);
+            });
+
+            it("should throw error when service has no path and not alias or synthetic", function(done) {
+                var key;
+
+                key = chance.word();
+
+                dm.setDefinition(key, {});
+
+                dm.get(key)
+                    .catch(function(err) {
+                        expect(err).to.be.instanceOf(Error);
+                        expect(err.message).equal("Path is expected in definition of service '" + key + "'")
+                    })
+                    .then(done, done);
+            });
+
+            it("should return forthcoming promise for synthetic service", function() {
+                var key;
+
+                key = chance.word();
+
+                dm.setDefinition(key, {
+                    synthetic: true
+                });
+
+                expect(dm.get(key)).to.be.instanceOf(RSVP.Promise);
+            });
+
+            it("should return aliased service", function(done) {
+                var key, alias, service;
+
+                key = chance.word();
+                alias = chance.word();
+                service = {};
+
+                dm.setDefinition(key, {
+                    alias: alias
+                });
+
+                dm.setDefinition(alias, {
+                    synthetic: true
+                });
+
+                dm.set(alias, service);
+
+                dm
+                    .get(key)
+                    .then(function(result) {
+                        expect(result).to.be.equal(service);
+                    })
+                    .then(done, done);
+            });
+
+            it("should throw error when aliased service is not defined", function(done) {
+                var key, alias;
+
+                key = chance.word();
+                alias = chance.word();
+
+                dm.setDefinition(key, {
+                    alias: alias
+                });
+
+                dm
+                    .get(key)
+                    .catch(function(err) {
+                        expect(err).to.be.instanceOf(Error);
+                        expect(err.message).equal("Service '" + key + "' could not be alias for not existing '" + alias + "' service");
+                    })
+                    .then(done, done);
+            });
+
+            it("should build every time new service, when sharing is off", function(done) {
+                var key;
+
+                key = chance.word();
+
+                // stub loader
+                // return Object constructor
+                sinon.stub(loader, "require", function() {
+                    return RSVP.Promise.resolve(Object);
+                });
+
+                dm.setDefinition(key, {
+                    path: chance.word(),
+                    share: false
+                });
+
+                RSVP
+                    .all(_.map(new Array(chance.natural({min: 2, max: 10})), function() {
+                        return dm.get(key);
+                    }))
+                    .then(function(results) {
+                        expect(_.uniq(results).length).to.be.equal(results.length);
+                    })
+                    .then(done, done);
+            });
+
+            it("should build once new service, and return one instance, when sharing is on", function(done) {
+                var key;
+
+                key = chance.word();
+
+                // stub loader
+                // return Object constructor
+                sinon.stub(loader, "require", function() {
+                    return RSVP.Promise.resolve(Object);
+                });
+
+                dm.setDefinition(key, {
+                    path: chance.word(),
+                    share: true
+                });
+
+                RSVP
+                    .all(_.map(new Array(chance.natural({min: 2, max: 10})), function() {
+                        return dm.get(key);
+                    }))
+                    .then(function(results) {
+                        expect(_.uniq(results).length).to.be.equal(1);
+                    })
+                    .then(done, done);
+            });
+
         });
 
     })

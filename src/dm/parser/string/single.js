@@ -1,5 +1,5 @@
 var StringParser = require("../string"),
-    _            = require("lodash"),
+    _            = require("../../utils"),
     SingleStringParser;
 
 /**

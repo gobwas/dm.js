@@ -1,5 +1,5 @@
 var Async = require("../async"),
-    _      = require("lodash"),
+    _      = require("../utils"),
     QAsync;
 
 /**

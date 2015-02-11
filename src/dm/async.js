@@ -42,6 +42,25 @@ Async.prototype = {
      */
     reject: function(value) {
         throw new Error("Method 'reject' must be implemented");
+    },
+
+    /**
+     * Universal defer function.
+     * Could be overriden by async implementors.
+     *
+     * @returns {Object}
+     */
+    defer: function() {
+        var deferred;
+
+        deferred = {};
+
+        deferred.promise = this.promise(function(resolve, reject) {
+            deferred.resolve = resolve;
+            deferred.reject  = reject;
+        });
+
+        return deferred;
     }
 };
 
