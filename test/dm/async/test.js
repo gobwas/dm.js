@@ -158,8 +158,8 @@ module.exports = function(Adaptee, AdapteePromise, ConcreteAdapter, options) {
                     try {
                         assert.isTrue(errorSpy.calledWithExactly(err));
                         assert.strictEqual(successSpy.callCount, 0);
-                    } catch (err) {
-                        error = err;
+                    } catch (err_) {
+                        error = err_;
                     }
 
                     done(error);
