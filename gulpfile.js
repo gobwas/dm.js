@@ -17,6 +17,7 @@ gulp.task("browserify:test", function(done) {
         buffer     = require("vinyl-buffer"),
         glob       = require("glob"),
         rename     = require("gulp-rename"),
+        uglify     = require("gulp-uglify"),
         eos        = require("end-of-stream"),
         path       = require("path"),
         File       = require("vinyl");
@@ -40,7 +41,7 @@ gulp.task("browserify:test", function(done) {
             }));
 
             bundler = browserify({
-                debug: true
+                debug: false
             });
 
             bundler.add("./build/test/module/polyfills.js");
@@ -60,6 +61,7 @@ gulp.task("browserify:test", function(done) {
                 .bundle()
                 .pipe(source("test.js"))
                 .pipe(buffer())
+                .pipe(uglify())
                 .pipe(gulp.dest("./web-test"));
 
             return new RSVP.Promise(function(resolve, reject) {
