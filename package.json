@@ -7,12 +7,12 @@
     "test": "test"
   },
   "scripts": {
-    "test": "./node_modules/gulp/bin/gulp.js test"
+    "test": "./node_modules/gulp/bin/gulp.js ci"
   },
   "testling": {
-    "preprocess": "./node_modules/gulp/bin/gulp.js testling",
+    "preprocess": "./node_modules/gulp/bin/gulp.js browserify:test",
     "harness": "mocha-bdd",
-    "files": "web-test/testling.js",
+    "files": "web-test/test.js",
     "browsers": [
       "ie/6..latest",
       "chrome/22..latest",
@@ -64,7 +64,15 @@
     "browserify-fs": "^1.0.0",
     "run-sequence": "^1.0.2",
     "through2": "^0.6.3",
-    "gulp-util": "^3.0.3"
+    "gulp-util": "^3.0.3",
+    "karma-mocha": "^0.1.10",
+    "karma": "^0.12.31",
+    "karma-sauce-launcher": "^0.2.10",
+    "karma-ie-launcher": "^0.1.5",
+    "karma-firefox-launcher": "^0.1.4",
+    "karma-safari-launcher": "^0.1.1",
+    "karma-chrome-launcher": "^0.1.7",
+    "karma-phantomjs-launcher": "^0.1.4"
   },
   "dependencies": {
     "inherits-js": "^0.1.0"

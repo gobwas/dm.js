@@ -7,11 +7,11 @@ gulp.task("clean", function(done) {
 
     del([
         "./tmp",
-        "./web-test/testling.js"
+        "./web-test/test.js"
     ], done);
 });
 
-gulp.task("browserify:testling", function(done) {
+gulp.task("browserify:test", function(done) {
     var browserify = require('browserify'),
         source     = require("vinyl-source-stream"),
         buffer     = require("vinyl-buffer"),
@@ -43,9 +43,12 @@ gulp.task("browserify:testling", function(done) {
                 debug: true
             });
 
+            bundler.add("./build/test/module/polyfills.js");
+
             bundler.external("vertx");
             bundler.external("jsdom");
-            bundler.require(new File({ contents: new Buffer("function noop(){}; module.exports={ readFile: noop};") }), { expose: "fs" });
+
+            bundler.require("./build/test/module/fs.js", { expose: "fs" });
 
             file = new File({
                 contents: contents
@@ -55,7 +58,7 @@ gulp.task("browserify:testling", function(done) {
 
             stream = bundler
                 .bundle()
-                .pipe(source("testling.js"))
+                .pipe(source("test.js"))
                 .pipe(buffer())
                 .pipe(gulp.dest("./web-test"));
 
@@ -137,6 +140,22 @@ gulp.task("style", function () {
         .pipe(jscs());
 });
 
+gulp.task("karma:sauce", function(done) {
+    var karma = require('karma').server;
+
+    karma.start({
+        configFile: __dirname + '/.karma.js'
+    }, done);
+});
+
+gulp.task("karma:local", function(done) {
+    var karma = require('karma').server;
+
+    karma.start({
+        configFile: __dirname + '/.karma.local.js'
+    }, done);
+});
+
 gulp.task("test", function(done) {
     var runSequence = require("run-sequence");
 
@@ -149,14 +168,16 @@ gulp.task("test", function(done) {
     );
 });
 
-gulp.task("testling", function(done) {
+gulp.task("ci", function(done) {
     var runSequence = require("run-sequence");
 
     runSequence(
         "clean",
         "lint",
         "style",
-        "browserify:testling",
+        "mocha",
+        "browserify:test",
+        "karma:sauce",
         done
     );
 });

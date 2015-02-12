@@ -4,7 +4,7 @@ node_js:
   - "0.10"
 #addons:
 #  sauce_connect: true
-#env:
-#  global:
-#    - secure: 51mDicBzBFsbCutc0eNtg1tqCyCdcnN4JeuJjuQ6RAyRwDy68XpxC/9oI84qfbK+GoT9LwBwndao6WvUFChxVk8TtVYDXtxeWgsLeUJkHH9KdyzjyoawssXmQG/4lydpHmpnrxciPfTqyUVuHiHhi1Q01kTNHwETwi6adcg4zfU=
-#    - secure: A5Oz1zslqzBu7JonwF7CLYKNkyC1AroVHnNQcvw+Z661q7XlZ5I2CLBQYEey72WHoZIISgGYRxxWys8sm34ZwTpKkqFBklWZrzeg08sLWivt0fSX8M3wvkrMAAX8P56YV4VZOqueTkxBLbqiZzsrB/TRkHP4F0bssirtVT32GbM=
+env:
+  global:
+    - secure: 51mDicBzBFsbCutc0eNtg1tqCyCdcnN4JeuJjuQ6RAyRwDy68XpxC/9oI84qfbK+GoT9LwBwndao6WvUFChxVk8TtVYDXtxeWgsLeUJkHH9KdyzjyoawssXmQG/4lydpHmpnrxciPfTqyUVuHiHhi1Q01kTNHwETwi6adcg4zfU=
+    - secure: A5Oz1zslqzBu7JonwF7CLYKNkyC1AroVHnNQcvw+Z661q7XlZ5I2CLBQYEey72WHoZIISgGYRxxWys8sm34ZwTpKkqFBklWZrzeg08sLWivt0fSX8M3wvkrMAAX8P56YV4VZOqueTkxBLbqiZzsrB/TRkHP4F0bssirtVT32GbM=
