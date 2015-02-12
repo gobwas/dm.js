@@ -18,10 +18,16 @@ module.exports = function(config) {
       base: 'SauceLabs',
       browserName: 'safari'
     },
-    sl_ios_safari: {
-      base: 'SauceLabs',
-      browserName: 'iphone'
-    },
+    //sl_ios_safari: {
+    //  base: 'SauceLabs',
+    //  browserName: 'iphone'
+    //},
+    //"SL_IOS_8": {
+    //  base: "SauceLabs",
+    //  browserName: "iPhone",
+    //  platform: "OS X 10.10",
+    //  version: "8.1"
+    //},
     sl_android: {
       base: 'SauceLabs',
       browserName: 'android'
