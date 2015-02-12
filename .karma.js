@@ -103,6 +103,9 @@ module.exports = function(config) {
       testName: pkg.name + "@" + pkg.version
     },
 
+    // increase timeout
+    captureTimeout: 180000,
+
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: true
