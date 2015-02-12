@@ -5,6 +5,7 @@ Change log
 ______________________
 
 + Simplified configuration of DM (Async and Loader in arguments);
++ Removed Grunt (to Gulp);
 
 ### 0.3.0 (5-10-2014)
 ______________________

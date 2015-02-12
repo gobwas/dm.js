@@ -3,7 +3,4 @@ tmp
 dist
 *.iml
 node_modules
-Gruntfile.js
-Gruntfile.map
 npm-debug.log
-*.testling.js

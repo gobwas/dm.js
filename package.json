@@ -7,12 +7,12 @@
     "test": "test"
   },
   "scripts": {
-    "test": "./node_modules/grunt-cli/bin/grunt test"
+    "test": "./node_modules/gulp/bin/gulp.js test"
   },
   "testling": {
-    "preprocess": "./node_modules/grunt-cli/bin/grunt testling",
-    "harness": "mocha-tdd",
-    "files": "test/**/*.testling.js",
+    "preprocess": "./node_modules/gulp/bin/gulp.js testling",
+    "harness": "mocha-bdd",
+    "files": "web-test/testling.js",
     "browsers": [
       "ie/6..latest",
       "chrome/22..latest",
@@ -57,7 +57,14 @@
     "gulp-mocha": "^2.0.0",
     "gulp-jshint": "^1.9.2",
     "gulp-jscs": "^1.4.0",
-    "jshint-stylish": "^1.0.0"
+    "jshint-stylish": "^1.0.0",
+    "end-of-stream": "^1.1.0",
+    "gulp-rename": "^1.2.0",
+    "vinyl": "^0.4.6",
+    "browserify-fs": "^1.0.0",
+    "run-sequence": "^1.0.2",
+    "through2": "^0.6.3",
+    "gulp-util": "^3.0.3"
   },
   "dependencies": {
     "inherits-js": "^0.1.0"

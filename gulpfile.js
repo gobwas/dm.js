@@ -1,5 +1,6 @@
 var gulp = require("gulp"),
-    RSVP = require("rsvp");
+    RSVP = require("rsvp"),
+    _    = require("lodash");
 
 gulp.task("clean", function(done) {
     var del = require("del");
@@ -10,12 +11,15 @@ gulp.task("clean", function(done) {
     ], done);
 });
 
-gulp.task("testling", function(done) {
+gulp.task("browserify:testling", function(done) {
     var browserify = require('browserify'),
         source     = require("vinyl-source-stream"),
         buffer     = require("vinyl-buffer"),
         glob       = require("glob"),
-        bundler;
+        rename     = require("gulp-rename"),
+        eos        = require("end-of-stream"),
+        path       = require("path"),
+        File       = require("vinyl");
 
     new RSVP
         .Promise(function(resolve, reject) {
@@ -29,24 +33,44 @@ gulp.task("testling", function(done) {
             });
         })
         .then(function(files) {
-            console.log("BUNDLINGS", files);
+            var bundler, stream, contents, file;
+
+            contents = Buffer.concat(files.map(function(file) {
+                return new Buffer("require('" + file + "');");
+            }));
+
             bundler = browserify({
-                entries: files,
                 debug: true
             });
 
-            bundler.external("jsdom");
             bundler.external("vertx");
+            bundler.external("jsdom");
+            bundler.require(new File({ contents: new Buffer("function noop(){}; module.exports={ readFile: noop};") }), { expose: "fs" });
 
-            return bundler
+            file = new File({
+                contents: contents
+            });
+
+            bundler.add(file);
+
+            stream = bundler
                 .bundle()
                 .pipe(source("testling.js"))
                 .pipe(buffer())
                 .pipe(gulp.dest("./web-test"));
+
+            return new RSVP.Promise(function(resolve, reject) {
+                eos(stream, function(err) {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+
+                    resolve();
+                });
+            });
         })
-        .then(function(stream) {
-            eos(stream, done);
-        });
+        .then(done, done);
 });
 
 gulp.task("mocha", function() {
@@ -60,15 +84,50 @@ gulp.task("mocha", function() {
 });
 
 gulp.task("lint", function() {
-    var jshint = require("gulp-jshint");
+    var jshint      = require("gulp-jshint"),
+        through2    = require("through2"),
+        PluginError = require("gulp-util").PluginError,
+        errors;
+
+    errors = [];
 
     return gulp
         .src(["./src/**/*.js"])
         .pipe(jshint())
         .pipe(jshint.reporter('jshint-stylish'))
-        .pipe(jshint.reporter('fail')); // todo custom
-});
+        .pipe(through2.obj(
+            function(file, enc, done) {
+                var jshint, isError;
 
+                // check for failure
+                if ((jshint = file.jshint) && !jshint.success && !jshint.ignored) {
+                    isError = _.any(jshint.results, function(result) {
+                        try {
+                            return result.error.code[0] === "E";
+                        } catch (err) {
+                            return false;
+                        }
+                    });
+
+                    if (isError) {
+                        errors.push(file.path);
+                    }
+                }
+
+                done(null, file);
+            },
+            function(done) {
+                if (errors.length > 0) {
+                    this.emit('error', new PluginError('gulp-jshint', {
+                        message: 'JSHint failed for: \n' + errors.join(',\n'),
+                        showStack: false
+                    }));
+                }
+
+                done();
+            }
+        ));
+});
 
 gulp.task("style", function () {
     var jscs = require("gulp-jscs");
@@ -76,4 +135,28 @@ gulp.task("style", function () {
     return gulp
         .src(["./src/**/*.js"])
         .pipe(jscs());
+});
+
+gulp.task("test", function(done) {
+    var runSequence = require("run-sequence");
+
+    runSequence(
+        "clean",
+        "lint",
+        "style",
+        "mocha",
+        done
+    );
+});
+
+gulp.task("testling", function(done) {
+    var runSequence = require("run-sequence");
+
+    runSequence(
+        "clean",
+        "lint",
+        "style",
+        "browserify:testling",
+        done
+    );
 });

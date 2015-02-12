@@ -94,7 +94,7 @@ describe("CJSLoader", function() {
                     var call;
 
                     expect(call = fs.readFile.getCall(0)).to.exist();
-                    expect(call.calledWith(path));
+                    expect(call.calledWith(path)).to.be.true();
                 })
                 .then(done, done)
                 .then(function() {
