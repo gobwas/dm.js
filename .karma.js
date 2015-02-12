@@ -8,20 +8,23 @@ module.exports = function(config) {
   var customLaunchers = {
     sl_chrome: {
       base: 'SauceLabs',
-      browserName: 'chrome',
-      platform: 'Windows 7',
-      version: '35'
+      browserName: 'chrome'
     },
     sl_firefox: {
       base: 'SauceLabs',
-      browserName: 'firefox',
-      version: '30'
+      browserName: 'firefox'
+    },
+    sl_safari: {
+      base: 'SauceLabs',
+      browserName: 'safari'
     },
     sl_ios_safari: {
       base: 'SauceLabs',
-      browserName: 'iphone',
-      platform: 'OS X 10.9',
-      version: '7.1'
+      browserName: 'iphone'
+    },
+    sl_android: {
+      base: 'SauceLabs',
+      browserName: 'android'
     },
     sl_ie_9: {
       base: 'SauceLabs',
@@ -98,7 +101,13 @@ module.exports = function(config) {
     },
 
     // increase timeout
-    captureTimeout: 180000,
+    captureTimeout: 240000,
+
+    // increase timeout
+    browserNoActivityTimeout: 90000,
+
+    // increase timeout
+    browserDisconnectTimeout: 10000,
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
