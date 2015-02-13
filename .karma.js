@@ -16,10 +16,14 @@ module.exports = function(config) {
       browserName: 'firefox',
       platform: 'Windows 8.1'
     },
+    sl_opera: {
+      base: 'SauceLabs',
+      browserName: 'opera',
+      platform: 'Windows 8.1'
+    },
     sl_safari: {
       base: 'SauceLabs',
-      browserName: 'safari',
-      platform: 'Windows 8.1'
+      browserName: 'safari'
     },
     "sl_ios_8": {
       base: "SauceLabs",
@@ -30,6 +34,12 @@ module.exports = function(config) {
     sl_android: {
       base: 'SauceLabs',
       browserName: 'android'
+    },
+    sl_ie_8: {
+      base: 'SauceLabs',
+      browserName: 'internet explorer',
+      platform: 'Windows XP',
+      version: '8'
     },
     sl_ie_9: {
       base: 'SauceLabs',

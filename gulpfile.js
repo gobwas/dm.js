@@ -147,7 +147,10 @@ gulp.task("karma:sauce", function(done) {
 
     karma.start({
         configFile: __dirname + '/.karma.js'
-    }, done);
+    }, function(err) {
+        // leave error
+        done();
+    });
 });
 
 gulp.task("karma:local", function(done) {
