@@ -145,6 +145,8 @@ gulp.task("style", function () {
 gulp.task("karma:sauce", function(done) {
     var karma = require('karma').server;
 
+    done = _.once(done);
+
     karma.start({
         configFile: __dirname + '/.karma.js'
     }, function(err) {

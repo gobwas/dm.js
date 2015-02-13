@@ -4,7 +4,8 @@
 
 [![NPM version](https://badge.fury.io/js/dm.svg)](http://badge.fury.io/js/dm)
 [![Build Status](https://travis-ci.org/gobwas/dm.js.svg?branch=0.3.0)](https://travis-ci.org/gobwas/dm.js)
-[![Sauce Test Status](https://saucelabs.com/browser-matrix/gbws.svg)](https://saucelabs.com/u/gbws)
+
+# [![Sauce Test Status](https://saucelabs.com/browser-matrix/gbws.svg)](https://saucelabs.com/u/gbws)
 
 ## Introduction
 
