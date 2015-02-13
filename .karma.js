@@ -8,26 +8,25 @@ module.exports = function(config) {
   var customLaunchers = {
     sl_chrome: {
       base: 'SauceLabs',
-      browserName: 'chrome'
+      browserName: 'chrome',
+      platform: 'Windows 8.1'
     },
     sl_firefox: {
       base: 'SauceLabs',
-      browserName: 'firefox'
+      browserName: 'firefox',
+      platform: 'Windows 8.1'
     },
     sl_safari: {
       base: 'SauceLabs',
-      browserName: 'safari'
+      browserName: 'safari',
+      platform: 'Windows 8.1'
     },
-    //sl_ios_safari: {
-    //  base: 'SauceLabs',
-    //  browserName: 'iphone'
-    //},
-    //"SL_IOS_8": {
-    //  base: "SauceLabs",
-    //  browserName: "iPhone",
-    //  platform: "OS X 10.10",
-    //  version: "8.1"
-    //},
+    "sl_ios_8": {
+      base: "SauceLabs",
+      browserName: "iPhone",
+      platform: "OS X 10.10",
+      version: "8.1"
+    },
     sl_android: {
       base: 'SauceLabs',
       browserName: 'android'
