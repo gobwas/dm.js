@@ -78,15 +78,30 @@ gulp.task("browserify:test", function(done) {
         .then(done, done);
 });
 
-gulp.task("mocha", function() {
-    var mocha = require("gulp-mocha");
+gulp.task("mocha", function(done) {
+    var istanbul = require('gulp-istanbul'),
+        mocha    = require("gulp-mocha");
 
-    return gulp
-        .src(["./test/**/*.js"])
-        .pipe(mocha({
-
-        }));
+    gulp.src(["./lib/**/*.js"])
+        .pipe(istanbul())
+        .pipe(istanbul.hookRequire())
+        .on('finish', function () {
+            gulp.src(["./test/**/*.js"])
+                .pipe(mocha())
+                .pipe(istanbul.writeReports({
+                    reporters: ["lcovonly"]
+                }))
+                .on('end', done);
+        });
 });
+
+gulp.task("coveralls", function() {
+    var coveralls = require('gulp-coveralls');
+
+    return gulp.src('./coverage/lcov.info')
+        .pipe(coveralls());
+});
+
 
 gulp.task("lint", function() {
     var jshint      = require("gulp-jshint"),
@@ -183,6 +198,7 @@ gulp.task("ci", function(done) {
         "lint",
         "style",
         "mocha",
+        "coveralls",
         "browserify:test",
         "karma:sauce",
         done

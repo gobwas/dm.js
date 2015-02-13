@@ -2,7 +2,7 @@
   "name": "dm",
   "version": "0.3.0",
   "description": "Dependency Injection Manager",
-  "main": "index.js",
+  "main": "./lib/dm.js",
   "directories": {
     "test": "test"
   },
@@ -73,7 +73,8 @@
     "karma-safari-launcher": "^0.1.1",
     "karma-chrome-launcher": "^0.1.7",
     "karma-phantomjs-launcher": "^0.1.4",
-    "gulp-uglify": "^1.1.0"
+    "gulp-uglify": "^1.1.0",
+    "gulp-istanbul": "^0.6.0"
   },
   "dependencies": {
     "inherits-js": "^0.1.0"

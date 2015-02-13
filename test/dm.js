@@ -3,9 +3,9 @@ var _      = require('lodash'),
     sinon  = require('sinon'),
     chai   = require('chai'),
     util   = require("util"),
-    DM     = require('../src/dm.js'),
-    Loader = require('../src/dm/loader'),
-    Async  = require('../src/dm/async'),
+    DM     = require('../lib/dm'),
+    Loader = require('../lib/loader'),
+    Async  = require('../lib/async'),
     RSVP   = require('rsvp'),
     assert, expect;
 
