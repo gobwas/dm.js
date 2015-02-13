@@ -2,6 +2,7 @@
 
 [![NPM version](https://badge.fury.io/js/dm.svg)](http://badge.fury.io/js/dm)
 [![Build Status](https://travis-ci.org/gobwas/dm.js.svg?branch=0.3.0)](https://travis-ci.org/gobwas/dm.js)
+[![Test Coverage][https://img.shields.io/coveralls/gobwas/dm.js.svg?style=flat]][https://coveralls.io/r/gobwas/dm.js?branch=0.3.0]
 [![Sauce Test Status](https://saucelabs.com/buildstatus/gbws)](https://saucelabs.com/u/gbws)
 
 > Dependency [Injection](http://en.wikipedia.org/wiki/Dependency_injection) Manager for javascript.
