@@ -11,7 +11,7 @@ gulp.task("clean", function(done) {
     ], done);
 });
 
-gulp.task("browserify:test", function(done) {
+function webTest(options, done) {
     var browserify = require('browserify'),
         source     = require("vinyl-source-stream"),
         buffer     = require("vinyl-buffer"),
@@ -21,6 +21,11 @@ gulp.task("browserify:test", function(done) {
         eos        = require("end-of-stream"),
         path       = require("path"),
         File       = require("vinyl");
+
+    options = _.defaults(options || {}, {
+        debug: true,
+        uglify: false
+    });
 
     new RSVP
         .Promise(function(resolve, reject) {
@@ -41,7 +46,7 @@ gulp.task("browserify:test", function(done) {
             }));
 
             bundler = browserify({
-                debug: false
+                debug: options.debug
             });
 
             bundler.add("./build/test/module/polyfills.js");
@@ -60,8 +65,13 @@ gulp.task("browserify:test", function(done) {
             stream = bundler
                 .bundle()
                 .pipe(source("test.js"))
-                .pipe(buffer())
-                .pipe(uglify())
+                .pipe(buffer());
+
+            if (options.uglify) {
+                stream = stream.pipe(uglify());
+            }
+
+            stream = stream
                 .pipe(gulp.dest("./web-test"));
 
             return new RSVP.Promise(function(resolve, reject) {
@@ -76,6 +86,14 @@ gulp.task("browserify:test", function(done) {
             });
         })
         .then(done, done);
+}
+
+gulp.task("webtest:ci", function(done) {
+    webTest({ uglify: true, debug: false }, done);
+});
+
+gulp.task("webtest:local", function(done) {
+    webTest({ uglify: false, debug: true }, done);
 });
 
 gulp.task("mocha", function(done) {
@@ -186,6 +204,8 @@ gulp.task("test", function(done) {
         "lint",
         "style",
         "mocha",
+        "webtest:local",
+        "karma:local",
         done
     );
 });
@@ -199,7 +219,7 @@ gulp.task("ci", function(done) {
         "style",
         "mocha",
         "coveralls",
-        "browserify:test",
+        "webtest:ci",
         "karma:sauce",
         done
     );
