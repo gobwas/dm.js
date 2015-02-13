@@ -66,7 +66,7 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'web-test/test.js'
+      'test/web/test.js'
     ],
 
     // list of files to exclude

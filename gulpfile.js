@@ -7,7 +7,7 @@ gulp.task("clean", function(done) {
 
     del([
         "./tmp",
-        "./web-test/test.js"
+        "./test/web/test.js"
     ], done);
 });
 
@@ -29,7 +29,7 @@ function webTest(options, done) {
 
     new RSVP
         .Promise(function(resolve, reject) {
-            glob("./test/**/*.js", function(err, files) {
+            glob("./test/unit/**/*.js", function(err, files) {
                 if (err) {
                     reject(err);
                     return;
@@ -72,7 +72,7 @@ function webTest(options, done) {
             }
 
             stream = stream
-                .pipe(gulp.dest("./web-test"));
+                .pipe(gulp.dest("./test/web"));
 
             return new RSVP.Promise(function(resolve, reject) {
                 eos(stream, function(err) {
@@ -104,7 +104,7 @@ gulp.task("mocha", function(done) {
         .pipe(istanbul())
         .pipe(istanbul.hookRequire())
         .on('finish', function () {
-            gulp.src(["./test/**/*.js"])
+            gulp.src(["./test/unit/**/*.js", "./test/functional/*.js"])
                 .pipe(mocha())
                 .pipe(istanbul.writeReports({
                     reporters: ["lcovonly"]
