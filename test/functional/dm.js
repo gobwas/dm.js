@@ -6,68 +6,7 @@ var DM        = require("../../lib/dm"),
     chai      = require("chai"),
 
     expect = chai.expect,
-    chance = new Chance,
-
-    config;
-
-config = {
-    "parameters": {
-        "path": "./resource",
-        "param": 10
-    },
-    "services": {
-
-        "service.a": {
-            "path": "./src/universal.js",
-            "calls": [
-                [
-                    "method",
-                    ["#./resource/text.txt#"]
-                ]
-            ]
-        },
-        "service.b": {
-            "path": "./src/universal.js",
-            "calls": [
-                [
-                    "method",
-                    ["#{./resource/text.txt}-B"]
-                ]
-            ]
-        },
-        "service.c": {
-            "path": "./src/universal.js",
-            "calls": [
-                [
-                    "method",
-                    ["@{serviceB}-C"]
-                ]
-            ]
-        },
-        "service.d": {
-            "path": "./src/universal.js",
-            "properties": {
-                "propA": "%param%",
-                "propB": "%{param}-B"
-            }
-        },
-        "service.e": {
-            "path": "./src/universal.js",
-            "arguments": [{
-                "option": true
-            }]
-        },
-
-        "service.z": {
-            "path": "./src/universal.js",
-            "arguments": [{
-                "string": "Peace"
-            }]
-        }
-
-    }
-};
-
+    chance = new Chance;
 
 
 describe("DM`s functionality", function() {
@@ -400,33 +339,6 @@ describe("DM`s functionality", function() {
         // todo insane things
 
     });
-
-
-
-
-
-
-    /*it("should work", function(done) {
-
-        dm.get("serviceA")
-            .then(function(service) {
-                expect(service.textA.callCount).equal(1);
-                expect(service.textA.firstCall.calledWithExactly("Hello, DM!")).to.be.true();
-
-                expect(service.textB.callCount).equal(1);
-                expect(service.textB.firstCall.calledWithExactly("Hello, DM!-B")).to.be.true();
-
-                expect(service.textC.callCount).equal(1);
-                expect(service.textC.firstCall.calledWithExactly("I am serviceB instance-C")).to.be.true();
-
-                expect(service.propA).equal(10);
-                expect(service.propB).equal("10-B");
-
-                expect(service.options.option).equal(true);
-            })
-            .then(done, done);
-
-    });*/
 
 });
 
