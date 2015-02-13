@@ -176,7 +176,7 @@ describe("DefaultServiceProvider", function() {
                 .then(done, done);
         });
 
-        it("should throw error when method is not exists", function(done) {
+        it("should throw error when property is not exists", function(done) {
             var name, property;
 
             name     = chance.word();
@@ -187,6 +187,35 @@ describe("DefaultServiceProvider", function() {
             });
             sinon.stub(dm, "get", function() {
                 return RSVP.Promise.resolve({});
+            });
+
+            provider
+                .get({ name: name, property: property })
+                .then(function() {
+                    done(new Error("Expected rejection, but fulfilled"));
+                })
+                .catch(function(err) {
+                    expect(err).to.be.instanceOf(Error);
+                    expect(err.message).equal("Service '" + name + "' does not have the property '" + property + "'");
+                })
+                .then(done, done);
+        });
+
+        it("should throw error when method is not exists", function(done) {
+            var name, property;
+
+            name     = chance.word();
+            property = chance.word();
+
+            sinon.stub(dm, "parse", function(str) {
+                return RSVP.Promise.resolve(str);
+            });
+            sinon.stub(dm, "get", function() {
+                var obj;
+
+                (obj = {})[property] = chance.word();
+
+                return RSVP.Promise.resolve(obj);
             });
 
             provider

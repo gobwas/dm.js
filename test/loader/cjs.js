@@ -109,7 +109,7 @@ describe("CJSLoader", function() {
 
             fs = require("fs");
             sinon.stub(fs, "readFile", function(path, cb) {
-                cb(null);
+                cb(null, chance.word());
             });
 
             path = chance.word();

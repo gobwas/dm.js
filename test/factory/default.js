@@ -93,6 +93,19 @@ describe("DefaultFactory", function() {
             expect(methodSpy.firstCall.calledWithExactly.apply(methodSpy.firstCall, args)).to.be.true();
         });
 
+        it("should throw error when method does not exists", function() {
+            var that, methodSpy, createStub, fac;
+
+            fac = function() {
+                factory.factory({
+                    constructor: Ctor,
+                    calls: [ ["method"] ]
+                });
+            };
+
+            expect(fac).to.throw(Error, "Try to call method that does not exists: 'method'");
+        });
+
         it("should set properties", function() {
             var service, props;
 
