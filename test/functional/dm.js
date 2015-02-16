@@ -4,6 +4,7 @@ var DM        = require("../../lib/dm"),
     CJSLoader = require("../../lib/loader/cjs"),
     Chance    = require("chance"),
     chai      = require("chai"),
+    sinon     = require("sinon"),
 
     expect = chai.expect,
     chance = new Chance;
@@ -14,9 +15,7 @@ describe("DM`s functionality", function() {
 
     beforeEach(function() {
         // clear cache
-        try {
-            delete require.cache[__dirname + "/src/universal.js"];
-        } catch (err) {}
+        delete require.cache[__dirname + "/src/universal.js"];
 
         dm = new DM(new RSVPAsync(RSVP), new CJSLoader(require, { base: __dirname }));
     });
@@ -39,7 +38,7 @@ describe("DM`s functionality", function() {
                 .get("service")
                 .then(function(service) {
                     expect(service.method.callCount).equal(1);
-                    expect(service.method.calledWithExactly(argument));
+                    expect(service.method.calledWithExactly(argument)).true();
                 })
                 .then(done, done);
         });
@@ -58,7 +57,7 @@ describe("DM`s functionality", function() {
                 .get("service")
                 .then(function(service) {
                     expect(service.constructor.callCount).equal(1);
-                    expect(service.constructor.calledWithExactly(argument));
+                    expect(service.constructor.calledWithExactly(argument)).true();
                 })
                 .then(done, done);
         });
@@ -175,7 +174,7 @@ describe("DM`s functionality", function() {
                 dm
                     .get("service")
                     .then(function(service) {
-                        expect(service.method.firstCall.calledWithExactly(text));
+                        expect(service.method.firstCall.calledWithExactly(text)).true();
                     })
                     .then(done, done);
             });
@@ -197,7 +196,7 @@ describe("DM`s functionality", function() {
                 dm
                     .get("service")
                     .then(function(service) {
-                        expect(service.method.firstCall.calledWithExactly(liveText));
+                        expect(service.method.firstCall.calledWithExactly(liveText)).true();
                     })
                     .then(done, done);
             });
@@ -237,7 +236,7 @@ describe("DM`s functionality", function() {
                 dm
                     .get("service")
                     .then(function(service) {
-                        expect(service.method.firstCall.calledWithExactly(value));
+                        expect(service.method.firstCall.calledWithExactly(value)).true();
                     })
                     .then(done, done);
             });
@@ -259,7 +258,7 @@ describe("DM`s functionality", function() {
                 dm
                     .get("service")
                     .then(function(service) {
-                        expect(service.method.firstCall.calledWithExactly(liveText));
+                        expect(service.method.firstCall.calledWithExactly(liveText)).true();
                     })
                     .then(done, done);
             });
@@ -268,10 +267,11 @@ describe("DM`s functionality", function() {
 
 
         describe("Service", function() {
-            var dependency, dependencyService;
+            var dependency, dependencyService, dependencyMethodResult;
 
             beforeEach(function() {
                 dependency = chance.word();
+                dependencyMethodResult = {};
 
                 dependencyService = {
                     toString: (function() {
@@ -282,7 +282,11 @@ describe("DM`s functionality", function() {
                         return function() {
                             return str;
                         }
-                    })()
+                    })(),
+
+                    method: sinon.spy(function() {
+                        return dependencyMethodResult;
+                    })
                 };
 
                 dm.setDefinition(dependency, {
@@ -292,7 +296,7 @@ describe("DM`s functionality", function() {
                 dm.set(dependency, dependencyService);
             });
 
-            it("should parse parameter template", function(done) {
+            it("should parse service template", function(done) {
                 dm.setDefinition("service", {
                     path: "./src/universal.js",
                     "calls": [
@@ -303,12 +307,12 @@ describe("DM`s functionality", function() {
                 dm
                     .get("service")
                     .then(function(service) {
-                        expect(service.method.firstCall.calledWithExactly(dependencyService));
+                        expect(service.method.firstCall.calledWithExactly(dependencyService)).true();
                     })
                     .then(done, done);
             });
 
-            it("should parse parameter live template", function(done) {
+            it("should parse service live template", function(done) {
                 var addition,
                     liveText;
 
@@ -325,7 +329,32 @@ describe("DM`s functionality", function() {
                 dm
                     .get("service")
                     .then(function(service) {
-                        expect(service.method.firstCall.calledWithExactly(liveText));
+                        expect(service.method.firstCall.calledWithExactly(liveText)).true();
+                    })
+                    .then(done, done);
+            });
+
+            it("should parse service calling", function(done) {
+                var args;
+
+                args = [chance.word(), chance.integer(), {}];
+
+                dm.setDefinition("service", {
+                    path: "./src/universal.js",
+                    "calls": [
+                        [ "method", [ "@" + dependency + ":method" + JSON.stringify(args) ] ]
+                    ]
+                });
+
+                dm
+                    .get("service")
+                    .then(function(service) {
+                        var firstCall;
+
+                        expect(firstCall = dependencyService.method.firstCall).to.exist();
+                        expect(firstCall.calledWithExactly.apply(firstCall, args)).true();
+                        expect(service.method.firstCall.calledWithExactly(dependencyMethodResult)).true();
+
                     })
                     .then(done, done);
             });
@@ -334,8 +363,90 @@ describe("DM`s functionality", function() {
 
         });
 
+        describe("Fury", function() {
 
-        // todo fury things
+            it("should parse live parameter, then resource", function(done) {
+                var dir;
+
+                dir = chance.word();
+
+                dm.setParameter(dir, "./resource");
+
+                dm.setDefinition("service", {
+                    path: "./src/universal.js",
+                    "calls": [
+                        [ "method", ["#%{" + dir + "}/text.txt#"] ]
+                    ]
+                });
+
+                dm
+                    .get("service")
+                    .then(function(service) {
+                        expect(service.method.firstCall.calledWithExactly(text)).true();
+                    })
+                    .then(done, done);
+
+            });
+
+            it("should parse live parameter, then live resource, then add text", function(done) {
+                var dir, addition, liveText;
+
+                addition = chance.word();
+                liveText = text + addition;
+
+                dir = chance.word();
+
+                dm.setParameter(dir, "./resource");
+
+                dm.setDefinition("service", {
+                    path: "./src/universal.js",
+                    "calls": [
+                        [ "method", ["#{%{" + dir + "}/text.txt}" + addition] ]
+                    ]
+                });
+
+                dm
+                    .get("service")
+                    .then(function(service) {
+                        expect(service.method.firstCall.calledWithExactly(liveText)).true();
+                    })
+                    .then(done, done);
+            });
+
+            it("should parse live parameter, then live resource, then add text, then get service", function(done) {
+                var dir, addition, liveText, dependency;
+
+                addition = chance.word();
+                liveText = text + addition;
+                dependency = {};
+
+                dir = chance.word();
+
+                dm.setParameter(dir, "./resource");
+
+                dm.setDefinition(liveText, {
+                    synthetic: true
+                });
+
+                dm.setDefinition("service", {
+                    path: "./src/universal.js",
+                    "calls": [
+                        [ "method", ["@#{%{" + dir + "}/text.txt}" + addition] ]
+                    ]
+                });
+
+                dm
+                    .get("service")
+                    .then(function(service) {
+                        expect(service.method.firstCall.calledWithExactly(dependency)).true();
+                    })
+                    .then(done, done);
+
+                dm.set(liveText, dependency);
+            });
+
+        });
+
         // todo insane things
 
     });

@@ -107,7 +107,7 @@ gulp.task("mocha", function(done) {
             gulp.src(["./test/unit/**/*.js", "./test/functional/*.js"])
                 .pipe(mocha())
                 .pipe(istanbul.writeReports({
-                    reporters: ["lcovonly"]
+                    reporters: ["lcovonly", "text-summary"]
                 }))
                 .on('end', done);
         });
