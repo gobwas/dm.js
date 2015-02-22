@@ -530,6 +530,100 @@ describe("DM", function() {
 
         });
 
+        describe("#build", function() {
+
+            it("should throw error when definition is not an object", function() {
+                expect(dm.build.bind(dm)).to.throw(TypeError, "Object is expected");
+            });
+
+            it("should reject when definition.path is not a string", function(done) {
+                dm.build({})
+                    .then(function() {
+                        throw new Error("Fulfilled, expected to be rejected");
+                    })
+                    .catch(function(err) {
+                        expect(err).to.be.instanceof(TypeError);
+                        expect(err.message).equal("definition.path is expected to be a string");
+                    })
+                    .then(done, done);
+            });
+
+            it("should call loader.require before parsing definition", function(done) {
+                var requireStub, parseStub,
+                    path;
+
+                requireStub = sinon.stub(loader, "require", function() {
+                    return RSVP.Promise.resolve(_.noop);
+                });
+
+                parseStub = sinon.stub(dm, "parse", function(obj) {
+                    return RSVP.Promise.resolve(obj);
+                });
+
+                dm
+                    .build({
+                        path: (path = chance.word()),
+                        arguments:  [],
+                        calls:      [],
+                        properties: {},
+                        factory:    ""
+                    })
+                    .then(function() {
+                        var rCall;
+
+                        expect(rCall = requireStub.firstCall).to.exist();
+                        expect(rCall.calledWithExactly(path));
+
+                        parseStub.getCalls().forEach(function(call) {
+                            expect(rCall.calledBefore(call));
+                        });
+                    })
+                    .then(done, done);
+            });
+
+            it("should pass parsed definition to the factory", function(done) {
+                var factory, ctor, args, calls, properties,
+                    parseSpy;
+
+                factory = sinon.spy();
+                ctor    = function() {};
+
+                sinon.stub(loader, "require", function() {
+                    return RSVP.Promise.resolve(ctor);
+                });
+
+                parseSpy = sinon.stub(dm, "parse", function(obj) {return RSVP.Promise.resolve(obj);});
+                parseSpy.withArgs(args = []);
+                parseSpy.withArgs(calls = []);
+                parseSpy.withArgs(properties = {});
+                parseSpy.withArgs(factory);
+
+                dm
+                    .build({
+                        path:       chance.word(),
+                        arguments:  args,
+                        calls:      calls,
+                        properties: properties,
+                        factory:    factory
+                    })
+                    .then(function() {
+                        expect(parseSpy.callCount).equal(4);
+                        expect(parseSpy.calledWithExactly(args)).to.be.true();
+                        expect(parseSpy.calledWithExactly(calls)).to.be.true();
+                        expect(parseSpy.calledWithExactly(properties)).to.be.true();
+                        expect(parseSpy.calledWithExactly(factory)).to.be.true();
+
+                        expect(factory.callCount).equal(1);
+                        expect(factory.firstCall.args[0].arguments).equal(args);
+                        expect(factory.firstCall.args[0].calls).equal(calls);
+                        expect(factory.firstCall.args[0].properties).equal(properties);
+                        expect(factory.firstCall.args[0].constructor).equal(ctor);
+                    })
+                    .then(done, done);
+            });
+
+        });
+
     })
 
 });

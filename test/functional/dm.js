@@ -11,13 +11,13 @@ var DM        = require("../../lib/dm"),
 
 
 describe("DM`s functionality", function() {
-    var dm;
+    var dm, async, loader;
 
     beforeEach(function() {
         // clear cache
         delete require.cache[__dirname + "/src/universal.js"];
 
-        dm = new DM(new RSVPAsync(RSVP), new CJSLoader(require, { base: __dirname }));
+        dm = new DM((async = new RSVPAsync(RSVP)), (loader = new CJSLoader(require, { base: __dirname })));
     });
 
     describe("configuration actions", function() {
@@ -139,6 +139,49 @@ describe("DM`s functionality", function() {
                 .then(done, done);
 
             dm.set("service", obj);
+        });
+
+        it("should use given factory", function(done) {
+            var factory,
+                ctor, args, calls, properties;
+
+            factory = sinon.spy();
+            ctor = function(){};
+
+            args = [];
+            calls = [];
+            properties = {};
+
+            dm.setDefinition("service", {
+                path: "./src/universal.js",
+                arguments:  DM.escape(args),
+                calls:      DM.escape(calls),
+                properties: DM.escape(properties),
+                factory: "@factory"
+            });
+
+            dm.setDefinition("factory", {
+                synthetic: true
+            });
+
+            dm.set("factory", factory);
+
+            sinon.stub(loader, "require", function() {
+                return RSVP.Promise.resolve(ctor);
+            });
+
+            dm
+                .get("service")
+                .then(function() {
+                    var call;
+
+                    expect(call = factory.firstCall).to.exist();
+                    expect(call.args[0].constructor).equal(ctor);
+                    expect(call.args[0].arguments).equal(args);
+                    expect(call.args[0].calls).equal(calls);
+                    expect(call.args[0].properties).equal(properties);
+                })
+                .then(done, done);
         });
 
         // todo lazy
@@ -362,6 +405,8 @@ describe("DM`s functionality", function() {
             // todo circular dependency
 
         });
+
+
 
         describe("Fury", function() {
 
