@@ -196,6 +196,25 @@ gulp.task("karma:local", function(done) {
     }, done);
 });
 
+gulp.task("jsdoc", function() {
+    var jsdoc2md = require("gulp-jsdoc-to-markdown"),
+        rename   = require("gulp-rename");
+
+    return gulp.src("./lib/**/*.js")
+        .pipe(jsdoc2md())
+        .pipe(rename(function(path){
+            path.extname = ".md";
+        }))
+        .pipe(gulp.dest("./docs"));
+});
+
+
+
+
+
+
+
+
 gulp.task("test", function(done) {
     var runSequence = require("run-sequence");
 
