@@ -202,7 +202,7 @@ gulp.task("jsdoc", function() {
         concat   = require("gulp-concat");
 
     return gulp.src("./lib/**/*.js")
-        .pipe(concat("all.js"))
+        //.pipe(concat("all.js"))
         .pipe(jsdoc2md())
         .pipe(rename(function(path){
             path.extname = ".md";
