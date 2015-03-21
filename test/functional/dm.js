@@ -406,6 +406,25 @@ describe("DM`s functionality", function() {
 
         });
 
+        describe("DM", function() {
+
+            it("should parse hypnofrog link to the dm", function(done) {
+                dm.setDefinition("service", {
+                    path: "./src/universal.js",
+                    "calls": [
+                        [ "method", [ "@_@" ] ]
+                    ]
+                });
+
+                dm
+                    .get("service")
+                    .then(function(service) {
+                        expect(service.method.firstCall.calledWithExactly(dm)).true();
+                    })
+                    .then(done, done);
+            });
+
+        });
 
 
         describe("Fury", function() {
