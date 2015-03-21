@@ -2,7 +2,7 @@ var gulp = require("gulp"),
     RSVP = require("rsvp"),
     _    = require("lodash");
 
-gulp.task("clean", function(done) {
+gulp.task("clean:test", function(done) {
     var del = require("del");
 
     del([
@@ -196,7 +196,16 @@ gulp.task("karma:local", function(done) {
     }, done);
 });
 
-gulp.task("jsdoc", function() {
+gulp.task("clean:doc", function(done) {
+    var del = require("del");
+
+    del([
+        "./doc/*",
+        "!./doc/README.md"
+    ], done);
+});
+
+gulp.task("doc", ["clean:doc"], function() {
     var jsdoc2md = require("gulp-jsdoc-to-markdown"),
         rename   = require("gulp-rename"),
         concat   = require("gulp-concat");
@@ -207,21 +216,14 @@ gulp.task("jsdoc", function() {
         .pipe(rename(function(path){
             path.extname = ".md";
         }))
-        .pipe(gulp.dest("./docs"));
+        .pipe(gulp.dest("./doc"));
 });
-
-
-
-
-
-
-
 
 gulp.task("test", function(done) {
     var runSequence = require("run-sequence");
 
     runSequence(
-        "clean",
+        "clean:test",
         "lint",
         "style",
         "mocha",
@@ -235,7 +237,7 @@ gulp.task("ci", function(done) {
     var runSequence = require("run-sequence");
 
     runSequence(
-        "clean",
+        "clean:test",
         "lint",
         "style",
         "mocha",

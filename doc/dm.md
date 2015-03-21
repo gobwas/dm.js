@@ -24,8 +24,6 @@ DM
 
 <a name="new_DM"></a>
 ##new DM(async, loader, [config])
-DM.
-
 **Params**
 
 - async `Async`  
