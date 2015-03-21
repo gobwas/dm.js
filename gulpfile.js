@@ -198,9 +198,11 @@ gulp.task("karma:local", function(done) {
 
 gulp.task("jsdoc", function() {
     var jsdoc2md = require("gulp-jsdoc-to-markdown"),
-        rename   = require("gulp-rename");
+        rename   = require("gulp-rename"),
+        concat   = require("gulp-concat");
 
     return gulp.src("./lib/**/*.js")
+        .pipe(concat("all.js"))
         .pipe(jsdoc2md())
         .pipe(rename(function(path){
             path.extname = ".md";
