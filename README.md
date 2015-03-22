@@ -86,11 +86,12 @@ DM can:
 + be configured on the fly with new definitions of services;
 + use custom factory for the service, to make more complex things;
 
-Full syntax definition you can find in the wiki.
+Full syntax definition you can find in the [wiki](https://github.com/gobwas/dm.js/wiki).
 
 ## Documentation
 
 There is a [wiki](https://github.com/gobwas/dm.js/wiki) for dive deep with dm usage, syntax and ideology.
+Also, you can check the [API docs](https://github.com/gobwas/dm.js/tree/master/doc).
 
 ## Contributing
 
