@@ -5,7 +5,7 @@
 [![Coverage Status](https://coveralls.io/repos/gobwas/dm.js/badge.svg?branch=0.3.0)](https://coveralls.io/r/gobwas/dm.js)
 [![Sauce Test Status](https://saucelabs.com/buildstatus/gobwas)](https://saucelabs.com/u/gobwas)
 
-> Dependency [Injection](http://en.wikipedia.org/wiki/Dependency_injection) Manager for javascript.
+> Dependency Injection Manager for javascript.
 
 ## Introduction
 
@@ -33,20 +33,33 @@ dm = new DM(new Async(Q), new Loader(require), {
 
     services: {
         "logger": {
+            // this is where the loader must get a constructor for this service
             "path": "./src/log/logger/polylogue.js",
+            
+            // this is what calls dm must do on just created service
             "calls": [
-                ["addHandler", ["@handler"]]
+            
+                // '@' symbol is the link to another service from config
+                [ "addHandler", ["@handler"] ]
+                
             ]
         },
 
         "handler": {
             "path": "./src/log/handler/file.js",
-            "arguments": [{
-                "path": "#{logs}/log.txt"
-            }]
+            
+            // this is what arguments pass to the constructor
+            "arguments": [
+                {
+                    // '%' symbol is the getter of parameter from config (defined above)
+                    // curly braces is a kinda simple templating feature (works with '@', '#' and '%')
+                    "path": "%{logs}/log.txt"
+                }
+            ]
         }
     }
 });
+
 
 dm
     .get("logger")
@@ -57,9 +70,27 @@ dm
 
 ```
 
+## Quick overview
+
+DM can:
+
++ call constructor of your object with needed arguments;
++ make any calls on created object with any arguments;
++ directly set some properties;
++ pass as dependency another service from configuration, or its property, or its method, or its method call result;
++ pass as dependency some file content (with fs.readFile in cjs, and require(text!) in amd);
++ pass as dependency value of parameters, defined in configuration object;
++ pass as dependency some static string with wildcards, that could be any kind of dependencies above;
++ cache or always create new object;
++ retrieve already created objects and work with them as cached services;
++ be configured on the fly with new definitions of services;
++ use custom factory for the service, to make more complex things;
+
+Full syntax definition you can find in the wiki.
+
 ## Documentation
 
-There is a [wiki](https://github.com/gobwas/dm.js/wiki) for know hot to use dm.
+There is a [wiki](https://github.com/gobwas/dm.js/wiki) for dive deep with dm usage, syntax and ideology.
 
 ## Contributing
 
