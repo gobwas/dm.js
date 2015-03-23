@@ -1,6 +1,6 @@
 {
   "name": "dm",
-  "version": "0.3.0-rc0",
+  "version": "0.3.0",
   "description": "Dependency Injection Manager",
   "main": "./lib/dm.js",
   "directories": {
@@ -30,10 +30,9 @@
     "injection",
     "manager",
     "javascript",
-    "amd",
-    "cjs",
-    "commonjs",
-    "dm.js"
+    "dm.js",
+    "service",
+    "locator"
   ],
   "author": "Sergey Kamardin",
   "license": "MIT",
