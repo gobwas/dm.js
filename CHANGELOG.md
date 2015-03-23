@@ -1,6 +1,33 @@
 Change log
 ==========
 
+### 0.3.1 (??-??-2015)
+______________________
+
+
+### 0.3.0 (23-03-2015)
+______________________
+
+> This version is almost absolutely not compatible with 0.2.2 and below.
+
+#### Breaking Changes
+
++ `DM` instantiating;
++ `DM` interface;
++ `Async`, `Loader` interfaces;
++ Removed `Adapter` interface;
++ Now calls from configuration throws Errors when method does not exists;
+
+#### Features
+
++ Live templates;
+
+#### Core
+
++ [Big Refactoring Issue](https://github.com/gobwas/dm.js/issues/10);
++ Removed `.coffee` tests ([issue](https://github.com/gobwas/dm.js/issues/5));
++ Removed Grunt (to Gulp);
+
 ### 0.2.2 (28-10-2014)
 ______________________
 
