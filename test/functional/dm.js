@@ -16,7 +16,6 @@ describe("DM`s functionality", function() {
     beforeEach(function() {
         // clear cache
         delete require.cache[__dirname + "/src/universal.js"];
-
         dm = new DM((async = new RSVPAsync(RSVP)), (loader = new CJSLoader(require, { base: __dirname })));
     });
 
@@ -398,6 +397,33 @@ describe("DM`s functionality", function() {
                         expect(firstCall.calledWithExactly.apply(firstCall, args)).true();
                         expect(service.method.firstCall.calledWithExactly(dependencyMethodResult)).true();
 
+                    })
+                    .then(done, done);
+            });
+
+            it("should parse service path as json-pointer", function(done) {
+                var args, Service;
+
+                Service = require("./src/klass.js");
+
+                dm.setDefinition("package.service", {
+                    path: "./src/package.js#/service"
+                });
+
+                dm.setDefinition("package.child", {
+                    path: "./src/package.js#/children/0"
+                });
+
+                RSVP
+                    .all([dm.get("package.service"), dm.get("package.child")])
+                    .then(function(list) {
+                        var packageService, packageChild;
+
+                        packageService = list[0];
+                        packageChild   = list[1];
+
+                        expect(packageService).to.be.instanceOf(Service);
+                        expect(packageChild).to.be.instanceOf(Service);
                     })
                     .then(done, done);
             });

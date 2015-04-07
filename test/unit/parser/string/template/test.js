@@ -51,7 +51,12 @@ module.exports = function(factory, options) {
 
                     yes.forEach(function(obj) {
                         it("should return as expected", function() {
-                            expect(template.match(obj.string).definition).deep.equal(obj.definition[0]);
+                            var result;
+
+                            result = template.match(obj.string);
+
+                            expect(result).to.be.an('object').and.have.property("definition");
+                            expect(result.definition).deep.equal(obj.definition[0]);
                         });
                     });
 

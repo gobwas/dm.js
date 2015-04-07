@@ -6,7 +6,7 @@ var DefaultServiceProvider = require("../../../../lib/provider/service/default")
     sinon  = require("sinon"),
     RSVP   = require("rsvp"),
     _      = require("lodash"),
-    chance;
+    chance, expect;
 
 expect = chai.expect;
 chance = new Chance;

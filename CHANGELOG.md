@@ -1,9 +1,12 @@
 Change log
 ==========
 
-### 0.3.1 (??-??-2015)
+### 0.3.1 (08-04-2015)
 ______________________
 
+#### Features
+
++ `definition.path` now accepts JSONPointer ([RFC6901](https://tools.ietf.org/html/rfc6901))
 
 ### 0.3.0 (23-03-2015)
 ______________________
