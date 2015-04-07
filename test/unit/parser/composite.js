@@ -162,6 +162,31 @@ describe("CompositeParser", function() {
                 .catch(done);
         });
 
+        it("Should throw error if no one pass test", function(done) {
+            _.chain(new Array(10))
+                .forEach(function(value, index) {
+                    var child;
+
+                    child = Object.create(Parser.prototype);
+                    sinon.stub(child, "test", function(word) {
+                        return async.resolve(false);
+                    });
+
+                    parser.add(child);
+                })
+                .value();
+
+            parser.parse(chance.word())
+                .then(function() {
+                    done(new Error("Expected rejection, but fulfilled"));
+                })
+                .catch(function(err) {
+                    expect(err).to.be.instanceOf(SyntaxError);
+                    expect(err.message).equal("Could not parse given some");
+                })
+                .then(done, done);
+        });
+
     });
 
 });

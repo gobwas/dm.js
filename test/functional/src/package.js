@@ -1,3 +1,6 @@
 module.exports = {
-    service: require("./universal")
+    service: require("./klass"),
+    children: [
+        require("./klass")
+    ]
 };

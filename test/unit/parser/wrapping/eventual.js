@@ -34,7 +34,7 @@ describe("EventualParser", function() {
         it("should eventually parse given string", function(done) {
             var testStub, parseStub, transitionsCount, transitional;
 
-            testStub = sinon.stub(targetParser, "test").onCall(0).returns(true);
+            testStub = sinon.stub(targetParser, "test").returns(true);
             parseStub = sinon.stub(targetParser, "parse").onCall(0).returns("hello");
 
             // create transitional results
@@ -46,7 +46,6 @@ describe("EventualParser", function() {
             // on each result we say - "Yes, I can parse it"
             // and then return on #parse corresponding to index value
             _.forEach(transitional, function(result, index) {
-                testStub.onCall(index).returns(true);
                 parseStub.onCall(index).returns(result);
             });
 
@@ -58,6 +57,37 @@ describe("EventualParser", function() {
                 .then(function(result) {
                     // parser should return the last parsed string
                     expect(result).equal(transitional[transitionsCount - 1]);
+                    done();
+                })
+                .catch(done);
+        });
+
+        it("should stop when parser could not parse", function(done) {
+            var testStub, parseStub, transitionsCount, errorIndex, transitional;
+
+            testStub = sinon.stub(targetParser, "test").returns(true);
+            parseStub = sinon.stub(targetParser, "parse").onCall(0).returns("hello");
+
+            // create transitional results
+            transitionsCount = 10;
+            errorIndex = 5;
+            transitional = _.map(new Array(transitionsCount), function(v, index) {
+                var result;
+
+                result = chance.word();
+                parseStub.onCall(index).returns(index == errorIndex ? RSVP.Promise.reject(new SyntaxError()) : result);
+
+                return result;
+            });
+
+            // the last time we say - "No, I cant parse this"
+            testStub.onCall(transitionsCount).returns(false);
+
+            // run
+            parser.parse(chance.word())
+                .then(function(result) {
+                    // parser should return the last parsed string
+                    expect(result).equal(transitional[errorIndex - 1]);
                     done();
                 })
                 .catch(done);

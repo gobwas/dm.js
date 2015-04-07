@@ -16,7 +16,6 @@ describe("DM`s functionality", function() {
     beforeEach(function() {
         // clear cache
         delete require.cache[__dirname + "/src/universal.js"];
-
         dm = new DM((async = new RSVPAsync(RSVP)), (loader = new CJSLoader(require, { base: __dirname })));
     });
 
@@ -402,17 +401,17 @@ describe("DM`s functionality", function() {
                     .then(done, done);
             });
 
-            it("should parse service json-pointer style", function(done) {
-                var args, service;
+            it("should parse service path as json-pointer", function(done) {
+                var args, Service;
 
-                service = require("./src/universal.js");
+                Service = require("./src/klass.js");
 
                 dm.setDefinition("package.service", {
-                    path: "./src/package.js#service"
+                    path: "./src/package.js#/service"
                 });
 
                 dm.setDefinition("package.child", {
-                    path: "./src/package.js#children/0"
+                    path: "./src/package.js#/children/0"
                 });
 
                 RSVP
@@ -423,8 +422,8 @@ describe("DM`s functionality", function() {
                         packageService = list[0];
                         packageChild   = list[1];
 
-                        expect(packageService).equal(service);
-                        expect(packageChild).equal(service);
+                        expect(packageService).to.be.instanceOf(Service);
+                        expect(packageChild).to.be.instanceOf(Service);
                     })
                     .then(done, done);
             });
