@@ -1,6 +1,12 @@
 Change log
 ==========
 
+### 0.3.2 (06-05-2015)
+
+#### Features
+
++ `factory` option now accepts some of `['constructor', 'function', 'proxy']` ([issue#40](https://github.com/gobwas/dm.js/issues/40))
+
 ### 0.3.1 (08-04-2015)
 ______________________
 
