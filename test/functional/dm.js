@@ -16,6 +16,8 @@ describe("DM`s functionality", function() {
     beforeEach(function() {
         // clear cache
         delete require.cache[__dirname + "/src/universal.js"];
+        delete require.cache[__dirname + "/src/package.js"];
+
         dm = new DM((async = new RSVPAsync(RSVP)), (loader = new CJSLoader(require, { base: __dirname })));
     });
 
@@ -140,6 +142,156 @@ describe("DM`s functionality", function() {
             dm.set("service", obj);
         });
 
+        it("should use factory 'constructor'", function(done) {
+            var obj, ctor, args, argument, properties,
+                Service, property, value;
+
+            Service = require("./src/universal.js");
+
+            args = [chance.word()];
+            (properties = {})[(property = chance.word())] = (value = {});
+
+            argument = {};
+
+            dm.setDefinition("service", {
+                path: "./src/package.js#/universal",
+                factory: "constructor",
+                arguments: DM.escape(args),
+                calls: [
+                    [ "method", [ DM.escape(argument) ] ]
+                ],
+                properties: DM.escape(properties)
+            });
+
+            dm
+                .get("service")
+                .then(function(service) {
+                    expect(service.constructor.callCount).equal(1);
+                    expect(service.constructor.firstCall.args).deep.equal(args);
+
+                    expect(service.method.callCount).equal(1);
+                    expect(service.method.calledWithExactly(argument)).true();
+
+                    expect(service).have.property(property).that.equal(value);
+                })
+                .then(done, done);
+        });
+
+        it("should use factory 'function'", function(done) {
+            var obj, ctor, args, argument, properties,
+                pkg, property, value;
+
+            pkg = require("./src/package.js");
+
+            args = [chance.word()];
+            (properties = {})[(property = chance.word())] = (value = {});
+
+            argument = {};
+
+            dm.setDefinition("service", {
+                path: "./src/package.js#/func",
+                factory: "function",
+                arguments: DM.escape(args),
+                calls: [
+                    [ "method", [ DM.escape(argument) ] ]
+                ],
+                properties: DM.escape(properties)
+            });
+
+            dm
+                .get("service")
+                .then(function(service) {
+                    expect(pkg.func.callCount).equal(1);
+                    expect(pkg.func.firstCall.args).deep.equal(args);
+
+                    expect(service.method.callCount).equal(1);
+                    expect(service.method.calledWithExactly(argument)).true();
+
+                    expect(service).have.property(property).that.equal(value);
+                })
+                .then(done, done);
+        });
+
+        it("should use factory 'proxy'", function(done) {
+            var obj, ctor, args, argument, properties,
+                pkg, property, value;
+
+            (properties = {})[(property = chance.word())] = (value = {});
+
+            argument = {};
+
+            dm.setDefinition("service", {
+                path: "./src/package.js#/obj",
+                factory: "proxy",
+                calls: [
+                    [ "method", [ DM.escape(argument) ] ]
+                ],
+                properties: DM.escape(properties)
+            });
+
+            dm
+                .get("service")
+                .then(function(service) {
+                    expect(service.method.callCount).equal(1);
+                    expect(service.method.calledWithExactly(argument)).true();
+
+                    expect(service).have.property(property).that.equal(value);
+                })
+                .then(done, done);
+        });
+
+        it("should throw error when factory is 'proxy' and needle is primitive but properties was declared", function(done) {
+            var obj, ctor, args, argument, properties,
+                pkg, property, value;
+
+            (properties = {})[(property = chance.word())] = (value = {});
+
+            argument = {};
+
+            dm.setDefinition("service", {
+                path: "./src/package.js#/str",
+                factory: "proxy",
+                properties: DM.escape(properties)
+            });
+
+            dm
+                .get("service")
+                .then(function() {
+                    done(new Error("Expected error"));
+                })
+                .catch(function(err) {
+                    expect(err).instanceOf(TypeError);
+                    expect(err.message).equal("Trying to set property of non object")
+                })
+                .then(done, done);
+        });
+
+        it("should throw error when factory is 'proxy' and needle is primitive but calls was declared", function(done) {
+            var obj, ctor, args, argument, properties,
+                pkg, property, value;
+
+            argument = {};
+
+            dm.setDefinition("service", {
+                path: "./src/package.js#/num",
+                factory: "proxy",
+                calls: [
+                    [ "method", [ DM.escape(argument) ] ]
+                ]
+            });
+
+            dm
+                .get("service")
+                .then(function() {
+                    done(new Error("Expected error"));
+                })
+                .catch(function(err) {
+                    expect(err).instanceOf(TypeError);
+                    expect(err.message).equal("Trying to call method of non object")
+                })
+                .then(done, done);
+        });
+
         it("should use given factory", function(done) {
             var factory,
                 ctor, args, calls, properties;
@@ -175,7 +327,7 @@ describe("DM`s functionality", function() {
                     var call;
 
                     expect(call = factory.firstCall).to.exist();
-                    expect(call.args[0].constructor).equal(ctor);
+                    expect(call.args[0].operand).equal(ctor);
                     expect(call.args[0].arguments).equal(args);
                     expect(call.args[0].calls).equal(calls);
                     expect(call.args[0].properties).equal(properties);

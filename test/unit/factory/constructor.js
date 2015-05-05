@@ -1,14 +1,14 @@
-var _        = require('lodash'),
-    sinon    = require('sinon'),
-    chai     = require('chai'),
-    DefaultFactory = require("../../../lib/factory/default"),
+var _                  = require('lodash'),
+    sinon              = require('sinon'),
+    chai               = require('chai'),
+    ConstructorFactory = require("../../../lib/factory/constructor"),
     assert, expect;
 
 assert = chai.assert;
 expect = chai.expect;
 
 
-describe("DefaultFactory", function() {
+describe("ConstructorFactory", function() {
     var factory, Ctor;
 
     beforeEach(function() {
@@ -20,13 +20,13 @@ describe("DefaultFactory", function() {
             constructor: Ctor
         };
 
-        factory = new DefaultFactory();
+        factory = new ConstructorFactory();
     });
 
     describe("#factory", function() {
 
         it("should create instanceof", function() {
-            expect(factory.factory({ constructor: Ctor })).to.be.instanceof(Ctor);
+            expect(factory.factory({ operand: Ctor })).to.be.instanceof(Ctor);
         });
 
         it("should call Object.create if exists", function() {
@@ -35,7 +35,7 @@ describe("DefaultFactory", function() {
             createSpy = sinon.spy(Object, "create");
 
             factory.factory({
-                constructor: Ctor
+                operand: Ctor
             });
 
             createSpy.restore();
@@ -58,7 +58,7 @@ describe("DefaultFactory", function() {
             args = [1,2,3];
 
             factory.factory({
-                constructor: Ctor,
+                operand: Ctor,
                 arguments: args
             });
 
@@ -67,6 +67,19 @@ describe("DefaultFactory", function() {
             expect(Ctor.callCount).equal(1);
             expect(Ctor.getCall(0).calledOn(that)).to.be.true();
             expect(Ctor.firstCall.calledWithExactly.apply(Ctor.firstCall, args)).to.be.true();
+        });
+
+        it("should throw error when method does not exists", function() {
+            var that, methodSpy, createStub, fac;
+
+            fac = function() {
+                factory.factory({
+                    operand: Ctor,
+                    calls: [ ["method"] ]
+                });
+            };
+
+            expect(fac).to.throw(Error, "Trying to call method that does not exists: 'method'");
         });
 
         it("should make calls", function() {
@@ -82,7 +95,7 @@ describe("DefaultFactory", function() {
             args = [1,2,3];
 
             factory.factory({
-                constructor: Ctor,
+                operand: Ctor,
                 calls: [ ["method", args] ]
             });
 
@@ -91,19 +104,6 @@ describe("DefaultFactory", function() {
             expect(methodSpy.callCount).equal(1);
             expect(methodSpy.getCall(0).calledOn(that)).to.be.true();
             expect(methodSpy.firstCall.calledWithExactly.apply(methodSpy.firstCall, args)).to.be.true();
-        });
-
-        it("should throw error when method does not exists", function() {
-            var that, methodSpy, createStub, fac;
-
-            fac = function() {
-                factory.factory({
-                    constructor: Ctor,
-                    calls: [ ["method"] ]
-                });
-            };
-
-            expect(fac).to.throw(Error, "Try to call method that does not exists: 'method'");
         });
 
         it("should set properties", function() {
@@ -116,7 +116,7 @@ describe("DefaultFactory", function() {
             };
 
             service = factory.factory({
-                constructor: Ctor,
+                operand: Ctor,
                 properties: props
             });
 

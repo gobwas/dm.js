@@ -539,7 +539,7 @@ describe("DM", function() {
             it("should reject when definition.path is not a string", function(done) {
                 dm.build({})
                     .then(function() {
-                        throw new Error("Fulfilled, expected to be rejected");
+                        done(new Error("Fulfilled, expected to be rejected"));
                     })
                     .catch(function(err) {
                         expect(err).to.be.instanceof(TypeError);
@@ -617,7 +617,7 @@ describe("DM", function() {
                         expect(factory.firstCall.args[0].arguments).equal(args);
                         expect(factory.firstCall.args[0].calls).equal(calls);
                         expect(factory.firstCall.args[0].properties).equal(properties);
-                        expect(factory.firstCall.args[0].constructor).equal(ctor);
+                        expect(factory.firstCall.args[0].operand).equal(ctor);
                     })
                     .then(done, done);
             });
