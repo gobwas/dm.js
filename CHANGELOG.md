@@ -1,6 +1,14 @@
 Change log
 ==========
 
+### 0.4.0 (xx-06-2015)
+
+#### Features
+
++ `lazy` option for services
++ `slugs` in lazy services definitions
++ **todo** deferred template aka `&@service` or `&#resource#`
+
 ### 0.3.2 (06-05-2015)
 
 #### Features

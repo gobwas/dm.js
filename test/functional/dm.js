@@ -506,6 +506,93 @@ describe("DM`s functionality", function() {
                     .then(done, done);
             });
 
+            it("should parse lazy service", function(done) {
+                var slug;
+
+                slug = {};
+
+                dm.setDefinition("service", {
+                    path: "./src/universal.js",
+                    lazy: true,
+                    "calls": [
+                        [ "method", ["$0"] ]
+                    ]
+                });
+
+                dm
+                    .get("service")
+                    .then(function(provider) {
+                        expect(typeof provider).equal("function");
+                        return provider(slug);
+                    })
+                    .then(function(service) {
+                        expect(service.method.firstCall.calledWithExactly(slug)).true();
+                    })
+                    .then(done, done);
+            });
+
+            it("should parse lazy service with live slug", function(done) {
+                dm.setDefinition("service", {
+                    path: "./src/universal.js",
+                    lazy: true,
+                    "calls": [
+                        [ "method", ["${0}abc"] ]
+                    ]
+                });
+
+                dm
+                    .get("service")
+                    .then(function(provider) {
+                        expect(typeof provider).equal("function");
+                        return provider(123);
+                    })
+                    .then(function(service) {
+                        expect(service.method.firstCall.args[0]).equal("123abc");
+                    })
+                    .then(done, done);
+            });
+
+            it("should parse lazy shared service", function(done) {
+                var firstProvider, firstService, slug1, slug2;
+
+                slug1 = {};
+                slug2 = {};
+
+                dm.setDefinition("service", {
+                    path: "./src/universal.js",
+                    lazy: true,
+                    share: true,
+                    "calls": [
+                        [ "method", ["$0"] ]
+                    ]
+                });
+
+                dm
+                    .get("service")
+                    .then(function(provider) {
+                        firstProvider = provider;
+                        return provider(slug1);
+                    })
+                    .then(function(service) {
+                        firstService = service;
+
+                        expect(service.method.firstCall.calledWithExactly(slug1)).true();
+
+                        return dm.get("service");
+                    })
+                    .then(function(provider) {
+                        expect(provider).equal(firstProvider);
+
+                        return provider(slug2);
+                    })
+                    .then(function(service) {
+                        expect(service).not.equal(firstService);
+
+                        expect(service.method.firstCall.calledWithExactly(slug2)).true();
+                    })
+                    .then(done, done);
+            });
+
             it("should parse service live template", function(done) {
                 var addition,
                     liveText;

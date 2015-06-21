@@ -4,6 +4,7 @@ var _      = require('lodash'),
     chai   = require('chai'),
     util   = require("util"),
     DM     = require('../../lib/dm'),
+    EventualParser = require('../../lib/parser/wrapping/eventual'),
     Loader = require('../../lib/loader'),
     Async  = require('../../lib/async'),
     RSVP   = require('rsvp'),
@@ -265,7 +266,7 @@ describe("DM", function() {
                             var call;
 
                             expect(call = dm.parse.getCall(index)).to.exist();
-                            expect(call.calledWithExactly(target)).to.be.true();
+                            expect(call.calledWith(target)).to.be.true();
                         });
                     })
                     .then(done, done);
@@ -476,6 +477,127 @@ describe("DM", function() {
                     .then(done, done);
             });
 
+            it("should return provider for deferred synthetic services", function(done) {
+                var service;
+
+                service = {};
+
+                dm.setDefinition("service", {
+                    synthetic: true
+                });
+
+                dm.set("service", service);
+
+                dm
+                    .get("service", { deferred: true })
+                    .then(function(provider) {
+                        var firstCall;
+
+                        expect(typeof provider).equal("function");
+
+                        return provider();
+                    })
+                    .then(function(result) {
+                        expect(result).equal(service);
+                    })
+                    .then(done, done);
+            });
+
+            it("should return provider for deferred services", function(done) {
+                var Service, first;
+
+                Service = function(){};
+
+                sinon.stub(loader, "require", function() {
+                    return async.resolve(Service);
+                });
+
+                dm.setDefinition("service", {
+                    path: chance.word()
+                });
+
+                dm
+                    .get("service", { deferred: true })
+                    .then(function(provider) {
+                        var firstCall;
+
+                        expect(typeof provider).equal("function");
+
+                        return provider();
+                    })
+                    .then(function(result) {
+                        first = result;
+                        expect(result).to.be.instanceof(Service);
+
+                        return dm.get("service", { deferred: true });
+                    })
+                    .then(function(provider) {
+                        return provider();
+                    })
+                    .then(function(result) {
+                        expect(result).equal(first);
+                    })
+                    .then(done, done);
+            });
+
+            it("should return provider for lazy services", function(done) {
+                var Service;
+
+                Service = function(){};
+
+                sinon.stub(loader, "require", function() {
+                    return async.resolve(Service);
+                });
+
+                dm.setDefinition("service", {
+                    path: chance.word(),
+                    lazy: true
+                });
+
+                dm
+                    .get("service")
+                    .then(function(provider) {
+                        var firstCall;
+
+                        expect(typeof provider).equal("function");
+
+                        return provider();
+                    })
+                    .then(function(result) {
+                        expect(result).to.be.instanceof(Service);
+                    })
+                    .then(done, done);
+            });
+
+            it("should return one level (not nested) provider for lazy deferred services", function(done) {
+                var Service;
+
+                Service = function(){};
+
+                sinon.stub(loader, "require", function() {
+                    return async.resolve(Service);
+                });
+
+                dm.setDefinition("service", {
+                    path: chance.word(),
+                    lazy: true
+                });
+
+                dm
+                    .get("service", { deferred: true })
+                    .then(function(provider) {
+                        var firstCall;
+
+                        expect(typeof provider).equal("function");
+
+                        return provider();
+                    })
+                    .then(function(result) {
+                        expect(result).to.be.instanceof(Service);
+                    })
+                    .then(done, done);
+            });
+
             it("should build every time new service, when sharing is off", function(done) {
                 var key;
 
@@ -566,7 +688,7 @@ describe("DM", function() {
                         arguments:  [],
                         calls:      [],
                         properties: {},
-                        factory:    ""
+                        factory:    _.noop
                     })
                     .then(function() {
                         var rCall;
@@ -581,9 +703,40 @@ describe("DM", function() {
                     .then(done, done);
             });
 
+            it("should call #parse with new parser for lazy services", function(done) {
+                var requireStub, parseStub,
+                    path;
+
+                sinon.stub(loader, "require", function() {
+                    return RSVP.Promise.resolve(_.noop);
+                });
+
+                parseStub = sinon.stub(dm, "parse", function(obj) {
+                    return RSVP.Promise.resolve(obj);
+                });
+
+                dm
+                    .build({
+                        path: chance.word(),
+                        lazy: true,
+                        factory: _.noop
+                    }, [])
+                    .then(function() {
+                        var parseCall, parser;
+
+                        expect(parseCall = parseStub.firstCall).to.exist();
+
+                        parser = parseCall.args[1];
+
+                        expect(parser).to.be.instanceof(EventualParser);
+                        expect(parser).not.equal(dm.parser);
+                    })
+                    .then(done, done);
+            });
+
             it("should pass parsed definition to the factory", function(done) {
                 var factory, ctor, args, calls, properties,
-                    parseSpy;
+                    parseSpy, def;
 
                 factory = sinon.spy();
                 ctor    = function() {};
@@ -593,25 +746,19 @@ describe("DM", function() {
                 });
 
                 parseSpy = sinon.stub(dm, "parse", function(obj) {return RSVP.Promise.resolve(obj);});
-                parseSpy.withArgs(args = []);
-                parseSpy.withArgs(calls = []);
-                parseSpy.withArgs(properties = {});
-                parseSpy.withArgs(factory);
+                parseSpy.withArgs(def = {
+                    path:       chance.word(),
+                    arguments:  (args = []),
+                    calls:      (calls = []),
+                    properties: (properties = {}),
+                    factory:    factory
+                });
 
                 dm
-                    .build({
-                        path:       chance.word(),
-                        arguments:  args,
-                        calls:      calls,
-                        properties: properties,
-                        factory:    factory
-                    })
+                    .build(def)
                     .then(function() {
-                        expect(parseSpy.callCount).equal(4);
-                        expect(parseSpy.calledWithExactly(args)).to.be.true();
-                        expect(parseSpy.calledWithExactly(calls)).to.be.true();
-                        expect(parseSpy.calledWithExactly(properties)).to.be.true();
-                        expect(parseSpy.calledWithExactly(factory)).to.be.true();
+                        expect(parseSpy.callCount).equal(1);
+                        expect(parseSpy.calledWith(def)).to.be.true();
 
                         expect(factory.callCount).equal(1);
                         expect(factory.firstCall.args[0].arguments).equal(args);
