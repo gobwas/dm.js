@@ -3,7 +3,6 @@
 [![NPM version](https://badge.fury.io/js/dm.svg)](http://badge.fury.io/js/dm)
 [![Build Status](https://travis-ci.org/gobwas/dm.js.svg?branch=0.3.0)](https://travis-ci.org/gobwas/dm.js)
 [![Coverage Status](https://coveralls.io/repos/gobwas/dm.js/badge.svg?branch=0.3.0)](https://coveralls.io/r/gobwas/dm.js)
-[![Sauce Test Status](https://saucelabs.com/buildstatus/gobwas)](https://saucelabs.com/u/gobwas)
 
 > Dependency Injection Manager for javascript.
 
