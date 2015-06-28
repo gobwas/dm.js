@@ -661,7 +661,7 @@ describe("DM", function() {
                     .then(function() {
                         var parseCall, parser;
 
-                        expect(parseCall = parseStub.firstCall).to.exist();
+                        expect(parseCall = parseStub.secondCall).to.exist();
 
                         parser = parseCall.args[1];
 
@@ -683,19 +683,22 @@ describe("DM", function() {
                 });
 
                 parseSpy = sinon.stub(dm, "parse", function(obj) {return RSVP.Promise.resolve(obj);});
-                parseSpy.withArgs(def = {
+
+                def = {
                     path:       chance.word(),
                     arguments:  (args = []),
                     calls:      (calls = []),
                     properties: (properties = {}),
                     factory:    factory
-                });
+                };
 
                 dm
                     .build(def)
                     .then(function() {
-                        expect(parseSpy.callCount).equal(1);
-                        expect(parseSpy.calledWith(def)).to.be.true();
+                        expect(parseSpy.callCount).equal(2);
+
+                        expect(parseSpy.firstCall.args[0]).equal(def.path);
+                        expect(parseSpy.secondCall.args[0]).deep.equal(_.omit(def, "path"));
 
                         expect(factory.callCount).equal(1);
                         expect(factory.firstCall.args[0].arguments).equal(args);
