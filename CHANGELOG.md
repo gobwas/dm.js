@@ -5,9 +5,10 @@ Change log
 
 #### Features
 
-+ `lazy` option for services
-+ `slugs` in lazy services definitions
-+ **todo** deferred template aka `&@service` or `&#resource#`
++ `lazy` option for services;
++ `slugs` in lazy services definitions;
++ deferred templates for `&@service` and `&#resource#` (included calls, handlers and other cool stuff);
++ now `definition.path` is parsed before loading module
 
 ### 0.3.2 (06-05-2015)
 

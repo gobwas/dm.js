@@ -242,6 +242,14 @@ gulp.task("ci", function(done) {
         "style",
         "mocha",
         "coveralls",
+        done
+    );
+});
+
+gulp.task("webtest", function(done) {
+    var runSequence = require("run-sequence");
+
+    runSequence(
         "webtest:ci",
         "karma:sauce",
         done

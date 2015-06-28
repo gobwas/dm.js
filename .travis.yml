@@ -1,8 +1,13 @@
 language: node_js
+
 node_js:
   - "0.10"
   - "0.12"
   - "iojs"
+
+after_success:
+    - npm run webtest
+
 env:
   global:
     - secure: WXoXYwB6jkXQqmf48aFof9MIf9Hjeln+Fa6p6XXS6tbqu/Ed5AkmJwoTzzMHeGedf8pqOlspj7nH7fepg3GfmjmAuimD+/422bvrSvYfgD/SU+WjeUmG9Leeow2fQL0pouXVhdxQGHDm5oYsSXUcD2BevIeyO5BPgMnSLPDtoKc=

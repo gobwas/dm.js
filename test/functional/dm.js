@@ -395,6 +395,44 @@ describe("DM`s functionality", function() {
                     .then(done, done);
             });
 
+            it("should parse resource deferred with provider, returning promise", function(done) {
+                dm.setDefinition("service", {
+                    path: "./src/universal.js",
+                    properties: {
+                        deferred: "&#./resource/text.txt#"
+                    }
+                });
+
+                dm
+                    .get("service")
+                    .then(function(service) {
+                        var provider;
+
+                        expect(typeof (provider = service.deferred)).equal("function");
+                        expect(provider()).to.be.instanceof(RSVP.Promise);
+                    })
+                    .then(done, done);
+            });
+
+            it("should parse resource deferred", function(done) {
+                dm.setDefinition("service", {
+                    path: "./src/universal.js",
+                    properties: {
+                        deferred: "&#./resource/text.txt#"
+                    }
+                });
+
+                dm
+                    .get("service")
+                    .then(function(service) {
+                        return service.deferred();
+                    })
+                    .then(function(result) {
+                        expect(result).equal(text);
+                    })
+                    .then(done, done);
+            });
+
         });
 
 
@@ -490,6 +528,22 @@ describe("DM`s functionality", function() {
                 dm.set(dependency, dependencyService);
             });
 
+            it("should parse service's path", function(done) {
+                var UniversalService = require("./src/universal.js");
+
+                dm.setParameter("src", "./src");
+                dm.setDefinition("service", {
+                    path: "%{src}/universal.js"
+                });
+
+                dm
+                    .get("service")
+                    .then(function(service) {
+                        expect(service).to.be.instanceof(UniversalService);
+                    })
+                    .then(done, done);
+            });
+
             it("should parse service template", function(done) {
                 dm.setDefinition("service", {
                     path: "./src/universal.js",
@@ -502,6 +556,59 @@ describe("DM`s functionality", function() {
                     .get("service")
                     .then(function(service) {
                         expect(service.method.firstCall.calledWithExactly(dependencyService)).true();
+                    })
+                    .then(done, done);
+            });
+
+            it("should parse deferred service with provider returning promise", function(done) {
+                dm.setDefinition("service", {
+                    path: "./src/universal.js",
+                    properties: {
+                        deferred: "&@" + dependency
+                    }
+                });
+
+                dm
+                    .get("service")
+                    .then(function(service) {
+                        var provider;
+
+                        expect(typeof (provider = service.deferred) ).equal("function");
+                        expect(provider()).to.be.instanceof(RSVP.Promise);
+                    })
+                    .then(done, done);
+            });
+
+            it("should parse deferred service", function(done) {
+                dm.setDefinition("service", {
+                    path: "./src/universal.js",
+                    properties: {
+                        deferred: "&@" + dependency
+                    }
+                });
+
+                dm
+                    .get("service")
+                    .then(function(service) {
+                        return service.deferred();
+                    })
+                    .then(function(dependency) {
+                        expect(dependency).equal(dependencyService);
+                    })
+                    .then(done, done);
+            });
+
+            it("should parse lazy service with handler returning promise", function(done) {
+                dm.setDefinition("service", {
+                    path: "./src/universal.js",
+                    lazy: true
+                });
+
+                dm
+                    .get("service")
+                    .then(function(provider) {
+                        expect(typeof provider).equal("function");
+                        expect(provider()).to.be.instanceof(RSVP.Promise);
                     })
                     .then(done, done);
             });
@@ -522,7 +629,6 @@ describe("DM`s functionality", function() {
                 dm
                     .get("service")
                     .then(function(provider) {
-                        expect(typeof provider).equal("function");
                         return provider(slug);
                     })
                     .then(function(service) {

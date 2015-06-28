@@ -477,69 +477,6 @@ describe("DM", function() {
                     .then(done, done);
             });
 
-            it("should return provider for deferred synthetic services", function(done) {
-                var service;
-
-                service = {};
-
-                dm.setDefinition("service", {
-                    synthetic: true
-                });
-
-                dm.set("service", service);
-
-                dm
-                    .get("service", { deferred: true })
-                    .then(function(provider) {
-                        var firstCall;
-
-                        expect(typeof provider).equal("function");
-
-                        return provider();
-                    })
-                    .then(function(result) {
-                        expect(result).equal(service);
-                    })
-                    .then(done, done);
-            });
-
-            it("should return provider for deferred services", function(done) {
-                var Service, first;
-
-                Service = function(){};
-
-                sinon.stub(loader, "require", function() {
-                    return async.resolve(Service);
-                });
-
-                dm.setDefinition("service", {
-                    path: chance.word()
-                });
-
-                dm
-                    .get("service", { deferred: true })
-                    .then(function(provider) {
-                        var firstCall;
-
-                        expect(typeof provider).equal("function");
-
-                        return provider();
-                    })
-                    .then(function(result) {
-                        first = result;
-                        expect(result).to.be.instanceof(Service);
-
-                        return dm.get("service", { deferred: true });
-                    })
-                    .then(function(provider) {
-                        return provider();
-                    })
-                    .then(function(result) {
-                        expect(result).equal(first);
-                    })
-                    .then(done, done);
-            });
-
             it("should return provider for lazy services", function(done) {
                 var Service;
 
